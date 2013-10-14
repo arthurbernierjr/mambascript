@@ -1049,7 +1049,17 @@ debugger = DEBUGGER { return rp(new CS.Debugger); }
 undefined = UNDEFINED { return rp(new CS.Undefined); }
 null = NULL { return rp(new CS.Null); }
 
-TypeExpr = $([a-zA-Z] [a-zA-Z0-9]*)
+TypeNameSymbol = $([a-zA-Z] [a-zA-Z0-9]*)
+TypeStruct = "{" _ key:$([a-zA-Z] [a-zA-Z0-9]*) _ "::" _ val:TypeNameSymbol _ "}" {
+  var obj = {};
+  obj[key] = val;
+  return obj;
+}
+
+TypeExpr
+  = TypeStruct
+  / TypeNameSymbol
+
 TypeAnnotation = "::" _ type:TypeExpr {return {type:type};}
 
 unassignable = ("arguments" / "eval") !identifierPart

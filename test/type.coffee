@@ -10,6 +10,13 @@ suite 'Type', ->
           x :: Number = "3"
         """
 
+    test 'throw member access error', ->
+      throws ->
+        CoffeeScript.parse """
+          obj :: { x :: Number } = { x : 3 }
+          obj.x = ""
+        """
+
     test 'any type thorough everything', ->
       a :: Any = 3
       a = false

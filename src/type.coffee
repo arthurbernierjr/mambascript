@@ -1,4 +1,4 @@
-# console = {log: ->}
+console = {log: ->}
 class TypeSymbol
   constructor: (@type) ->
     @type = Symbol
@@ -37,14 +37,17 @@ class ScopeNode
 
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
-  # console.log cs_ast.body.statements
+  console.log cs_ast.body.statements
   root = new ScopeNode
   root.name = 'root'
+  for i in ['global', 'exports', 'Module', 'module']
+    root.defs[i] = 'Any'
   _typecheck cs_ast.body.statements, root
-  ScopeNode.dump root
+  # ScopeNode.dump root
 
 _typecheck = (node, parentScope) ->
   # undefined
+  # TODO: Why?
   return if node is undefined
 
   # array
@@ -73,7 +76,26 @@ _typecheck = (node, parentScope) ->
 
   # 関数呼び出し
   else if node.function? and node.arguments?
+    # TODO: argumentsを名前空間に
     _typecheck node.arguments, parentScope
+
+  # member access
+  # TODO: 入れ子とか関数の返り値を考慮
+  else if node.assignee?.memberName? and node.expression?
+    # console.log node
+    symbol = node.assignee.expression.data
+    member = node.assignee.memberName
+
+    registered_type = parentScope.getScopedType(symbol) # Object
+    return unless registered_type? # TODO: maybe global defined
+
+    type = registered_type[member] # ClassName
+    infered_type = guess_expr_type node.expression
+
+    if type? and (type is infered_type) or (registered_type is 'Any')
+      ''
+    else
+      throw new Error "'#{symbol}' is expected to #{registered_type} (indeed #{infered_type}) at member access"
 
   # 代入
   else if node.assignee? and node.expression?
@@ -93,12 +115,16 @@ _typecheck = (node, parentScope) ->
       if symbol is 'toString'
         ''
       else unless  (registered_type is infered_type) or (registered_type is 'Any')
-        throw new Error "'#{symbol}' is expected to #{registered_type} indeed #{infered_type}, #{node.toString()}"
+        throw new Error "'#{symbol}' is expected to #{registered_type} indeed #{infered_type}, by assignee"
 
     # 型識別子が存在せず、既にそのスコープで宣言済みの型である場合、再度型推論する識別子が存在する場合スコープに追加する
     else if assigned_type
+      # 明示的なAny
       if assigned_type is 'Any'
         parentScope.setType symbol, 'Any'
+      # オブジェクトリテラル
+      else if (typeof assigned_type) is 'object'
+        parentScope.setType symbol, assignee.annotation.type
       else if assigned_type is infered_type
         parentScope.setType symbol, assignee.annotation.type
         # 関数を追加
