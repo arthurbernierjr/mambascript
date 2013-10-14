@@ -2,11 +2,11 @@
 Nodes = require './nodes'
 {Preprocessor} = require './preprocessor'
 Parser = require './parser'
+Type = require './type'
 {Optimiser} = require './optimiser'
 {Compiler} = require './compiler'
 cscodegen = try require 'cscodegen'
 escodegen = try require 'escodegen'
-
 
 pkg = require './../package.json'
 
@@ -37,6 +37,8 @@ CoffeeScript =
       parsed = Parser.parse preprocessed,
         raw: options.raw
         inputSource: options.inputSource
+      Type.checkNodes(parsed)
+
       if options.optimise then Optimiser.optimise parsed else parsed
     catch e
       throw e unless e instanceof Parser.SyntaxError
