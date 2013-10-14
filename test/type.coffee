@@ -19,4 +19,3 @@ suite 'Type', ->
       class X
       X::x = 3
       eq X.prototype.x, 3
-

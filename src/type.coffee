@@ -1,4 +1,4 @@
-console = {log: ->}
+# console = {log: ->}
 class TypeSymbol
   constructor: (@type) ->
     @type = Symbol
@@ -46,6 +46,7 @@ checkNodes = (cs_ast) ->
 _typecheck = (node, parentScope) ->
   # undefined
   return if node is undefined
+
   # array
   if node.length?
     node.forEach (s) -> _typecheck s, parentScope
@@ -105,10 +106,15 @@ _typecheck = (node, parentScope) ->
           fnode = new ScopeNode
           fnode.name   = symbol
           fnode.parent = parentScope
+
+          # 引数を次のスコープの名前空間に追加
+          node.expression.parameters.map (param) ->
+            fnode.setType param.data, param.annotation?.type ? 'Any'
+
           parentScope.nodes.push fnode
-          _typecheck expression.body.statements, fnode
+          _typecheck node.expression.body.statements, fnode
       else
-        # なぜかtoStringくることがある
+        # TODO: なぜかtoStringくることがあるので握りつぶす
         if symbol is 'toString'
           ''
         else
@@ -116,11 +122,11 @@ _typecheck = (node, parentScope) ->
     else
       # scope.setType symbol, infered_type
       parentScope.setType symbol, 'Any'
-      if infered_type is 'Function' and expression.body?.statements?
+      if infered_type is 'Function' and node.expression.body?.statements?
         fnode = new ScopeNode
         fnode.name   = symbol
         fnode.parent = parentScope
         parentScope.nodes.push fnode
-        _typecheck expression.body.statements, fnode
+        _typecheck node.expression.body.statements, fnode
 
 module.exports = {checkNodes}

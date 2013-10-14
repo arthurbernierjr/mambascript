@@ -12,8 +12,9 @@ fn :: Function = ->
   x = 3
   n = ->
     i = ''
-  # x = "" #=> Error
-  # y :: String = ""
+
+f2 :: Function = (a :: Number) ->
+  a + 3
 
 class X
   f: ->
