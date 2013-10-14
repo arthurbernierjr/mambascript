@@ -1050,9 +1050,13 @@ undefined = UNDEFINED { return rp(new CS.Undefined); }
 null = NULL { return rp(new CS.Null); }
 
 TypeNameSymbol = $([a-zA-Z] [a-zA-Z0-9]*)
-TypeStruct = "{" _ key:$([a-zA-Z] [a-zA-Z0-9]*) _ "::" _ val:TypeNameSymbol _ "}" {
+_TypeStruct = "," _ key:$([a-zA-Z] [a-zA-Z0-9]*) _ "::" _ val:TypeNameSymbol { return [key, val]; }
+TypeStruct = "{" _ key:$([a-zA-Z] [a-zA-Z0-9]*) _ "::" _ val:TypeNameSymbol _ types:_TypeStruct* _ "}" {
   var obj = {};
   obj[key] = val;
+  types.map(function(t){
+    obj[t[0]] = t[1];
+  });
   return obj;
 }
 
