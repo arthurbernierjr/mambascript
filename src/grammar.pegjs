@@ -1049,19 +1049,32 @@ debugger = DEBUGGER { return rp(new CS.Debugger); }
 undefined = UNDEFINED { return rp(new CS.Undefined); }
 null = NULL { return rp(new CS.Null); }
 
-TypeNameSymbol = $([a-zA-Z] [a-zA-Z0-9]*)
-_TypeStruct = "," _ key:$([a-zA-Z] [a-zA-Z0-9]*) _ "::" _ val:TypeNameSymbol { return [key, val]; }
-TypeStruct = "{" _ key:$([a-zA-Z] [a-zA-Z0-9]*) _ "::" _ val:TypeNameSymbol _ types:_TypeStruct* _ "}" {
-  var obj = {};
-  obj[key] = val;
-  types.map(function(t){
-    obj[t[0]] = t[1];
-  });
-  return obj;
-}
+typeLiteral
+  = "{" members:typeLiteralBody TERMINATOR? _ "}" {
+    var obj = {};
+    members.forEach(function(member){
+      obj[member[0]] = member[1];
+    });
+    return obj;
+    // return rp(new CS.ObjectInitialiser(members));
+  }
+  typeLiteralBody
+    = TERMINDENT members:typeLiteralMemberList DEDENT { return members; }
+    / _ members:typeLiteralMemberList? { return members || []; }
+  typeLiteralMemberList
+    = e:typeLiteralMember _ es:(arrayLiteralMemberSeparator _ typeLiteralMember _)* ","? {
+        return [e].concat(es.map(function(e){ return e[2]; }));
+      }
+  typeLiteralMember
+    = key:TypeNameSymbol _ "::" _ val: TypeExpr {
+        return [key.data, val.data];
+        // return rp(new CS.ObjectInitialiserMember(key, val));
+      }
+
+TypeNameSymbol = ObjectInitialiserKeys
 
 TypeExpr
-  = TypeStruct
+  = typeLiteral
   / TypeNameSymbol
 
 TypeAnnotation = "::" _ type:TypeExpr {return {type:type};}
