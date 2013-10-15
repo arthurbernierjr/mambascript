@@ -20,7 +20,10 @@ z :: Boolean = false
 #   f: ->
 #     n = 3
 obj :: { x :: Number, y :: Number } = { x : 3, y : 5}
-obj2 :: { x :: Number, y :: Number } = { x : 3, y : ""} # should throw
+obj2 :: {
+  x :: Number
+  y :: Number
+} = { x : 3, y : ""} # should throw
 # obj2.y = "xxx" # 例外
 obj.x = 5
 # obj.x = ""
