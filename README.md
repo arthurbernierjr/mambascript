@@ -1,3 +1,9 @@
+TypedCoffeeScript
+==================================
+implemented by mizchi
+
+
+
 CoffeeScript II: The Wrath of Khan
 ==================================
 

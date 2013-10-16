@@ -1,10 +1,10 @@
 ok = require 'assert'
 
-x :: Number = 3
-y :: String = "hello"
-z :: Boolean = false
-# z :: String = 4 #=> Error
-# y = x #=> Error
+# x :: Number = 3
+# y :: String = "hello"
+# z :: Boolean = false
+# k :: String = 4 #=> Error
+# # y = x #=> Error
 # a :: Any = 3
 # a = 'fadfa'
 # b = 'a'
@@ -19,15 +19,20 @@ z :: Boolean = false
 # class X
 #   f: ->
 #     n = 3
-obj :: { x :: Number, y :: Number } = { x : 3, y : 5}
-obj2 :: {
-  x :: Number
-  y :: Number
-} = { x : 3, y : ""} # should throw
-# obj2.y = "xxx" # 例外
-obj.x = 5
-# obj.x = ""
+# obj :: { x :: Number, y :: Number } = { x : 3, y : 5}
+# obj2 :: {
+#   x :: Number
+#   y :: Number
+# } = { x : 3, y : ""} # should throw
+# # obj2.y = "xxx" # 例外
+# obj.x = 5
+# # obj.x = ""
 
-f :: Number -> Number = (n :: Number) ->  n * n
+# f :: Number -> Number = (n :: Number) ->  n * n
+# n :: Number  = f 4
 
-console.log 'finish', f 4
+# x
+
+# console.log 'finish', f n
+
+a :: Number = "hello"

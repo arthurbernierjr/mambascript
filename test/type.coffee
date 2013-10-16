@@ -37,6 +37,10 @@ suite 'Type', ->
       a = false
       eq a, false
 
+    test 'typed function and binding', ->
+      f :: Number -> Number = (n :: Number) ->  n * n
+      n :: Number  = f 4
+
     test 'avoid polution about prototype', ->
       class X
       X::x = 3
