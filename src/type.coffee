@@ -1,8 +1,4 @@
 console = {log: ->}
-class TypeSymbol
-  constructor: (@type) ->
-    @type = Symbol
-
 guess_expr_type = (expr) ->
   if (typeof expr.data) is 'number'
     'Number'
@@ -15,25 +11,28 @@ guess_expr_type = (expr) ->
   else
     'Any'
 
+class TypeSymbol
+  constructor: ({@type, @implicit}) ->
+
 class ScopeNode
   constructor: ->
     @name = ''
-    @nodes = [] #=> ScopeNode...
-    @defs = {} #=> symbol -> type
+    @nodes = [] #=> scopeeNode...
+    @_defs = {} #=> symbol -> type
     @parent = null
-  setType: (symbol, type) ->
-    @defs[symbol] = type
+  setType: (symbol, type, implicit = true) ->
+    @_defs[symbol] = new TypeSymbol {type, implicit}
   getType: (symbol) ->
-    @defs[symbol]
+    @_defs[symbol]?.type ? undefined
   getScopedType: (symbol) ->
     @getType(symbol) or @parent?.getScopedType(symbol) or undefined
 
   @dump: (node, prefix = '') ->
     console.log prefix + "[#{node.name}]"
-    for key, val of node.defs
+    for key, val of node._defs
       console.log prefix, ' +', key, '::', val
-    for n in node.nodes
-      ScopeNode.dump n, prefix + '  '
+    for next in node.nodes
+      ScopeNode.dump next, prefix + '  '
 
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
@@ -42,7 +41,7 @@ checkNodes = (cs_ast) ->
   root = new ScopeNode
   root.name = 'root'
   for i in ['global', 'exports', 'Module', 'module']
-    root.defs[i] = 'Any'
+    root.setType i, 'Any', true
   _typecheck cs_ast.body.statements, root
   ScopeNode.dump root
 
@@ -139,7 +138,6 @@ _typecheck = (node, parentScope) ->
     # シンボルに対して 型識別子が存在する
     # -> x :: Number = 3
     else if assigned_type
-      console.log 'assigned', node
       # 明示的なAny
       # x :: Any = "any instance"
       if assigned_type is 'Any'

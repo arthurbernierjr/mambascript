@@ -814,15 +814,22 @@ switch
   caseBody = conditionalBody
 
 
+ReturnTypeExpr
+  = typeLiteral
+  / "(" _ tf:TypeFunction _ ")" {return tf;}
+  / TypeNameSymbol
+returnTypeLiteral = _ "::" _ type:ReturnTypeExpr? _ {return type;}
 functionLiteral
-  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)?  arrow:("->" / "=>") body:functionBody? {
+  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? type:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
       var constructor;
       switch(arrow) {
         case '->': constructor = CS.Function; break;
         case '=>': constructor = CS.BoundFunction; break;
         default: throw new Error('parsed function arrow ("' + arrow + '") not associated with a constructor');
       }
-      return rp(new constructor(params && params[2] || [], body || null));
+      var ret = rp(new constructor(params && params[2] || [], body || null));
+      ret.annotation = {type:type};
+      return ret;
     }
   functionBody
     = _ TERMINDENT b:block DEDENT { return b; }
