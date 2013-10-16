@@ -41,6 +41,14 @@ suite 'Type', ->
       f :: Number -> Number = (n :: Number) ->  n * n
       n :: Number  = f 4
 
+    test 'typed function with return type', ->
+      f :: Number -> Number = (n :: Number) :: Number ->  n * n
+      n :: Number  = f 4
+
+    test 'return function type', ->
+      fh = (n :: Number) :: (Number -> Number) -> (m)-> n * m
+      eq fh(2)(3), 6
+
     test 'avoid polution about prototype', ->
       class X
       X::x = 3

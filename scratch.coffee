@@ -31,6 +31,8 @@ obj.x = 5
 f :: Number -> Number = (n :: Number) :: Number ->  n * n
 n :: Number  = f 4
 
+fh = (n :: Number) :: (Number -> Number) -> (m)-> n * m
+
 # x
 
 console.log 'finish', f n
