@@ -27,4 +27,7 @@ obj2 :: {
 # obj2.y = "xxx" # 例外
 obj.x = 5
 # obj.x = ""
-console.log 'finish'
+
+f :: Number -> Number = (n :: Number) ->  n * n
+
+console.log 'finish', f 4

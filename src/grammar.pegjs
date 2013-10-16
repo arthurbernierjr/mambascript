@@ -1067,14 +1067,23 @@ typeLiteral
       }
   typeLiteralMember
     = key:TypeNameSymbol _ "::" _ val: TypeExpr {
-        return [key.data, val.data];
-        // return rp(new CS.ObjectInitialiserMember(key, val));
+        return [key, val];
       }
 
-TypeNameSymbol = ObjectInitialiserKeys
+TypeNameSymbol = key:ObjectInitialiserKeys {return key.data;}
+
+TypeFunction = args:TypeArgs _ "->" _ returns:TypeNameSymbol {
+  return {args: args, returns: returns, type: 'function'};
+}
+TypeArgs
+  = "(" _ e:TypeNameSymbol _ es:("," _ TypeNameSymbol _)* ")" {
+    return [e].concat(es.map(function(e){return e[2]}));
+  }
+  / e:TypeNameSymbol {return [e];}
 
 TypeExpr
   = typeLiteral
+  / TypeFunction
   / TypeNameSymbol
 
 TypeAnnotation = "::" _ type:TypeExpr {return {type:type};}
