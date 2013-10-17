@@ -326,6 +326,7 @@ statement
   / debugger
 expression = expressionworthy / seqExpression
 
+
 secondaryStatement
   = secondaryExpression
   / return
@@ -337,9 +338,18 @@ secondaryStatement
 secondaryExpression = expressionworthy / assignmentExpression
 secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressionNoImplicitObjectCall
 
+// TODO: FIX CS.Int hack
+structdef = 'struct' !(_ "=") __ name:TypeNameSymbol _ expr: TypeExpr {
+  var s = rp(new CS.Int(line()))
+  s.type = 'struct';
+  s.name = name;
+  s.expr = expr;
+  return s;
+}
 // TODO: rename?
 expressionworthy
-  = functionLiteral
+  = structdef
+  / functionLiteral
   / conditional
   / while
   / loop

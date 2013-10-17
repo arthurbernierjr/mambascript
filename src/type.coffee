@@ -11,25 +11,30 @@ guess_expr_type = (expr) ->
   else
     'Any'
 
-class TypeSymbol
+class VarSymbol
   constructor: ({@type, @implicit}) ->
 
 class ScopeNode
   constructor: ->
     @name = ''
     @nodes = [] #=> scopeeNode...
-    @_defs = {} #=> symbol -> type
+    @_vars = {} #=> symbol -> type
+    @_types = {} #=> typeName -> type
+    @_this = null #=> null or {}
     @parent = null
-  setType: (symbol, type, implicit = true) ->
-    @_defs[symbol] = new TypeSymbol {type, implicit}
-  getType: (symbol) ->
-    @_defs[symbol]?.type ? undefined
-  getScopedType: (symbol) ->
-    @getType(symbol) or @parent?.getScopedType(symbol) or undefined
+
+  setVar: (symbol, type, implicit = true) ->
+    @_vars[symbol] = new VarSymbol {type, implicit}
+
+  getVar: (symbol) ->
+    @_vars[symbol]?.type ? undefined
+
+  getVarInScope: (symbol) ->
+    @getVar(symbol) or @parent?.getVarInScope(symbol) or undefined
 
   @dump: (node, prefix = '') ->
     console.log prefix + "[#{node.name}]"
-    for key, val of node._defs
+    for key, val of node._vars
       console.log prefix, ' +', key, '::', val
     for next in node.nodes
       ScopeNode.dump next, prefix + '  '
@@ -41,19 +46,23 @@ checkNodes = (cs_ast) ->
   root = new ScopeNode
   root.name = 'root'
   for i in ['global', 'exports', 'Module', 'module']
-    root.setType i, 'Any', true
+    root.setVar i, 'Any', true
   _typecheck cs_ast.body.statements, root
   ScopeNode.dump root
 
 _typecheck = (node, parentScope) ->
   # undefined
   # TODO: Why?
-  return if node is undefined
+  if node is undefined
+    return
 
   # array
-  if node.length?
+  else if node.length?
     node.forEach (s) -> _typecheck s, parentScope
     return
+
+  else if node.type is 'struct'
+    parentScope.setVar node.type.name, node.type.expr
 
   # ラムダ
   else if guess_expr_type(node) is 'Function'
@@ -84,7 +93,7 @@ _typecheck = (node, parentScope) ->
     symbol = node.assignee.expression.data
     member = node.assignee.memberName
 
-    registered_type = parentScope.getScopedType(symbol) # Object
+    registered_type = parentScope.getVarInScope(symbol) # Object
     return unless registered_type? # TODO: maybe global defined
 
     type = registered_type[member] # ClassName
@@ -99,7 +108,7 @@ _typecheck = (node, parentScope) ->
   else if node.assignee? and node.expression?
     {assignee, expression} = node
     symbol          = assignee.data
-    registered_type = parentScope.getScopedType(symbol)
+    registered_type = parentScope.getVarInScope(symbol)
     infered_type    = guess_expr_type expression
     assigned_type   = assignee.annotation?.type
 
@@ -112,13 +121,13 @@ _typecheck = (node, parentScope) ->
     # Function call
     # -> x :: Number = f 4
     else if node.expression.function?
-      expected = parentScope.getScopedType(expression.function.data)
+      expected = parentScope.getVarInScope(expression.function.data)
 
       # TODO: argument check
       if expected is undefined
-        parentScope.setType symbol, 'Any'
+        parentScope.setVar symbol, 'Any'
       else if assigned_type is expected?.returns
-        parentScope.setType symbol, assigned_type
+        parentScope.setVar symbol, assigned_type
       else
         throw new Error "'#{symbol}' is expected to #{assigned_type} indeed #{expected}, by function call"
 
@@ -141,17 +150,17 @@ _typecheck = (node, parentScope) ->
       # 明示的なAny
       # x :: Any = "any instance"
       if assigned_type is 'Any'
-        parentScope.setType symbol, 'Any'
+        parentScope.setVar symbol, 'Any'
       # TypedFunction
       # f :: Int -> Int = (n) -> n
       else if assignee.annotation.type.type is 'Function'
         # register
-        parentScope.setType symbol, assignee.annotation.type
+        parentScope.setVar symbol, assignee.annotation.type
       # オブジェクトリテラル
       else if (typeof assigned_type) is 'object'
-        parentScope.setType symbol, assignee.annotation.type
+        parentScope.setVar symbol, assignee.annotation.type
       else if assigned_type is infered_type
-        parentScope.setType symbol, assignee.annotation.type
+        parentScope.setVar symbol, assignee.annotation.type
         # 関数を追加
         if infered_type is 'Function'
           fnode = new ScopeNode
@@ -160,7 +169,7 @@ _typecheck = (node, parentScope) ->
 
           # 引数を次のスコープの名前空間に追加
           node.expression.parameters.map (param) ->
-            fnode.setType param.data, param.annotation?.type ? 'Any'
+            fnode.setVar param.data, param.annotation?.type ? 'Any'
 
           parentScope.nodes.push fnode
           _typecheck node.expression.body.statements, fnode
@@ -170,8 +179,8 @@ _typecheck = (node, parentScope) ->
 
         throw new Error "'#{symbol}' is expected to #{assignee.annotation.type} indeed #{infered_type}"
     else
-      # scope.setType symbol, infered_type
-      parentScope.setType symbol, 'Any'
+      # scope.setVar symbol, infered_type
+      parentScope.setVar symbol, 'Any'
       if infered_type is 'Function' and node.expression.body?.statements?
         fnode = new ScopeNode
         fnode.name   = symbol

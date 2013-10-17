@@ -33,6 +33,12 @@ n :: Number  = f 4
 
 fh = (n :: Number) :: (Number -> Number) -> (m)-> n * m
 
-# x
+struct Point {
+  x :: Number
+  y :: Number
+}
 
+p :: Point = {x: 3, y: 3}
+
+console.log typeof a
 console.log 'finish', f n
