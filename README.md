@@ -1,8 +1,32 @@
 TypedCoffeeScript
 ==================================
-implemented by mizchi
 
+yet another altjs developed by mizchi
 
+## Examles
+
+```coffeescript
+struct Point {
+  x :: Number
+  y :: Number
+}
+
+p :: Point = {x: 3, y: 3}
+
+f :: Number -> Number = (n :: Number) :: Number ->  n * n
+console.log f 4
+```
+
+## CONCEPT
+
+* Subset of CoffeeScript (all tests passed)
+* Type check target is CS AST, not compiler.
+* Inspired by TypeScript, Roy and other altjs.
+
+## CAUTION
+
+* extremely incomplete yet.
+* bad way to hacking CS
 
 CoffeeScript II: The Wrath of Khan
 ==================================
