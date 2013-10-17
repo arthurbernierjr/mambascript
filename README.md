@@ -3,7 +3,7 @@ TypedCoffeeScript
 
 yet another altjs developed by mizchi
 
-## Examles
+## Examples
 
 ```coffeescript
 struct Point {
