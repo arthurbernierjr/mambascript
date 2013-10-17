@@ -17,6 +17,8 @@ f :: Number -> Number = (n :: Number) :: Number ->  n * n
 console.log f 4
 ```
 
+See test/type.coffee as working codes.
+
 ## CONCEPT
 
 * Subset of CoffeeScript (all tests passed)
