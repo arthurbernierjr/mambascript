@@ -14,14 +14,26 @@ guess_expr_type = (expr) ->
 class VarSymbol
   constructor: ({@type, @implicit}) ->
 
+class TypeSymbol
+  constructor: ({@type}) ->
+
 class ScopeNode
   constructor: ->
     @name = ''
-    @nodes = [] #=> scopeeNode...
-    @_vars = {} #=> symbol -> type
+    @nodes  = [] #=> scopeeNode...
+    @_vars  = {} #=> symbol -> type
     @_types = {} #=> typeName -> type
-    @_this = null #=> null or {}
+    @_this  = null #=> null or {}
     @parent = null
+
+  setType: (symbol, type) ->
+    @_types[symbol] = new TypeSymbol {type}
+
+  getType: (symbol) ->
+    @_types[symbol]?.type ? undefined
+
+  getTypeInScope: (symbol) ->
+    @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
 
   setVar: (symbol, type, implicit = true) ->
     @_vars[symbol] = new VarSymbol {type, implicit}
@@ -62,7 +74,8 @@ _typecheck = (node, parentScope) ->
     return
 
   else if node.type is 'struct'
-    parentScope.setVar node.type.name, node.type.expr
+    console.log 'struct', node
+    parentScope.setType node.name, node.expr
 
   # ラムダ
   else if guess_expr_type(node) is 'Function'
@@ -110,7 +123,10 @@ _typecheck = (node, parentScope) ->
     symbol          = assignee.data
     registered_type = parentScope.getVarInScope(symbol)
     infered_type    = guess_expr_type expression
-    assigned_type   = assignee.annotation?.type
+    assigned_type   =
+      if (typeof assignee.annotation?.type) is 'object' then assignee.annotation?.type
+      else parentScope.getTypeInScope(assignee.annotation?.type) ? assignee.annotation?.type
+    console.log assigned_type, parentScope.getTypeInScope(assignee.annotation?.type)
 
     # 型識別子が存在し、既にそのスコープで宣言済みのシンボルである場合、二重定義として例外
     #    x :: Number = 3
