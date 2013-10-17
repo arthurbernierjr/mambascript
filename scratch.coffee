@@ -42,3 +42,5 @@ p :: Point = {x: 3, y: 3}
 
 console.log typeof a
 console.log 'finish', f n
+
+-> console.log 'x'
