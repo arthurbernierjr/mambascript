@@ -1,6 +1,7 @@
+console = {log: ->}
+
 CS = require './nodes'
 
-console = {log: ->}
 guess_expr_type = (expr) ->
   if (typeof expr.data) is 'number'
     'Number'
@@ -25,13 +26,14 @@ class TypeSymbol
     @instanceof ?= (t) -> t instanceof @constructor
 
 class Scope
-  constructor: ->
+  constructor: (@parent = null) ->
+    @parent?.nodes.push this
+
     @name = ''
     @nodes  = [] #=> scopeeNode...
     @_vars  = {} #=> symbol -> type
     @_types = {} #=> typeName -> type
     @_this  = null #=> null or {}
-    @parent = null
 
   setType: (symbol, type) ->
     @_types[symbol] = new TypeSymbol {type}
@@ -61,6 +63,24 @@ class Scope
     for next in node.nodes
       Scope.dump next, prefix + '  '
 
+  # convert
+  # {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
+  extendTypeLiteral: (object_or_name) ->
+    switch (typeof object_or_name)
+      when 'object'
+        obj = object_or_name
+        for key, val of obj
+          switch (typeof validate)
+            when 'object'
+              obj[key] = @extendTypeLiteral(val)
+            when 'string'
+              obj[key] = @getTypeInScope(val)
+        obj
+      when 'string'
+        str = object_or_name
+        return @getTypeInScope(str) ? str
+
+
 initializeGlobalTypes = (node) ->
   node.setTypeObject 'Number', new TypeSymbol {
     type: 'Number'
@@ -75,153 +95,136 @@ checkNodes = (cs_ast) ->
   root.name = 'root'
   for i in ['global', 'exports', 'Module', 'module']
     root.setVar i, 'Any', true
-  _typecheck cs_ast.body.statements, root
+  walk cs_ast.body.statements, root
   Scope.dump root
 
-_typecheck = (node, currentScope) ->
-  # console.log node.className
-  # undefined
-  # TODO: Why?
-  if node is undefined
-    return
+walk = (node, currentScope) ->
+  switch
+    # undefined
+    # TODO: Why?
+    when node is undefined
+      return
 
-  # array
-  else if node.length?
-    node.forEach (s) -> _typecheck s, currentScope
-    return
+    # array
+    when node.length?
+      node.forEach (s) -> walk s, currentScope
 
-  else if node.type is 'struct'
-    console.log 'struct', node
-    currentScope.setType node.name, node.expr
+    # struct
+    when node.type is 'struct'
+      currentScope.setType node.name, node.expr
 
-  # ラムダ
-  else if node instanceof CS.Function
-    {body} = node
-    snode = new Scope
-    snode.name   = '-lambda-'
-    snode.parent = currentScope
-    currentScope.nodes.push snode
-    _typecheck body.statements, snode
+    # クラス
+    when node.instanceof CS.Class
+      walk node.body.statements, new Scope currentScope
 
-  # クラス
-  else if node instanceof CS.Class
-    {body, name} = node
-    snode = new Scope
-    snode.name   = name.data
-    snode.parent = currentScope
-    currentScope.nodes.push snode
-    _typecheck body.statements, snode
+    # ラムダ
+    when node.instanceof CS.Function
+      scope = new Scope currentScope
+      scope.name   = '-lambda-'
 
-  # 関数呼び出し
-  else if node instanceof CS.FunctionApplication
-    # TODO: argumentsを名前空間に
-    _typecheck node.arguments, currentScope
+      # register arguments to next scope
+      node.parameters.map (param) ->
+        scope.setVar param.data, (param.annotation?.type ? 'Any')
 
-  # member access
-  # TODO: 入れ子とか関数の返り値を考慮
-  # else if node.assignee?.memberName? and node.expression?
-  else if (node instanceof CS.AssignOp) and node.assignee.expression?
-    symbol = node.assignee.expression.data
-    member = node.assignee.memberName
+      walk node.body?.statements, scope
 
-    registered_type = currentScope.getVarInScope(symbol) # Object
-    return unless registered_type? # TODO: maybe global defined
+    # 関数呼び出し
+    when node.instanceof CS.FunctionApplication
+      # TODO: 引数チェック
+      walk node.arguments, currentScope
 
-    type = registered_type[member] # ClassName
-    infered_type = guess_expr_type node.expression
+    # Assigning
+    when node.instanceof CS.AssignOp
+      left  = node.assignee
+      right = node.expression
 
-    if type? and (type is infered_type) or (registered_type is 'Any')
-      ''
-    else
-      throw new Error "'#{symbol}' is expected to #{registered_type} (indeed #{infered_type}) at member access"
+      # メンバーアクセス
+      if left.memberName?
+        symbol = left.expression.data
+        registered = currentScope.getVarInScope(symbol) # Object
+        return unless registered? # TODO: maybe global defined
 
-  # 代入
-  else if node instanceof CS.AssignOp
-    # console.log 'assign', node.className, (node instanceof CS.AssignOp), node
+        expected = registered[left.memberName] # ClassName
+        infered  = guess_expr_type right
 
-    {assignee, expression} = node
-    symbol          = assignee.data
-    registered_type = currentScope.getVarInScope(symbol)
-    infered_type    = guess_expr_type expression
-    assigned_type   =
-      if (typeof assignee.annotation?.type) is 'object' then assignee.annotation?.type
-      else currentScope.getTypeInScope(assignee.annotation?.type) ? assignee.annotation?.type
-    console.log assigned_type, currentScope.getTypeInScope(assignee.annotation?.type)
+        if expected? and (expected is infered) or (registered is 'Any')
+          ''
+        else
+          throw new Error "'#{symbol}' is expected to #{registered} (indeed #{infered}) at member access"
 
-    # 型識別子が存在し、既にそのスコープで宣言済みのシンボルである場合、二重定義として例外
-    #    x :: Number = 3
-    # -> x :: String = "hello"
-    if registered_type? and assigned_type?
-      throw new Error 'double bind', symbol
+      # prepare for type interface
+      symbol = left.data
+      registered = currentScope.getVarInScope(symbol)
+      infered    = guess_expr_type right
 
-    # Function call
-    # -> x :: Number = f 4
-    else if node.expression.function?
-      expected = currentScope.getVarInScope(expression.function.data)
+      assigning =
+        if left.annotation?
+          currentScope.extendTypeLiteral(left.annotation.type)
+        else
+          undefined
 
-      # TODO: argument check
-      if expected is undefined
-        currentScope.setVar symbol, 'Any'
-      else if assigned_type is expected?.returns
-        currentScope.setVar symbol, assigned_type
-      else
-        throw new Error "'#{symbol}' is expected to #{assigned_type} indeed #{expected}, by function call"
+      # 型識別子が存在し、既にそのスコープで宣言済みのシンボルである場合、二重定義として例外
+      #    x :: Number = 3
+      # -> x :: String = "hello"
+      if assigning? and registered?
+        throw new Error 'double bind', symbol
 
-    # シンボルに型識別子が存在せず、既にそのスコープで宣言済みのシンボルである場合
-    # expressionを再度型推論し、ダウンキャストできなければthrow
-    #    x :: Number = 3
-    # -> x = 5
-    # TODO: ダウンキャストルールの記述
-    else if registered_type?
+      # -> x :: Number = f 4
+      else if right.instanceof CS.FunctionApplication
+        expected = currentScope.getVarInScope(right.function.data)
 
-      # 推論済みor anyならok
-      if symbol is 'toString'
-        ''
-      else unless  (registered_type is infered_type) or (registered_type is 'Any')
-        throw new Error "'#{symbol}' is expected to #{registered_type} indeed #{infered_type}, by assignee"
+        if expected is undefined
+          currentScope.setVar symbol, 'Any'
+        else if assigning is expected?.returns
+          currentScope.setVar symbol, assigning
+        else
+          throw new Error "'#{symbol}' is expected to #{assigning} indeed #{expected}, by function call"
+        # TODO: argument check
 
-    # シンボルに対して 型識別子が存在する
-    # -> x :: Number = 3
-    else if assigned_type
-      # 明示的なAny
-      # x :: Any = "any instance"
-      if assigned_type is 'Any'
-        currentScope.setVar symbol, 'Any'
-      # TypedFunction
-      # f :: Int -> Int = (n) -> n
-      else if assignee.annotation.type.type is 'Function'
-        # register
-        currentScope.setVar symbol, assignee.annotation.type
-      # オブジェクトリテラル
-      else if (typeof assigned_type) is 'object'
-        currentScope.setVar symbol, assignee.annotation.type
-      else if assigned_type is infered_type
-        currentScope.setVar symbol, assignee.annotation.type
-        # 関数を追加
-        if infered_type is 'Function'
-          fnode = new Scope
-          fnode.name   = symbol
-          fnode.parent = currentScope
-
-          # 引数を次のスコープの名前空間に追加
-          node.expression.parameters.map (param) ->
-            fnode.setVar param.data, param.annotation?.type ? 'Any'
-
-          currentScope.nodes.push fnode
-          _typecheck node.expression.body.statements, fnode
-      else
-        # TODO: なぜかtoStringくることがあるので握りつぶす
+      # シンボルに型識別子が存在せず、既にそのスコープで宣言済みのシンボルである場合
+      # rightを再度型推論し、ダウンキャストできなければthrow
+      #    x :: Number = 3
+      # -> x = 5
+      # TODO: ダウンキャストルールの記述
+      else if registered?
+        # 推論済みor anyならok
         return if symbol is 'toString'
+        unless  (registered is infered) or (registered is 'Any')
+          throw new Error "'#{symbol}' is expected to #{registered} indeed #{infered}, by assignee"
 
-        throw new Error "'#{symbol}' is expected to #{assignee.annotation.type} indeed #{infered_type}"
-    else
-      # scope.setVar symbol, infered_type
-      currentScope.setVar symbol, 'Any'
-      if infered_type is 'Function' and node.expression.body?.statements?
-        fnode = new Scope
-        fnode.name   = symbol
-        fnode.parent = currentScope
-        currentScope.nodes.push fnode
-        _typecheck node.expression.body.statements, fnode
+      # シンボルに対して 型識別子が存在する
+      # -> x :: Number = 3
+      else if assigning
+        # 明示的なAnyは全て受け入れる
+        # x :: Any = "any instance"
+        if assigning is 'Any'
+          currentScope.setVar symbol, 'Any'
+        # TypedFunction
+        # f :: Int -> Int = (n) -> n
+        else if left.annotation.type.type is 'Function'
+          # TODO: Fix parser
+          currentScope.setVar symbol, left.annotation.type
+        # オブジェクトリテラルを代入しようとしているときはとりあえず代入を許可する
+        # obj :: {x :: Number} = {x : 3}
+        else if (typeof assigning) is 'object'
+          # TODO: オブジェクトの中身と型の確認。たぶんdeftypesを使う。
+          currentScope.setVar symbol, left.annotation.type
+
+        # 右辺の型が指定した型に一致する場合
+        # x :: Number = 3 (:: A)
+        else if assigning is infered
+          currentScope.setVar symbol, left.annotation.type
+          walk right, currentScope
+
+        # 型が一致しないので例外を投げる
+        else
+          # TODO: なぜかtoStringくることがあるので握りつぶす
+          return if symbol is 'toString'
+          throw new Error "'#{symbol}' is expected to #{left.annotation.type} indeed #{infered}"
+
+      # Vanilla CS
+      else
+        currentScope.setVar symbol, 'Any'
+        walk right, currentScope
 
 module.exports = {checkNodes}

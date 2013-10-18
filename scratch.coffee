@@ -19,6 +19,7 @@ f2 :: Function = (a :: Number) ->
 class X
   f: ->
     n = 3
+
 obj :: { x :: Number, y :: Number } = { x : 3, y : 5}
 obj2 :: {
   x :: Number
@@ -31,7 +32,7 @@ obj.x = 5
 f :: Number -> Number = (n :: Number) :: Number ->  n * n
 n :: Number  = f 4
 
-fh = (n :: Number) :: (Number -> Number) -> (m)-> n * m
+fh :: Function = (n :: Number) :: (Number -> Number) -> (m)-> n * m
 
 struct Point {
   x :: Number
@@ -43,4 +44,4 @@ p :: Point = {x: 3, y: 3}
 console.log typeof a
 console.log 'finish', f n
 
--> console.log 'x'
+(x) -> console.log 'x'
