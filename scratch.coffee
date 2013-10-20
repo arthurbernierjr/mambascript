@@ -45,3 +45,5 @@ console.log typeof a
 console.log 'finish', f n
 
 (x) -> console.log 'x'
+
+nf :: () -> () = -> setTimeout (->), 100

@@ -1087,7 +1087,10 @@ typeLiteral
         return [key, val];
       }
 
-TypeNameSymbol = key:ObjectInitialiserKeys {return key.data;}
+TypeNameSymbol
+  = "(" _ ")" {return 'void';}
+  / "(" _ key:ObjectInitialiserKeys _ ")" {return key.data;}
+  / key:ObjectInitialiserKeys {return key.data;}
 
 TypeFunction = args:TypeArgs _ "->" _ returns:TypeNameSymbol {
   return {args: args, returns: returns, type: 'Function'};
