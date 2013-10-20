@@ -38,7 +38,7 @@ class Scope
   setType: (symbol, type) ->
     @_types[symbol] = new TypeSymbol {type}
 
-  sltTypeObject: (symbol, type_object) ->
+  setTypeObject: (symbol, type_object) ->
     @_types[symbol] = type_object
 
   getType: (symbol) ->
@@ -63,7 +63,7 @@ class Scope
     for next in node.nodes
       Scope.dump next, prefix + '  '
 
-  # convert
+  # convert symbole to type instance
   # {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
   extendTypeLiteral: (object_or_name) ->
     switch (typeof object_or_name)
@@ -78,13 +78,33 @@ class Scope
         obj
       when 'string'
         str = object_or_name
-        return @getTypeInScope(str) ? str
+        return @getTypeInScope(str) # ? str
 
 
 initializeGlobalTypes = (node) ->
+  node.setTypeObject 'String', new TypeSymbol {
+    type: 'String'
+    instanceof: (expr) -> (typeof expr.data) is 'string'
+  }
+
   node.setTypeObject 'Number', new TypeSymbol {
     type: 'Number'
-    instanceof: (n) -> (typeof n) is 'number'
+    instanceof: (expr) -> (typeof expr.data) is 'number'
+  }
+
+  node.setTypeObject 'Boolean', new TypeSymbol {
+    type: 'Boolean'
+    instanceof: (expr) -> (typeof expr.data) is 'boolean'
+  }
+
+  node.setTypeObject 'Object', new TypeSymbol {
+    type: 'Object'
+    instanceof: (expr) -> (typeof expr.data) is 'object'
+  }
+
+  node.setTypeObject 'Any', new TypeSymbol {
+    type: 'Any'
+    instanceof: (expr) -> true
   }
 
 checkNodes = (cs_ast) ->
@@ -95,6 +115,8 @@ checkNodes = (cs_ast) ->
   root.name = 'root'
   for i in ['global', 'exports', 'Module', 'module']
     root.setVar i, 'Any', true
+  initializeGlobalTypes(root)
+
   walk cs_ast.body.statements, root
   Scope.dump root
 
@@ -105,19 +127,19 @@ walk = (node, currentScope) ->
     when node is undefined
       return
 
-    # array
+    # Array
     when node.length?
       node.forEach (s) -> walk s, currentScope
 
-    # struct
+    # Struct
     when node.type is 'struct'
       currentScope.setType node.name, node.expr
 
-    # クラス
+    # Class
     when node.instanceof CS.Class
       walk node.body.statements, new Scope currentScope
 
-    # ラムダ
+    # Function
     when node.instanceof CS.Function
       scope = new Scope currentScope
       scope.name   = '-lambda-'
@@ -128,7 +150,7 @@ walk = (node, currentScope) ->
 
       walk node.body?.statements, scope
 
-    # 関数呼び出し
+    # FunctionApplication
     when node.instanceof CS.FunctionApplication
       # TODO: 引数チェック
       walk node.arguments, currentScope

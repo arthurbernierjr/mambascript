@@ -47,3 +47,5 @@ console.log 'finish', f n
 (x) -> console.log 'x'
 
 nf :: () -> () = -> setTimeout (->), 100
+nx :: () -> void = ->
+  setTimeout (->), 100

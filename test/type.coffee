@@ -71,9 +71,11 @@ suite 'Type', ->
           p :: Point = {x:3, y:3}
           p.x = "hoge"
         """
-      # Function call
-            else if node.instanceof CS.FunctionApplication
 
-    test 'struct definition', ->
+    test 'void', ->
       nf :: () -> () = -> setTimeout (->), 100
+      nf()
+
+    test 'void', ->
+      nf :: () -> void = -> setTimeout (->), 100
       nf()
