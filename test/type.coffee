@@ -13,11 +13,11 @@ suite 'Type', ->
     test 'object assign', ->
       obj :: { x :: Number} = { x : 2}
 
-    # test 'throw object literal mitmatching', ->
-    #   throws ->
-    #     CoffeeScript.parse """
-    #       obj :: { x :: Number } = { x : '' }
-    #     """
+    test 'throw object literal mitmatching', ->
+      throws ->
+        CoffeeScript.parse """
+          obj :: { x :: Number } = { x : '' }
+        """
 
     test 'throw member access error', ->
       throws ->

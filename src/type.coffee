@@ -3,6 +3,13 @@ console = {log: ->}
 CS = require './nodes'
 
 guess_expr_type = (expr) ->
+  return undefined unless expr?
+  if expr.members?
+    obj = {}
+    for member in expr.members when member.key?
+      obj[member.key.data] = guess_expr_type member.expression
+    return obj
+
   if (typeof expr.data) is 'number'
     'Number'
   else if (typeof expr.data) is 'string'
@@ -13,6 +20,7 @@ guess_expr_type = (expr) ->
     'Function'
   else
     'Any'
+
 
 class VarSymbol
   # type :: String
@@ -78,7 +86,7 @@ class Scope
         obj
       when 'string'
         str = object_or_name
-        return @getTypeInScope(str) # ? str
+        return @getTypeInScope(str)
 
 
 initializeGlobalTypes = (node) ->
@@ -217,19 +225,31 @@ walk = (node, currentScope) ->
       # シンボルに対して 型識別子が存在する
       # -> x :: Number = 3
       else if assigning
+
         # 明示的なAnyは全て受け入れる
         # x :: Any = "any instance"
         if assigning is 'Any'
           currentScope.setVar symbol, 'Any'
+
         # TypedFunction
         # f :: Int -> Int = (n) -> n
         else if left.annotation.type.type is 'Function'
           # TODO: Fix parser
           currentScope.setVar symbol, left.annotation.type
-        # オブジェクトリテラルを代入しようとしているときはとりあえず代入を許可する
-        # obj :: {x :: Number} = {x : 3}
+
+        # pass obj :: {x :: Number} = {x : 3}
+        # ng   obj :: {x :: Number} = {x : 3}
         else if (typeof assigning) is 'object'
-          # TODO: オブジェクトの中身と型の確認。たぶんdeftypesを使う。
+          typeobj = guess_expr_type right
+
+          # TODO リファクタ & 再帰
+          for key, val of assigning
+            if typeobj[key] isnt val
+              throw new Error "'#{key}' is expected to #{typeobj[key]} indeed #{val}"
+
+          for member in right.members
+            walk member.expression, (new Scope currentScope)
+
           currentScope.setVar symbol, left.annotation.type
 
         # 右辺の型が指定した型に一致する場合
