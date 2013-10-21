@@ -1,4 +1,4 @@
-console = {log: ->}
+# console = {log: ->}
 
 CS = require './nodes'
 
@@ -96,8 +96,8 @@ initializeGlobalTypes = (node) ->
 
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
-  console.log cs_ast.body.statements
-  console.log '====================='
+  # console.log cs_ast.body.statements
+  # console.log '====================='
   root = new Scope
   root.name = 'root'
   for i in ['global', 'exports', 'Module', 'module']
@@ -105,9 +105,10 @@ checkNodes = (cs_ast) ->
   initializeGlobalTypes(root)
 
   walk cs_ast.body.statements, root
-  Scope.dump root
+  # Scope.dump root
 
 walk = (node, currentScope) ->
+  # console.log node
   switch
     # undefined(mayby body)
     when node is undefined
@@ -136,8 +137,11 @@ walk = (node, currentScope) ->
     # Object
     when node.instanceof CS.ObjectInitialiser
       obj = {}
+      nextScope = new Scope currentScope
+      nextScope.name = 'object'
+
       for {expression, key} in node.members when key?
-        walk expression, currentScope
+        walk expression, nextScope
         obj[key.data] = expression.annotation?.type
 
       # TODO: implicit ルールをどうするか決める
@@ -164,17 +168,19 @@ walk = (node, currentScope) ->
       walk node.body.statements, new Scope currentScope
 
     # Function
-    # TODO どうもちゃんと再帰してないみたいなので修正
     when node.instanceof CS.Function
-      scope = new Scope currentScope
-      scope.name   = '-lambda-'
+      objectScope = new Scope currentScope
+      objectScope.name = '-lambda-'
 
       # register arguments to next scope
       node.parameters.map (param) ->
-        scope.setVar param.data, (param.annotation?.type ? 'Any')
+        try
+          objectScope.setVar? param.data, (param.annotation?.type ? 'Any')
+        catch
+          # TODO あとで調査 register.jsで壊れるっぽい
+          'ignore but brake on somewhere. why?'
 
-      walk node.body?.statements, scope
-
+      walk node.body?.statements, objectScope
 
     # FunctionApplication
     when node.instanceof CS.FunctionApplication
@@ -263,7 +269,7 @@ walk = (node, currentScope) ->
         else if (typeof assigning) is 'object'
           for key, val of assigning
             if right.annotation.type[key] isnt val # TODO Deep equal
-              throw new Error "'#{key}' is expected to #{typeobj[key]}(indeed #{val})"
+              throw new Error "'#{key}' is expected to #{right.annotation.type[key]}(indeed #{val})"
           currentScope.setVar symbol, left.annotation.type, false
 
         # 右辺の型が指定した型に一致する場合
@@ -280,6 +286,5 @@ walk = (node, currentScope) ->
       # Vanilla CS
       else
         currentScope.setVar symbol, 'Any'
-        walk right, currentScope
 
 module.exports = {checkNodes}
