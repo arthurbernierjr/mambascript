@@ -1,4 +1,4 @@
-console = {log: ->}
+# console = {log: ->}
 
 CS = require './nodes'
 
@@ -130,8 +130,7 @@ checkNodes = (cs_ast) ->
 
 walk = (node, currentScope) ->
   switch
-    # undefined
-    # TODO: Why?
+    # undefined(mayby body)
     when node is undefined
       return
 
@@ -142,6 +141,32 @@ walk = (node, currentScope) ->
     # Struct
     when node.type is 'struct'
       currentScope.setType node.name, node.expr
+
+    # String
+    when node.instanceof CS.String
+      node.annotation ?=
+        type: 'String'
+        implicit: true
+
+    # Bool
+    when node.instanceof CS.Bool
+      node.annotation ?=
+        type: 'Boolean'
+        implicit: true
+
+    # Number
+    when node.instanceof CS.Numbers
+      node.annotation ?=
+        type: 'Number'
+        implicit: true
+      # if node.instanceof CS.Int
+      #   node.annotation ?=
+      #     type: 'Int'
+      #     implicit: true
+      # else if node.instanceof CS.Int
+      #   node.annotation ?=
+      #     type: 'Float'
+      #     implicit: true
 
     # Class
     when node.instanceof CS.Class
