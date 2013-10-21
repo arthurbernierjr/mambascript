@@ -1,26 +1,6 @@
-# console = {log: ->}
+console = {log: ->}
 
 CS = require './nodes'
-
-guess_expr_type = (expr) ->
-  return undefined unless expr?
-  if expr.members?
-    obj = {}
-    for member in expr.members when member.key?
-      obj[member.key.data] = guess_expr_type member.expression
-    return obj
-
-  if (typeof expr.data) is 'number'
-    'Number'
-  else if (typeof expr.data) is 'string'
-    'String'
-  else if (typeof expr.data) is 'boolean'
-    'Boolean'
-  else if expr.parameters? and expr.body?
-    'Function'
-  else
-    'Any'
-
 
 class VarSymbol
   # type :: String
@@ -71,7 +51,6 @@ class Scope
     for next in node.nodes
       Scope.dump next, prefix + '  '
 
-  # convert symbole to type instance
   # {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
   extendTypeLiteral: (object_or_name) ->
     switch (typeof object_or_name)
@@ -134,7 +113,7 @@ walk = (node, currentScope) ->
     when node is undefined
       return
 
-    # Array
+    # Nodes Array
     when node.length?
       node.forEach (s) -> walk s, currentScope
 
@@ -152,6 +131,18 @@ walk = (node, currentScope) ->
     when node.instanceof CS.Bool
       node.annotation ?=
         type: 'Boolean'
+        implicit: true
+
+    # Object
+    when node.instanceof CS.ObjectInitialiser
+      obj = {}
+      for {expression, key} in node.members when key?
+        walk expression, currentScope
+        obj[key.data] = expression.annotation?.type
+
+      # TODO: implicit ルールをどうするか決める
+      node.annotation ?=
+        type: obj
         implicit: true
 
     # Number
@@ -173,6 +164,7 @@ walk = (node, currentScope) ->
       walk node.body.statements, new Scope currentScope
 
     # Function
+    # TODO どうもちゃんと再帰してないみたいなので修正
     when node.instanceof CS.Function
       scope = new Scope currentScope
       scope.name   = '-lambda-'
@@ -182,6 +174,7 @@ walk = (node, currentScope) ->
         scope.setVar param.data, (param.annotation?.type ? 'Any')
 
       walk node.body?.statements, scope
+
 
     # FunctionApplication
     when node.instanceof CS.FunctionApplication
@@ -193,14 +186,17 @@ walk = (node, currentScope) ->
       left  = node.assignee
       right = node.expression
 
+      walk right, currentScope
+
       # メンバーアクセス
+      # hoge.fuga.bar をちゃんとやる
       if left.memberName?
         symbol = left.expression.data
         registered = currentScope.getVarInScope(symbol) # Object
         return unless registered? # TODO: maybe global defined
 
         expected = registered[left.memberName] # ClassName
-        infered  = guess_expr_type right
+        infered    = right.annotation?.type
 
         if expected? and (expected is infered) or (registered is 'Any')
           ''
@@ -208,9 +204,9 @@ walk = (node, currentScope) ->
           throw new Error "'#{symbol}' is expected to #{registered} (indeed #{infered}) at member access"
 
       # prepare for type interface
-      symbol = left.data
+      symbol     = left.data
       registered = currentScope.getVarInScope(symbol)
-      infered    = guess_expr_type right
+      infered    = right.annotation?.type
 
       assigning =
         if left.annotation?
@@ -249,7 +245,7 @@ walk = (node, currentScope) ->
 
       # シンボルに対して 型識別子が存在する
       # -> x :: Number = 3
-      else if assigning
+      else if assigning?
 
         # 明示的なAnyは全て受け入れる
         # x :: Any = "any instance"
@@ -259,29 +255,21 @@ walk = (node, currentScope) ->
         # TypedFunction
         # f :: Int -> Int = (n) -> n
         else if left.annotation.type.type is 'Function'
-          # TODO: Fix parser
+          # TODO: Fix parser 'type.type' -> 'type'
           currentScope.setVar symbol, left.annotation.type
 
         # pass obj :: {x :: Number} = {x : 3}
         # ng   obj :: {x :: Number} = {x : 3}
         else if (typeof assigning) is 'object'
-          typeobj = guess_expr_type right
-
-          # TODO リファクタ & 再帰
           for key, val of assigning
-            if typeobj[key] isnt val
-              throw new Error "'#{key}' is expected to #{typeobj[key]} indeed #{val}"
-
-          for member in right.members
-            walk member.expression, (new Scope currentScope)
-
-          currentScope.setVar symbol, left.annotation.type
+            if right.annotation.type[key] isnt val # TODO Deep equal
+              throw new Error "'#{key}' is expected to #{typeobj[key]}(indeed #{val})"
+          currentScope.setVar symbol, left.annotation.type, false
 
         # 右辺の型が指定した型に一致する場合
-        # x :: Number = 3 (:: A)
+        # x :: Number = 3
         else if assigning is infered
           currentScope.setVar symbol, left.annotation.type
-          walk right, currentScope
 
         # 型が一致しないので例外を投げる
         else
