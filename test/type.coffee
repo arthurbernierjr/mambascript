@@ -61,6 +61,16 @@ suite 'Type', ->
       }
       p :: Point = {x: 3, y: 3}
 
+    test 'nested struct definition', ->
+      struct Point {
+        x :: Number
+        y :: {
+          a :: Number
+          b :: String
+        }
+      }
+      p :: Point = {x: 3, y: {a : 1 , y : 'foo'}}
+
     test 'throw struct member access with mismatch type', ->
       throws ->
         CoffeeScript.parse """

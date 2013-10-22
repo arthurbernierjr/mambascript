@@ -1,6 +1,21 @@
-# console = {log: ->}
+console = {log: ->}
 
 CS = require './nodes'
+
+checkNodes = (cs_ast) ->
+  return unless cs_ast.body?.statements?
+  console.log 'AST =================='
+  console.log cs_ast.body.statements
+  console.log '=================='
+  root = new Scope
+  root.name = 'root'
+  for i in ['global', 'exports', 'module']
+    root.addVar i, 'Any', true
+  initializeGlobalTypes(root)
+
+  walk cs_ast.body.statements, root
+  # console.log 'scope ====================='
+  # Scope.dump root
 
 class VarSymbol
   # type :: String
@@ -23,10 +38,10 @@ class Scope
     @_types = {} #=> typeName -> type
     @_this  = null #=> null or {}
 
-  setType: (symbol, type) ->
+  addType: (symbol, type) ->
     @_types[symbol] = new TypeSymbol {type}
 
-  setTypeObject: (symbol, type_object) ->
+  addTypeObject: (symbol, type_object) ->
     @_types[symbol] = type_object
 
   getType: (symbol) ->
@@ -35,7 +50,7 @@ class Scope
   getTypeInScope: (symbol) ->
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
 
-  setVar: (symbol, type, implicit = true) ->
+  addVar: (symbol, type, implicit = true) ->
     @_vars[symbol] = new VarSymbol {type, implicit}
 
   getVar: (symbol) ->
@@ -67,48 +82,45 @@ class Scope
         str = object_or_name
         return @getTypeInScope(str)
 
+# pass obj :: {x :: Number} = {x : 3}
+checkAcceptableObject = (left, right) ->
+  if ((typeof left) is 'string') and ((typeof right) is 'string')
+    if left isnt right
+      console.log left, right
+      throw (new Error 'object deep equal mismatch')
+  else if ((typeof left) is 'object') and ((typeof right) is 'object')
+    for lkey, lval of left
+      checkAcceptableObject(lval, right[lkey])
+  else
+    throw (new Error 'object deep equal mismatch')
 
 initializeGlobalTypes = (node) ->
-  node.setTypeObject 'String', new TypeSymbol {
+  node.addTypeObject 'String', new TypeSymbol {
     type: 'String'
     instanceof: (expr) -> (typeof expr.data) is 'string'
   }
 
-  node.setTypeObject 'Number', new TypeSymbol {
+  node.addTypeObject 'Number', new TypeSymbol {
     type: 'Number'
     instanceof: (expr) -> (typeof expr.data) is 'number'
   }
 
-  node.setTypeObject 'Boolean', new TypeSymbol {
+  node.addTypeObject 'Boolean', new TypeSymbol {
     type: 'Boolean'
     instanceof: (expr) -> (typeof expr.data) is 'boolean'
   }
 
-  node.setTypeObject 'Object', new TypeSymbol {
+  node.addTypeObject 'Object', new TypeSymbol {
     type: 'Object'
     instanceof: (expr) -> (typeof expr.data) is 'object'
   }
 
-  node.setTypeObject 'Any', new TypeSymbol {
+  node.addTypeObject 'Any', new TypeSymbol {
     type: 'Any'
     instanceof: (expr) -> true
   }
 
-checkNodes = (cs_ast) ->
-  return unless cs_ast.body?.statements?
-  # console.log cs_ast.body.statements
-  # console.log '====================='
-  root = new Scope
-  root.name = 'root'
-  for i in ['global', 'exports', 'Module', 'module']
-    root.setVar i, 'Any', true
-  initializeGlobalTypes(root)
-
-  walk cs_ast.body.statements, root
-  # Scope.dump root
-
 walk = (node, currentScope) ->
-  # console.log node
   switch
     # undefined(mayby body)
     when node is undefined
@@ -120,7 +132,12 @@ walk = (node, currentScope) ->
 
     # Struct
     when node.type is 'struct'
-      currentScope.setType node.name, node.expr
+      currentScope.addType node.name, node.expr
+
+    # Program
+    when node.instanceof CS.Program
+      walk node.body.statements, root
+      node.annotation = type: 'Program'
 
     # String
     when node.instanceof CS.String
@@ -175,7 +192,7 @@ walk = (node, currentScope) ->
       # register arguments to next scope
       node.parameters.map (param) ->
         try
-          objectScope.setVar? param.data, (param.annotation?.type ? 'Any')
+          objectScope.addVar? param.data, (param.annotation?.type ? 'Any')
         catch
           # TODO あとで調査 register.jsで壊れるっぽい
           'ignore but brake on somewhere. why?'
@@ -231,9 +248,9 @@ walk = (node, currentScope) ->
         expected = currentScope.getVarInScope(right.function.data)
 
         if expected is undefined
-          currentScope.setVar symbol, 'Any'
+          currentScope.addVar symbol, 'Any'
         else if assigning is expected?.returns
-          currentScope.setVar symbol, assigning
+          currentScope.addVar symbol, assigning
         else
           throw new Error "'#{symbol}' is expected to #{assigning} indeed #{expected}, by function call"
         # TODO: argument check
@@ -256,26 +273,29 @@ walk = (node, currentScope) ->
         # 明示的なAnyは全て受け入れる
         # x :: Any = "any instance"
         if assigning is 'Any'
-          currentScope.setVar symbol, 'Any'
+          currentScope.addVar symbol, 'Any'
 
         # TypedFunction
         # f :: Int -> Int = (n) -> n
         else if left.annotation.type.type is 'Function'
           # TODO: Fix parser 'type.type' -> 'type'
-          currentScope.setVar symbol, left.annotation.type
+          currentScope.addVar symbol, left.annotation.type
 
-        # pass obj :: {x :: Number} = {x : 3}
-        # ng   obj :: {x :: Number} = {x : 3}
         else if (typeof assigning) is 'object'
-          for key, val of assigning
-            if right.annotation.type[key] isnt val # TODO Deep equal
-              throw new Error "'#{key}' is expected to #{right.annotation.type[key]}(indeed #{val})"
-          currentScope.setVar symbol, left.annotation.type, false
+          # TODO: consider symbol annotation
+          # 変数シンボルの方を展開する
+          # console.log assigning, right.annotation.type
+          checkAcceptableObject(assigning, right.annotation.type)
+
+          # for key, val of assigning
+          #   if right.annotation.type[key] isnt val # TODO Deep equal
+          #     throw new Error "'#{key}' is expected to #{right.annotation.type[key]}(indeed #{val})"
+          currentScope.addVar symbol, left.annotation.type, false
 
         # 右辺の型が指定した型に一致する場合
         # x :: Number = 3
         else if assigning is infered
-          currentScope.setVar symbol, left.annotation.type
+          currentScope.addVar symbol, left.annotation.type
 
         # 型が一致しないので例外を投げる
         else
@@ -285,6 +305,6 @@ walk = (node, currentScope) ->
 
       # Vanilla CS
       else
-        currentScope.setVar symbol, 'Any'
+        currentScope.addVar symbol, 'Any'
 
 module.exports = {checkNodes}
