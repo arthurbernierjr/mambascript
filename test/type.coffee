@@ -61,6 +61,20 @@ suite 'Type', ->
       }
       p :: Point = {x: 3, y: 3}
 
+    test 'struct definition with symbol', ->
+      struct A {
+        num :: Number
+      }
+
+      struct Point {
+        x :: Number
+        y :: {
+          a :: A
+          b :: String
+        }
+      }
+      p :: Point = {x: 3, y: {a : {num: 4} , b : 'foo'}}
+
     test 'nested struct definition', ->
       struct Point {
         x :: Number
@@ -69,7 +83,7 @@ suite 'Type', ->
           b :: String
         }
       }
-      p :: Point = {x: 3, y: {a : 1 , y : 'foo'}}
+      p :: Point = {x: 3, y: {a : 1 , b : 'foo'}}
 
     test 'throw struct member access with mismatch type', ->
       throws ->

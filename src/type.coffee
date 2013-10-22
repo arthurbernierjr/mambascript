@@ -67,20 +67,21 @@ class Scope
       Scope.dump next, prefix + '  '
 
   # {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
-  extendTypeLiteral: (object_or_name) ->
-    switch (typeof object_or_name)
+  extendTypeLiteral: (node) ->
+    switch (typeof node)
       when 'object'
-        obj = object_or_name
-        for key, val of obj
-          switch (typeof validate)
-            when 'object'
-              obj[key] = @extendTypeLiteral(val)
-            when 'string'
-              obj[key] = @getTypeInScope(val)
-        obj
+        ret = {}
+        for key, val of node
+          ret[key] = @extendTypeLiteral(val)
+        return ret
       when 'string'
-        str = object_or_name
-        return @getTypeInScope(str)
+        type = @getTypeInScope(node)
+        switch typeof type
+          when 'object'
+            return @extendTypeLiteral(type)
+          when 'string'
+            return type
+
 
 # pass obj :: {x :: Number} = {x : 3}
 checkAcceptableObject = (left, right) ->
@@ -92,7 +93,7 @@ checkAcceptableObject = (left, right) ->
     for lkey, lval of left
       checkAcceptableObject(lval, right[lkey])
   else
-    throw (new Error 'object deep equal mismatch')
+    throw (new Error 'object deep equal mismatch'+left+':'+right)
 
 initializeGlobalTypes = (node) ->
   node.addTypeObject 'String', new TypeSymbol {
@@ -136,8 +137,13 @@ walk = (node, currentScope) ->
 
     # Program
     when node.instanceof CS.Program
-      walk node.body.statements, root
+      walk node.body.statements, currentScope
       node.annotation = type: 'Program'
+
+    # Identifier
+    when node.instanceof CS.Identifier
+      node.annotation ?=
+        type: currentScope.getVar(node.data) ? 'Any'
 
     # String
     when node.instanceof CS.String

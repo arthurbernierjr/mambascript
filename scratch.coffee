@@ -44,24 +44,40 @@
 # console.log typeof a
 # console.log 'finish', f n
 
-(x) -> console.log 'x'
+# (x) -> console.log 'x'
 
-nf :: () -> () = -> setTimeout (->), 100
-nx :: () -> void = ->
-  setTimeout (->), 100
-# {a: 3}
+# nf :: () -> () = -> setTimeout (->), 100
+# nx :: () -> void = ->
+#   setTimeout (->), 100
+# # {a: 3}
 
-fn :: Function = ->
-  aa = 3
-  k = ->
-    i = ''
+# fn :: Function = ->
+#   aa = 3
+#   k = ->
+#     i = ''
 
-struct Nested {
+# struct Nested {
+#   x :: Number
+#   y :: {
+#     a :: Number
+#     b :: String
+#   }
+# }
+
+# nested :: Nested = {x: 3, y: {a : 1 , b : 'foo'}}
+
+a :: { n :: Number } = {n : 3}
+b = a
+
+struct A {
+  num :: Number
+}
+
+struct Point {
   x :: Number
   y :: {
-    a :: Number
+    a :: A
     b :: String
   }
 }
-
-nested :: Nested = {x: 3, y: {a : 1 , b : 'foo'}}
+p :: Point = {x: 3, y: {a : {num: 4} , b : 'foo'}}
