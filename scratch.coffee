@@ -10,5 +10,5 @@ f :: Number -> Number = (n :: Number) :: Number ->  n * n
 (f 3, 8)
 n = (f 3, 8)
 
-hoge = {}
-hoge.a = 3
+x :: Number = (f 3)
+y :: String = (f 3)

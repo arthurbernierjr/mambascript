@@ -125,3 +125,15 @@ suite 'Type', ->
           f :: Number -> Number = (n :: Number) :: Number ->  n * n
           (f "hello")
         """
+
+    test 'void keyword', ->
+      f :: Number -> Number = (n :: Number) :: Number ->  n * n
+      x :: Number = (f 3)
+
+    test 'throw function arguments mismatch', ->
+      throws ->
+        CoffeeScript.parse """
+          f :: Number -> Number = (n :: Number) :: Number ->  n * n
+          y :: String = (f 3)
+        """
+
