@@ -37,9 +37,24 @@ suite 'Type', ->
       a = false
       eq a, false
 
+    test 'typed function', ->
+      f :: Number -> Number = (n :: Number) :: Number ->  n * n
+
+    test 'typed function type mismatch', ->
+      throws ->
+        CoffeeScript.compile """
+          f :: Number -> Number = (n :: Number) :: String ->  n * n
+        """
+
     test 'typed function and binding', ->
       f :: Number -> Number = (n :: Number) ->  n * n
       n :: Number  = f 4
+
+    test 'typed function mismatching application', ->
+      throws ->
+        CoffeeScript.parse """
+          f :: Number -> Number = 3
+        """
 
     test 'typed function with return type', ->
       f :: Number -> Number = (n :: Number) :: Number ->  n * n

@@ -1,12 +1,13 @@
 console = {log: ->}
 
 CS = require './nodes'
+{render} = require 'prettyjson'
 
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
   console.log 'AST =================='
-  console.log cs_ast.body.statements
-  console.log '=================='
+  console.log render cs_ast
+  console.log '================== AST'
   root = new Scope
   root.name = 'root'
   for i in ['global', 'exports', 'module']
@@ -16,6 +17,7 @@ checkNodes = (cs_ast) ->
   walk cs_ast.body.statements, root
   # console.log 'scope ====================='
   # Scope.dump root
+  console.log '================== Scope'
 
 class VarSymbol
   # type :: String
@@ -70,10 +72,15 @@ class Scope
   extendTypeLiteral: (node) ->
     switch (typeof node)
       when 'object'
-        ret = {}
-        for key, val of node
-          ret[key] = @extendTypeLiteral(val)
-        return ret
+        # array
+        if node instanceof Array
+          return (@extendTypeLiteral(i) for i in node)
+        # object
+        else
+          ret = {}
+          for key, val of node
+            ret[key] = @extendTypeLiteral(val)
+          return ret
       when 'string'
         type = @getTypeInScope(node)
         switch typeof type
@@ -82,18 +89,35 @@ class Scope
           when 'string'
             return type
 
+  checkFunctionLiteral: (left, right) ->
+    left  = @extendTypeLiteral left
+    right = @extendTypeLiteral right
+    console.log 'left', left
+    console.log 'right', right
+
+    # args
+    for l_arg, i in left.args
+      r_arg = right.args[i]
+      checkAcceptableObject(l_arg, r_arg)
+
+    # return type
+    checkAcceptableObject(left.returns, right.returns)
+
 
 # pass obj :: {x :: Number} = {x : 3}
 checkAcceptableObject = (left, right) ->
   if ((typeof left) is 'string') and ((typeof right) is 'string')
-    if left isnt right
-      console.log left, right
-      throw (new Error 'object deep equal mismatch')
+    if (left is right) or (left is 'Any') or (right is 'Any')
+      'ok'
+    else
+      throw (new Error "object deep equal mismatch #{left}, #{right}")
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
     for lkey, lval of left
       checkAcceptableObject(lval, right[lkey])
+  else if (left is undefined) or (right is undefined)
+    "ignore now"
   else
-    throw (new Error 'object deep equal mismatch'+left+':'+right)
+    throw (new Error "object deep equal mismatch #{left}, #{right}")
 
 initializeGlobalTypes = (node) ->
   node.addTypeObject 'String', new TypeSymbol {
@@ -173,6 +197,7 @@ walk = (node, currentScope) ->
         implicit: true
 
     # Number
+    # TODO: Int, Float
     when node.instanceof CS.Numbers
       node.annotation ?=
         type: 'Number'
@@ -192,7 +217,10 @@ walk = (node, currentScope) ->
 
     # Function
     when node.instanceof CS.Function
-      objectScope = new Scope currentScope
+      args = node.parameters.map (param) -> param.annotation?.type ? 'Any'
+      node.annotation.type.args = args
+
+      objectScope      = new Scope currentScope
       objectScope.name = '-lambda-'
 
       # register arguments to next scope
@@ -275,7 +303,6 @@ walk = (node, currentScope) ->
       # シンボルに対して 型識別子が存在する
       # -> x :: Number = 3
       else if assigning?
-
         # 明示的なAnyは全て受け入れる
         # x :: Any = "any instance"
         if assigning is 'Any'
@@ -283,30 +310,27 @@ walk = (node, currentScope) ->
 
         # TypedFunction
         # f :: Int -> Int = (n) -> n
-        else if left.annotation.type.type is 'Function'
-          # TODO: Fix parser 'type.type' -> 'type'
+        else if left.annotation.type.args? and right.annotation.type.args?
+          # TODO: ノードを推論した結果、関数になる場合はok
+          if right.instanceof CS.Function
+            currentScope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
+          else
+            throw new Error "assigining right is function"
+
           currentScope.addVar symbol, left.annotation.type
+          # TODO 右辺の推論した型と比較
 
         else if (typeof assigning) is 'object'
-          # TODO: consider symbol annotation
-          # 変数シンボルの方を展開する
-          # console.log assigning, right.annotation.type
           checkAcceptableObject(assigning, right.annotation.type)
-
-          # for key, val of assigning
-          #   if right.annotation.type[key] isnt val # TODO Deep equal
-          #     throw new Error "'#{key}' is expected to #{right.annotation.type[key]}(indeed #{val})"
           currentScope.addVar symbol, left.annotation.type, false
 
         # 右辺の型が指定した型に一致する場合
         # x :: Number = 3
         else if assigning is infered
           currentScope.addVar symbol, left.annotation.type
-
-        # 型が一致しないので例外を投げる
+        # Throw items
         else
-          # TODO: なぜかtoStringくることがあるので握りつぶす
-          return if symbol is 'toString'
+          return if symbol is 'toString' # TODO: なぜかtoStringくることがあるので握りつぶす
           throw new Error "'#{symbol}' is expected to #{left.annotation.type} indeed #{infered}"
 
       # Vanilla CS

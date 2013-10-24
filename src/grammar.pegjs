@@ -830,7 +830,7 @@ ReturnTypeExpr
   / TypeNameSymbol
 returnTypeLiteral = _ "::" _ type:ReturnTypeExpr? _ {return type;}
 functionLiteral
-  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? type:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
+  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? returns:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
       var constructor;
       switch(arrow) {
         case '->': constructor = CS.Function; break;
@@ -838,7 +838,11 @@ functionLiteral
         default: throw new Error('parsed function arrow ("' + arrow + '") not associated with a constructor');
       }
       var ret = rp(new constructor(params && params[2] || [], body || null));
-      ret.annotation = {type:type};
+      ret.annotation = {
+        type: {
+          returns: (returns ? returns : 'Any')
+        }
+       };
       return ret;
     }
   functionBody
