@@ -115,6 +115,13 @@ suite 'Type', ->
       nf :: () -> () = -> setTimeout (->), 100
       nf()
 
-    test 'void', ->
+    test 'void keyword', ->
       nf :: () -> void = -> setTimeout (->), 100
       nf()
+
+    test 'throw function arguments mismatch', ->
+      throws ->
+        CoffeeScript.parse """
+          f :: Number -> Number = (n :: Number) :: Number ->  n * n
+          (f "hello")
+        """

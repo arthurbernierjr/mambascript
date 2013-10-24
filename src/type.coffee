@@ -92,9 +92,6 @@ class Scope
   checkFunctionLiteral: (left, right) ->
     left  = @extendTypeLiteral left
     right = @extendTypeLiteral right
-    console.log 'left', left
-    console.log 'right', right
-
     # args
     for l_arg, i in left.args
       r_arg = right.args[i]
@@ -235,8 +232,17 @@ walk = (node, currentScope) ->
 
     # FunctionApplication
     when node.instanceof CS.FunctionApplication
-      # TODO: 引数チェック
       walk node.arguments, currentScope
+      expected = currentScope.getVarInScope(node.function.data)
+
+      # args
+      if expected? and expected isnt 'Any'
+        args = node.arguments?.map (arg) -> arg.annotation?.type
+        currentScope.checkFunctionLiteral expected, {args: args, returns: 'Any'}
+
+        node.annotation =
+          type: expected.returns
+          implicit: true
 
     # Assigning
     when node.instanceof CS.AssignOp
@@ -245,7 +251,8 @@ walk = (node, currentScope) ->
 
       walk right, currentScope
 
-      # メンバーアクセス
+      return unless left?
+      # TODO: メンバーアクセス
       # hoge.fuga.bar をちゃんとやる
       if left.memberName?
         symbol = left.expression.data
@@ -278,15 +285,15 @@ walk = (node, currentScope) ->
         throw new Error 'double bind', symbol
 
       # -> x :: Number = f 4
-      else if right.instanceof CS.FunctionApplication
-        expected = currentScope.getVarInScope(right.function.data)
+      # else if right.instanceof CS.FunctionApplication
+      #   expected = currentScope.getVarInScope(right.function.data)
 
-        if expected is undefined
-          currentScope.addVar symbol, 'Any'
-        else if assigning is expected?.returns
-          currentScope.addVar symbol, assigning
-        else
-          throw new Error "'#{symbol}' is expected to #{assigning} indeed #{expected}, by function call"
+      #   if expected is undefined
+      #     currentScope.addVar symbol, 'Any'
+      #   else if assigning is expected?.returns
+      #     currentScope.addVar symbol, assigning
+      #   else
+      #     throw new Error "'#{symbol}' is expected to #{assigning} indeed #{expected}, by function call"
         # TODO: argument check
 
       # シンボルに型識別子が存在せず、既にそのスコープで宣言済みのシンボルである場合
