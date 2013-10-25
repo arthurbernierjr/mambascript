@@ -15,6 +15,7 @@ checkNodes = (cs_ast) ->
   initializeGlobalTypes(root)
 
   walk cs_ast.body.statements, root
+
   # console.log 'scope ====================='
   # Scope.dump root
   console.log '================== Scope'
@@ -137,6 +138,11 @@ initializeGlobalTypes = (node) ->
     instanceof: (expr) -> (typeof expr.data) is 'object'
   }
 
+  node.addTypeObject 'Array', new TypeSymbol {
+    type: 'Array'
+    instanceof: (expr) -> (typeof expr.data) is 'object'
+  }
+
   node.addTypeObject 'Any', new TypeSymbol {
     type: 'Any'
     instanceof: (expr) -> true
@@ -176,6 +182,13 @@ walk = (node, currentScope) ->
     when node.instanceof CS.Bool
       node.annotation ?=
         type: 'Boolean'
+        implicit: true
+
+    # Array
+    when node.instanceof CS.ArrayInitialiser
+      walk node.members, currentScope
+      node.annotation ?=
+        type: 'Array'
         implicit: true
 
     # Object
@@ -312,6 +325,7 @@ walk = (node, currentScope) ->
       else if assigning?
         # 明示的なAnyは全て受け入れる
         # x :: Any = "any instance"
+
         if assigning is 'Any'
           currentScope.addVar symbol, 'Any'
 
