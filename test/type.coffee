@@ -40,6 +40,12 @@ suite 'Type', ->
     test 'typed function', ->
       f :: Number -> Number = (n :: Number) :: Number ->  n * n
 
+    test 'typed function that has 2 arguments', ->
+      f :: Number * Number -> Number = (n :: Number, m :: Number) :: Number ->  n * m
+
+    test 'typed function that has 3 arguments', ->
+      f :: Number * Number * Number -> Number = (n :: Number, m :: Number, r :: Number) :: Number ->  n * m * r
+
     test 'typed function type mismatch', ->
       throws ->
         CoffeeScript.compile """
