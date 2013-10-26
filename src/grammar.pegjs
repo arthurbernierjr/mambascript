@@ -1106,7 +1106,7 @@ TypeFunction = args:TypeArgs _ "->" _ returns:TypeNameSymbol {
   return {args: args, returns: returns, type: 'Function'};
 }
 TypeArgs
-  = "(" _ e:TypeNameSymbol _ es:("," _ TypeNameSymbol _)* ")" {
+  = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {
     return [e].concat(es.map(function(e){return e[2]}));
   }
   / e:TypeNameSymbol {return [e];}
