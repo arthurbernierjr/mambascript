@@ -1093,8 +1093,14 @@ typeLiteral
 
 TypeNameSymbol
   = "(" _ ")" {return 'void';}
-  / "(" _ key:ObjectInitialiserKeys _ ")" {return key.data;}
-  / key:ObjectInitialiserKeys {return key.data;}
+  / "(" _ key:ObjectInitialiserKeys isArray:"[]"? _ ")" {
+    if(!isArray) return key.data;
+    else return {array: key.data}
+  }
+  / key:ObjectInitialiserKeys isArray:"[]"? {
+    if(!isArray) return key.data;
+    else return {array: key.data}
+  }
 
 TypeFunction = args:TypeArgs _ "->" _ returns:TypeNameSymbol {
   return {args: args, returns: returns, type: 'Function'};

@@ -18,5 +18,14 @@
 # obj2 :: {a :: String} = {a: (fun 4)}
 
 # arr = [1, 'hoge', false]
-tarr :: Array = [1, 'hoge', false]
+
+# tarr :: Array of Point  = [1, 'hoge', false]
+struct Point {
+  x :: Number
+  y :: Number
+}
+
+p :: Point = {x: 3, y: 2}
+tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
+
 console.log 'done', tarr

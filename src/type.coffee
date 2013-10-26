@@ -101,6 +101,16 @@ class Scope
     # return type
     checkAcceptableObject(left.returns, right.returns)
 
+  checkArrayLiteral: (left, right) ->
+    left  = @extendTypeLiteral left
+    right = @extendTypeLiteral right
+    # args
+    for l_arg, i in left.args
+      r_arg = right.args[i]
+      checkAcceptableObject(l_arg, r_arg)
+
+    # return type
+    checkAcceptableObject(left.returns, right.returns)
 
 # pass obj :: {x :: Number} = {x : 3}
 checkAcceptableObject = (left, right) ->
@@ -109,6 +119,10 @@ checkAcceptableObject = (left, right) ->
       'ok'
     else
       throw (new Error "object deep equal mismatch #{left}, #{right}")
+  else if left?.array?
+    console.log 'leftb', left
+    console.log right
+
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
     for lkey, lval of left
       checkAcceptableObject(lval, right[lkey])
@@ -187,8 +201,9 @@ walk = (node, currentScope) ->
     # Array
     when node.instanceof CS.ArrayInitialiser
       walk node.members, currentScope
+
       node.annotation ?=
-        type: 'Array'
+        type: {array: (node.members.map (m) -> m.annotation?.type)}
         implicit: true
 
     # Object
@@ -328,6 +343,17 @@ walk = (node, currentScope) ->
 
         if assigning is 'Any'
           currentScope.addVar symbol, 'Any'
+
+        else if right.annotation?.type.array?
+          console.log assigning
+          console.log "Array =========="
+          console.log right.annotation.type.array
+          for el in right.annotation.type.array
+            target_type = currentScope.extendTypeLiteral(el)
+            console.log 'acceptable?', assigning.array, target_type
+            checkAcceptableObject(assigning.array, target_type)
+
+          # currentScope.addVar symbol, 'Any'
 
         # TypedFunction
         # f :: Int -> Int = (n) -> n
