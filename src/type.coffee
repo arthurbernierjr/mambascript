@@ -62,6 +62,11 @@ class Scope
   getVarInScope: (symbol) ->
     @getVar(symbol) or @parent?.getVarInScope(symbol) or undefined
 
+  isImplicitVar: (symbol) -> !! @_vars[symbol]?.implicit
+
+  isImplicitVarInScope: (symbol) ->
+    @isImplicitVar(symbol) or @parent?.isImplicitVarInScope(symbol) or undefined
+
   @dump: (node, prefix = '') ->
     console.log prefix + "[#{node.name}]"
     for key, val of node._vars
