@@ -137,3 +137,10 @@ suite 'Type', ->
           y :: String = (f 3)
         """
 
+    test 'typed array', ->
+      struct Point {
+        x :: Number
+        y :: Number
+      }
+      p :: Point = {x: 3, y: 2}
+      tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
