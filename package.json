@@ -1,11 +1,12 @@
 {
-  "name": "coffee-script-redux",
-  "author": "Michael Ficarra",
+  "name": "typed-coffee-script",
+  "author": "mizchi",
   "version": "2.0.0-beta8-dev",
-  "homepage": "https://github.com/michaelficarra/CoffeeScriptRedux",
-  "bugs": "https://github.com/michaelficarra/CoffeeScriptRedux/issues",
-  "description": "Unfancy JavaScript",
+  "homepage": "https://github.com/mizchi/TypedCoffeeScript",
+  "bugs": "https://github.com/mizchi/TypedCoffeeScript/issues",
+  "description": "Unfancy JavaScript with Types",
   "keywords": [
+    "typedcoffeescript",
     "coffeescript",
     "javascript",
     "language",
@@ -13,7 +14,7 @@
   ],
   "main": "./lib/module",
   "bin": {
-    "coffee": "./bin/coffee"
+    "tcoffee": "./bin/coffee"
   },
   "repository": {
     "type": "git",
@@ -35,6 +36,7 @@
     "nopt": "~2.1.2"
   },
   "optionalDependencies": {
+    "prettyjson": "*",
     "esmangle": "~0.0.8",
     "source-map": "0.1.11",
     "escodegen": "~0.0.24",

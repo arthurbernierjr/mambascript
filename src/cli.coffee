@@ -33,7 +33,7 @@ optAliases =
   v: '--version'
   w: '--watch'
 
-option 'parse', 'compile', 'optimise', 'debug', 'literate', 'raw', 'version', 'help'
+option 'parse', 'compile', 'optimise', 'debug', 'literate', 'raw', 'version', 'help', 'typed2cs'
 parameter 'cli', 'input', 'nodejs', 'output', 'watch'
 
 if escodegen?

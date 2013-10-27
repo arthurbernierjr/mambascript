@@ -47,6 +47,9 @@ CoffeeScript =
   compile: (csAst, options) ->
     (Compiler.compile csAst, options).toBasicObject()
 
+  compileTypedToCS: (csAst, options) ->
+    (cscodegen csAst)
+
   # TODO
   cs: (csAst, options) ->
     # TODO: opt: format (default: nice defaults)

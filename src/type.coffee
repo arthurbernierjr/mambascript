@@ -1,5 +1,6 @@
 console = {log: ->}
-{render} = require 'prettyjson'
+{render} = try require 'prettyjson'
+render ?= ->
 
 CS = require './nodes'
 

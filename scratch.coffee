@@ -33,4 +33,4 @@ tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
 # obj :: Point = { x : 3, z: 5 } #=> throw
 
 
-console.log 'done', obj
+console.log 'done'
