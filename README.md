@@ -1,7 +1,14 @@
 TypedCoffeeScript
 ==================================
 
-Yet another altjs developed by mizchi
+Super set of CoffeeScript with types
+
+
+## WARNING!
+
+* extremely incomplete yet.
+* heavily under development
+* bad way to hacking CS
 
 ## Examples
 
@@ -27,6 +34,13 @@ See test/type.coffee as working codes.
 $ npm install typed-coffee-script
 ```
 
+
+now aliased tcoffee
+
+```
+$ tcoffee --js  < scratch.coffee > scratch.js
+```
+
 ## Implementation progress
 
 * ✅ Struct definition
@@ -42,14 +56,10 @@ $ npm install typed-coffee-script
 
 ## CONCEPT
 
-* Subset of CoffeeScript (all tests passed)
+* Super set of CoffeeScript (must be passed all coffee tests)
 * Type check target is CS AST, not compiler.
 * Inspired by TypeScript, Roy and other altjs.
 
-## CAUTION
-
-* extremely incomplete yet.
-* bad way to hacking CS
 
 CoffeeScript II: The Wrath of Khan
 ==================================
