@@ -1,8 +1,9 @@
-console = {log: ->}
-
-CS = require './nodes'
+# console = {log: ->}
 {render} = require 'prettyjson'
 
+CS = require './nodes'
+
+# CS AST -> void
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
   console.log 'AST =================='
@@ -18,20 +19,93 @@ checkNodes = (cs_ast) ->
 
   # console.log 'scope ====================='
   # Scope.dump root
-  console.log '================== Scope'
+  # console.log '================== Scope'
+  console.log 'finish ================== checkNodes'
 
+# Exec down casting
+# pass obj :: {x :: Number, name :: String} = {x : 3, y : "hello"}
+# ng   obj :: {x :: Number, name :: String} = {x : 3, y : 5 }
+checkAcceptableObject = (left, right) ->
+  # "Number" <> "Number"
+  if ((typeof left) is 'string') and ((typeof right) is 'string')
+    if (left is right) or (left is 'Any') or (right is 'Any')
+      'ok'
+    else
+      throw (new Error "object deep equal mismatch #{left}, #{right}")
+
+  # {array: "Number"} <> {array: "Number"}
+  else if left?.array?
+    # TODO: fix it
+    console.log 'leftb', left
+    console.log right
+
+  # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
+  else if ((typeof left) is 'object') and ((typeof right) is 'object')
+    for lkey, lval of left
+      checkAcceptableObject(lval, right[lkey])
+  else if (left is undefined) or (right is undefined)
+    "ignore now"
+  else
+    throw (new Error "object deep equal mismatch #{left}, #{right}")
+
+# Initialize primitive types
+# Number, Boolean, Object, Array, Any
+initializeGlobalTypes = (node) ->
+  # Primitive
+  node.addTypeObject 'String', new TypeSymbol {
+    type: 'String'
+    instanceof: (expr) -> (typeof expr.data) is 'string'
+  }
+
+  node.addTypeObject 'Number', new TypeSymbol {
+    type: 'Number'
+    instanceof: (expr) -> (typeof expr.data) is 'number'
+  }
+
+  node.addTypeObject 'Boolean', new TypeSymbol {
+    type: 'Boolean'
+    instanceof: (expr) -> (typeof expr.data) is 'boolean'
+  }
+
+  node.addTypeObject 'Object', new TypeSymbol {
+    type: 'Object'
+    instanceof: (expr) -> (typeof expr.data) is 'object'
+  }
+
+  node.addTypeObject 'Array', new TypeSymbol {
+    type: 'Array'
+    instanceof: (expr) -> (typeof expr.data) is 'object'
+  }
+
+  # Any
+  node.addTypeObject 'Any', new TypeSymbol {
+    type: 'Any'
+    instanceof: (expr) -> true
+  }
+
+# Known vars in scope
 class VarSymbol
   # type :: String
   # implicit :: Bolean
   constructor: ({@type, @implicit}) ->
 
+# Known types in scope
 class TypeSymbol
   # type :: String or Object
   # instanceof :: (Any) -> Boolean
   constructor: ({@type, @instanceof}) ->
     @instanceof ?= (t) -> t instanceof @constructor
 
+# Var and type scope as node
 class Scope
+  # constructor :: (Scope) -> Scope
+
+  # Get registered type in my scope
+  # addType  :: (String, String) -> ()
+
+  # Get registered type included in parents
+  # addTypeInScope  :: (String, String) -> ()
+
   constructor: (@parent = null) ->
     @parent?.nodes.push this
 
@@ -67,14 +141,8 @@ class Scope
   isImplicitVarInScope: (symbol) ->
     @isImplicitVar(symbol) or @parent?.isImplicitVarInScope(symbol) or undefined
 
-  @dump: (node, prefix = '') ->
-    console.log prefix + "[#{node.name}]"
-    for key, val of node._vars
-      console.log prefix, ' +', key, '::', val
-    for next in node.nodes
-      Scope.dump next, prefix + '  '
-
-  # {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
+  # Extend symbol to type object
+  # ex. {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
   extendTypeLiteral: (node) ->
     switch (typeof node)
       when 'object'
@@ -95,21 +163,26 @@ class Scope
           when 'string'
             return type
 
+  # Check arguments
   checkFunctionLiteral: (left, right) ->
+    # flat extend
     left  = @extendTypeLiteral left
     right = @extendTypeLiteral right
-    # args
+    # check args
     for l_arg, i in left.args
       r_arg = right.args[i]
       checkAcceptableObject(l_arg, r_arg)
 
-    # return type
+    # check return type
     checkAcceptableObject(left.returns, right.returns)
 
+  # Check arrays
+  # TODO: no use yet
   checkArrayLiteral: (left, right) ->
     left  = @extendTypeLiteral left
     right = @extendTypeLiteral right
-    # args
+
+    # check args
     for l_arg, i in left.args
       r_arg = right.args[i]
       checkAcceptableObject(l_arg, r_arg)
@@ -117,56 +190,15 @@ class Scope
     # return type
     checkAcceptableObject(left.returns, right.returns)
 
-# pass obj :: {x :: Number} = {x : 3}
-checkAcceptableObject = (left, right) ->
-  if ((typeof left) is 'string') and ((typeof right) is 'string')
-    if (left is right) or (left is 'Any') or (right is 'Any')
-      'ok'
-    else
-      throw (new Error "object deep equal mismatch #{left}, #{right}")
-  else if left?.array?
-    console.log 'leftb', left
-    console.log right
+  # for debug
+  @dump: (node, prefix = '') ->
+    console.log prefix + "[#{node.name}]"
+    for key, val of node._vars
+      console.log prefix, ' +', key, '::', val
+    for next in node.nodes
+      Scope.dump next, prefix + '  '
 
-  else if ((typeof left) is 'object') and ((typeof right) is 'object')
-    for lkey, lval of left
-      checkAcceptableObject(lval, right[lkey])
-  else if (left is undefined) or (right is undefined)
-    "ignore now"
-  else
-    throw (new Error "object deep equal mismatch #{left}, #{right}")
-
-initializeGlobalTypes = (node) ->
-  node.addTypeObject 'String', new TypeSymbol {
-    type: 'String'
-    instanceof: (expr) -> (typeof expr.data) is 'string'
-  }
-
-  node.addTypeObject 'Number', new TypeSymbol {
-    type: 'Number'
-    instanceof: (expr) -> (typeof expr.data) is 'number'
-  }
-
-  node.addTypeObject 'Boolean', new TypeSymbol {
-    type: 'Boolean'
-    instanceof: (expr) -> (typeof expr.data) is 'boolean'
-  }
-
-  node.addTypeObject 'Object', new TypeSymbol {
-    type: 'Object'
-    instanceof: (expr) -> (typeof expr.data) is 'object'
-  }
-
-  node.addTypeObject 'Array', new TypeSymbol {
-    type: 'Array'
-    instanceof: (expr) -> (typeof expr.data) is 'object'
-  }
-
-  node.addTypeObject 'Any', new TypeSymbol {
-    type: 'Any'
-    instanceof: (expr) -> true
-  }
-
+# Traverse all nodes
 walk = (node, currentScope) ->
   switch
     # undefined(mayby body)
@@ -178,6 +210,7 @@ walk = (node, currentScope) ->
       node.forEach (s) -> walk s, currentScope
 
     # Struct
+    # Dirty hack on Number
     when node.type is 'struct'
       currentScope.addType node.name, node.expr
 
@@ -186,21 +219,40 @@ walk = (node, currentScope) ->
       walk node.body.statements, currentScope
       node.annotation = type: 'Program'
 
-    # Identifier
-    when node.instanceof CS.Identifier
-      node.annotation ?=
-        type: currentScope.getVar(node.data) ? 'Any'
-
     # String
     when node.instanceof CS.String
       node.annotation ?=
         type: 'String'
         implicit: true
+        primitive: true
 
     # Bool
     when node.instanceof CS.Bool
       node.annotation ?=
         type: 'Boolean'
+        implicit: true
+        primitive: true
+
+    # Number
+    # TODO: Int, Float
+    when node.instanceof CS.Numbers
+      node.annotation ?=
+        type: 'Number'
+        implicit: true
+        primitive: true
+      # if node.instanceof CS.Int
+      #   node.annotation ?=
+      #     type: 'Int'
+      #     implicit: true
+      # else if node.instanceof CS.Int
+      #   node.annotation ?=
+      #     type: 'Float'
+      #     implicit: true
+
+    # Identifier
+    when node.instanceof CS.Identifier
+      node.annotation ?=
+        type: currentScope.getVar(node.data) ? 'Any'
         implicit: true
 
     # Array
@@ -225,21 +277,6 @@ walk = (node, currentScope) ->
       node.annotation ?=
         type: obj
         implicit: true
-
-    # Number
-    # TODO: Int, Float
-    when node.instanceof CS.Numbers
-      node.annotation ?=
-        type: 'Number'
-        implicit: true
-      # if node.instanceof CS.Int
-      #   node.annotation ?=
-      #     type: 'Int'
-      #     implicit: true
-      # else if node.instanceof CS.Int
-      #   node.annotation ?=
-      #     type: 'Float'
-      #     implicit: true
 
     # Class
     when node.instanceof CS.Class
@@ -273,7 +310,7 @@ walk = (node, currentScope) ->
         args = node.arguments?.map (arg) -> arg.annotation?.type
         currentScope.checkFunctionLiteral expected, {args: args, returns: 'Any'}
 
-        node.annotation =
+        node.annotation ?=
           type: expected.returns
           implicit: true
 
@@ -285,6 +322,7 @@ walk = (node, currentScope) ->
       walk right, currentScope
 
       return unless left?
+
       # TODO: メンバーアクセス
       # hoge.fuga.bar をちゃんとやる
       if left.memberName?
@@ -311,36 +349,19 @@ walk = (node, currentScope) ->
         else
           undefined
 
-      # 型識別子が存在し、既にそのスコープで宣言済みのシンボルである場合、二重定義として例外
+      # 既に宣言済みのシンボルに対して型宣言できない
       #    x :: Number = 3
       # -> x :: String = "hello"
       if assigning? and registered?
-        throw new Error 'double bind', symbol
+        throw new Error 'double bind: '+ symbol
 
-      # -> x :: Number = f 4
-      # else if right.instanceof CS.FunctionApplication
-      #   expected = currentScope.getVarInScope(right.function.data)
-
-      #   if expected is undefined
-      #     currentScope.addVar symbol, 'Any'
-      #   else if assigning is expected?.returns
-      #     currentScope.addVar symbol, assigning
-      #   else
-      #     throw new Error "'#{symbol}' is expected to #{assigning} indeed #{expected}, by function call"
-        # TODO: argument check
-
-      # シンボルに型識別子が存在せず、既にそのスコープで宣言済みのシンボルである場合
-      # rightを再度型推論し、ダウンキャストできなければthrow
-      #    x :: Number = 3
-      # -> x = 5
-      # TODO: ダウンキャストルールの記述
       else if registered?
+        return if symbol is 'toString' # TODO: fix
         # 推論済みor anyならok
-        return if symbol is 'toString'
         unless  (registered is infered) or (registered is 'Any')
           throw new Error "'#{symbol}' is expected to #{registered} indeed #{infered}, by assignee"
 
-      # シンボルに対して 型識別子が存在する
+      # 左辺に型宣言が存在する
       # -> x :: Number = 3
       else if assigning?
         # 明示的なAnyは全て受け入れる
@@ -350,27 +371,22 @@ walk = (node, currentScope) ->
           currentScope.addVar symbol, 'Any'
 
         else if right.annotation?.type.array?
-          console.log assigning
-          console.log "Array =========="
-          console.log right.annotation.type.array
+          # TODO: Refactor to checkAcceptableObject
           for el in right.annotation.type.array
             target_type = currentScope.extendTypeLiteral(el)
-            console.log 'acceptable?', assigning.array, target_type
             checkAcceptableObject(assigning.array, target_type)
-
-          # currentScope.addVar symbol, 'Any'
+          currentScope.addVar symbol, 'Any'
 
         # TypedFunction
         # f :: Int -> Int = (n) -> n
         else if left.annotation.type.args? and right.annotation.type.args?
-          # TODO: ノードを推論した結果、関数になる場合はok
+          # TODO: ノードを推論した結果、関数になる場合はok annotation.typeをみる
           if right.instanceof CS.Function
             currentScope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
           else
-            throw new Error "assigining right is function"
+            throw new Error "Right is not function"
 
           currentScope.addVar symbol, left.annotation.type
-          # TODO 右辺の推論した型と比較
 
         else if (typeof assigning) is 'object'
           checkAcceptableObject(assigning, right.annotation.type)
