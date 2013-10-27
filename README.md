@@ -47,12 +47,10 @@ $ tcoffee --js  < scratch.coffee > scratch.js
 * ✅ Typed function definition
 * ✅ Function call with typecheck
 * ✅ Typed Array
+* ✅Check type on member access
 * Generate pure coffee
-* Check type on member access
 * Scope with this
-* Multi files
-* IDE Support
-
+* Share type context with some scripts
 
 ## CONCEPT
 
