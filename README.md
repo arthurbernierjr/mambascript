@@ -20,6 +20,13 @@ f :: Number -> Number = (n) ->  n * n
 
 See test/type.coffee as working codes.
 
+
+## Install
+
+```
+$ npm install typed-coffee-script
+```
+
 ## Implementation progress
 
 * ✅ Struct definition
