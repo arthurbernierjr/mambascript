@@ -180,7 +180,9 @@ class Scope
       checkAcceptableObject(l_arg, r_arg)
 
     # check return type
-    checkAcceptableObject(left.returns, right.returns)
+    # TODO: Now I will not infer function return type
+    if right.returns isnt 'Any'
+      checkAcceptableObject(left.returns, right.returns)
 
   # Check arrays
   # TODO: no use yet
