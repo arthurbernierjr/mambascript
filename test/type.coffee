@@ -25,12 +25,6 @@ suite 'Type', ->
           obj :: { x :: Number, y :: Number } = { x : 3 }
         """
 
-    test 'throw object literal mitmatching', ->
-      throws ->
-        CoffeeScript.parse """
-          obj :: { x :: Number, y :: Number } = { x : 3, z: 5}
-        """
-
     test 'throw member access error', ->
       throws ->
         CoffeeScript.parse """

@@ -1,4 +1,4 @@
-# console = {log: ->}
+console = {log: ->}
 {render} = require 'prettyjson'
 
 CS = require './nodes'
@@ -26,6 +26,7 @@ checkNodes = (cs_ast) ->
 # pass obj :: {x :: Number, name :: String} = {x : 3, y : "hello"}
 # ng   obj :: {x :: Number, name :: String} = {x : 3, y : 5 }
 checkAcceptableObject = (left, right) ->
+  console.log left, right
   # "Number" <> "Number"
   if ((typeof left) is 'string') and ((typeof right) is 'string')
     if (left is right) or (left is 'Any') or (right is 'Any')
@@ -41,9 +42,13 @@ checkAcceptableObject = (left, right) ->
 
   # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
-    for lkey, lval of left
-      checkAcceptableObject(lval, right[lkey])
+    for key, lval of left
+      # when {x: Number} = {z: Number}
+      if right[key] is undefined
+        throw new Error "'#{key}' is not defined on right"
+      checkAcceptableObject(lval, right[key])
   else if (left is undefined) or (right is undefined)
+    # TODO: valid code later
     "ignore now"
   else
     throw (new Error "object deep equal mismatch #{left}, #{right}")
@@ -366,16 +371,16 @@ walk = (node, currentScope) ->
       else if assigning?
         # 明示的なAnyは全て受け入れる
         # x :: Any = "any instance"
-
         if assigning is 'Any'
-          currentScope.addVar symbol, 'Any'
+          currentScope.addVar symbol, 'Any', true
 
+        # arr = [1,2,3]
         else if right.annotation?.type.array?
           # TODO: Refactor to checkAcceptableObject
           for el in right.annotation.type.array
             target_type = currentScope.extendTypeLiteral(el)
             checkAcceptableObject(assigning.array, target_type)
-          currentScope.addVar symbol, 'Any'
+          currentScope.addVar symbol, 'Any', true
 
         # TypedFunction
         # f :: Int -> Int = (n) -> n
