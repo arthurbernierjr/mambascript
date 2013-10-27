@@ -1,4 +1,4 @@
-console = {log: ->}
+# console = {log: ->}
 {render} = try require 'prettyjson'
 render ?= ->
 
@@ -262,6 +262,16 @@ walk = (node, currentScope) ->
       node.annotation ?=
         type: currentScope.getVar(node.data) ? 'Any'
         implicit: true
+
+    # MemberAccessOps
+    when node.instanceof CS.MemberAccessOps
+      walk node.expression, currentScope
+
+      type = currentScope.extendTypeLiteral(node.expression.annotation?.type)
+      if type?
+        node.annotation = type: type[node.memberName], implicit: false
+      else
+        node.annotation = type: 'Any', implicit: true
 
     # Array
     when node.instanceof CS.ArrayInitialiser
