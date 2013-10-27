@@ -1,6 +1,6 @@
-# console = {log: ->}
-{render} = try require 'prettyjson'
-render ?= ->
+console = {log: ->}
+pj = try require 'prettyjson'
+render = (obj) -> pj?.render obj
 
 CS = require './nodes'
 
@@ -8,7 +8,7 @@ CS = require './nodes'
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
   console.log 'AST =================='
-  console.log render cs_ast
+  # console.log render cs_ast
   console.log '================== AST'
   root = new Scope
   root.name = 'root'
@@ -18,9 +18,9 @@ checkNodes = (cs_ast) ->
 
   walk cs_ast.body.statements, root
 
-  # console.log 'scope ====================='
-  # Scope.dump root
-  # console.log '================== Scope'
+  console.log 'scope ====================='
+  Scope.dump root
+  console.log '================== Scope'
   console.log 'finish ================== checkNodes'
 
 # Exec down casting
@@ -215,7 +215,10 @@ walk = (node, currentScope) ->
 
     # Nodes Array
     when node.length?
-      node.forEach (s) -> walk s, currentScope
+      # node.forEach (s) -> walk s, currentScope
+      for s in node
+        walk s, currentScope
+
 
     # Struct
     # Dirty hack on Number
@@ -265,20 +268,21 @@ walk = (node, currentScope) ->
 
     # MemberAccessOps
     when node.instanceof CS.MemberAccessOps
-      walk node.expression, currentScope
+      if node.instanceof CS.MemberAccessOp
+        walk node.expression, currentScope
 
-      type = currentScope.extendTypeLiteral(node.expression.annotation?.type)
-      if type?
-        node.annotation = type: type[node.memberName], implicit: false
-      else
-        node.annotation = type: 'Any', implicit: true
+        type = currentScope.extendTypeLiteral(node.expression.annotation?.type)
+        if type?
+          node.annotation = type: type[node.memberName], implicit: false
+        else
+          node.annotation = type: 'Any', implicit: true
 
     # Array
     when node.instanceof CS.ArrayInitialiser
       walk node.members, currentScope
 
       node.annotation ?=
-        type: {array: (node.members.map (m) -> m.annotation?.type)}
+        type: {array: (node.members?.map (m) -> m.annotation?.type)}
         implicit: true
 
     # Object
@@ -302,14 +306,14 @@ walk = (node, currentScope) ->
 
     # Function
     when node.instanceof CS.Function
-      args = node.parameters.map (param) -> param.annotation?.type ? 'Any'
+      args = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
       node.annotation.type.args = args
 
       objectScope      = new Scope currentScope
       objectScope.name = '-lambda-'
 
       # register arguments to next scope
-      node.parameters.map (param) ->
+      node.parameters?.map (param) ->
         try
           objectScope.addVar? param.data, (param.annotation?.type ? 'Any')
         catch
@@ -338,86 +342,84 @@ walk = (node, currentScope) ->
       right = node.expression
 
       walk right, currentScope
+      walk left, currentScope
 
       return unless left?
 
-      # TODO: メンバーアクセス
-      # hoge.fuga.bar をちゃんとやる
-      if left.memberName?
-        symbol = left.expression.data
-        registered = currentScope.getVarInScope(symbol) # Object
-        return unless registered? # TODO: maybe global defined
+      # NOT member access
+      if left.instanceof CS.Identifier
 
-        expected = registered[left.memberName] # ClassName
+        symbol     = left.data
+        registered = currentScope.getVarInScope(symbol)
         infered    = right.annotation?.type
 
-        if expected? and (expected is infered) or (registered is 'Any')
-          ''
-        else
-          throw new Error "'#{symbol}' is expected to #{registered} (indeed #{infered}) at member access"
-
-      # prepare for type interface
-      symbol     = left.data
-      registered = currentScope.getVarInScope(symbol)
-      infered    = right.annotation?.type
-
-      assigning =
-        if left.annotation?
-          currentScope.extendTypeLiteral(left.annotation.type)
-        else
-          undefined
-
-      # 既に宣言済みのシンボルに対して型宣言できない
-      #    x :: Number = 3
-      # -> x :: String = "hello"
-      if assigning? and registered?
-        throw new Error 'double bind: '+ symbol
-
-      else if registered?
-        return if symbol is 'toString' # TODO: fix
-        # 推論済みor anyならok
-        unless  (registered is infered) or (registered is 'Any')
-          throw new Error "'#{symbol}' is expected to #{registered} indeed #{infered}, by assignee"
-
-      # 左辺に型宣言が存在する
-      # -> x :: Number = 3
-      else if assigning?
-        # 明示的なAnyは全て受け入れる
-        # x :: Any = "any instance"
-        if assigning is 'Any'
-          currentScope.addVar symbol, 'Any', true
-
-        # arr = [1,2,3]
-        else if right.annotation?.type.array?
-          # TODO: Refactor to checkAcceptableObject
-          for el in right.annotation.type.array
-            target_type = currentScope.extendTypeLiteral(el)
-            checkAcceptableObject(assigning.array, target_type)
-          currentScope.addVar symbol, 'Any', true
-
-        # TypedFunction
-        # f :: Int -> Int = (n) -> n
-        else if left.annotation.type.args? and right.annotation.type.args?
-          # TODO: ノードを推論した結果、関数になる場合はok annotation.typeをみる
-          if right.instanceof CS.Function
-            currentScope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
+        assigning =
+          if left.annotation?
+            currentScope.extendTypeLiteral(left.annotation.type)
           else
-            throw new Error "Right is not function"
+            undefined
 
-          currentScope.addVar symbol, left.annotation.type
+        # 既に宣言済みのシンボルに対して型宣言できない
+        #    x :: Number = 3
+        # -> x :: String = "hello"
+        if assigning? and registered?
+          throw new Error 'double bind: '+ symbol
 
-        else if (typeof assigning) is 'object'
-          checkAcceptableObject(assigning, right.annotation.type)
-          currentScope.addVar symbol, left.annotation.type, false
+        else if registered?
+          return if symbol is 'toString' # TODO: fix
+          # 推論済みor anyならok
+          unless  (registered is infered) or (registered is 'Any')
+            throw new Error "'#{symbol}' is expected to #{registered} indeed #{infered}, by assignee"
 
-        # 右辺の型が指定した型に一致する場合
-        # x :: Number = 3
-        else if assigning is infered
-          currentScope.addVar symbol, left.annotation.type
-        # Throw items
-        else
-          return if symbol is 'toString' # TODO: なぜかtoStringくることがあるので握りつぶす
-          throw new Error "'#{symbol}' is expected to #{left.annotation.type} indeed #{infered}"
+        # 左辺に型宣言が存在する
+        # -> x :: Number = 3
+        else if assigning?
+          # 明示的なAnyは全て受け入れる
+          # x :: Any = "any instance"
+          if assigning is 'Any'
+            currentScope.addVar symbol, 'Any', true
+
+          # arr = [1,2,3]
+          else if right.annotation?.type?.array?
+            # TODO: Refactor to checkAcceptableObject
+            for el in right.annotation.type.array
+              target_type = currentScope.extendTypeLiteral(el)
+              checkAcceptableObject(assigning.array, target_type)
+            currentScope.addVar symbol, 'Any', true
+
+          # TypedFunction
+          # f :: Int -> Int = (n) -> n
+          else if left.annotation.type.args? and right.annotation.type.args?
+            # TODO: ノードを推論した結果、関数になる場合はok annotation.typeをみる
+            if right.instanceof CS.Function
+              currentScope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
+            else
+              throw new Error "Right is not function"
+
+            currentScope.addVar symbol, left.annotation.type
+
+          else if (typeof assigning) is 'object'
+            # TODO: ignore destructive assignation
+            # ex) {map, concat, concatMap, difference, nub, union} = require './functional-helpers'
+            if right.annotation? and left.annotation?
+              checkAcceptableObject(assigning, right.annotation.type)
+              currentScope.addVar symbol, left.annotation.type, false
+
+          # 右辺の型が指定した型に一致する場合
+          # x :: Number = 3
+          else if assigning is infered
+            currentScope.addVar symbol, left.annotation.type
+          # Throw items
+          else
+            return if symbol is 'toString' # TODO: なぜかtoStringくることがあるので握りつぶす
+            throw new Error "'#{symbol}' is expected to #{left.annotation.type} indeed #{infered}"
+
+      # Member access
+      else if left.instanceof CS.MemberAccessOp
+        return if left.expression.raw is '@' # ignore @ yet
+        if left.annotation?.type? and right.annotation?.type?
+          if left.annotation.type isnt 'Any'
+            checkAcceptableObject(currentScope.extendTypeLiteral(left.annotation.type), currentScope.extendTypeLiteral(right.annotation.type))
 
       # Vanilla CS
       else

@@ -4,6 +4,6 @@ struct Point {
 }
 
 rp :: () -> Point = () -> { x : 3, y : 5}
-rp().x.y
+rp().x = 3
 
 # console.log 'done'
