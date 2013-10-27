@@ -1,7 +1,7 @@
 TypedCoffeeScript
 ==================================
 
-yet another altjs developed by mizchi
+Yet another altjs developed by mizchi
 
 ## Examples
 
@@ -12,12 +12,26 @@ struct Point {
 }
 
 p :: Point = {x: 3, y: 3}
+line :: Point[] = [{x: 3, y: 4}, {x: 8, y: 5}, p]
 
-f :: Number -> Number = (n :: Number) :: Number ->  n * n
-console.log f 4
+f :: Number -> Number = (n) ->  n * n
+((n :: Number) :: Number ->  n * n)(3)
 ```
 
 See test/type.coffee as working codes.
+
+## Implementation progress
+
+* ✅ Struct definition
+* ✅ Typed function definition
+* ✅ Function call with typecheck
+* ✅ Typed Array
+* Generate pure coffee
+* Check type on member access
+* Scope with this
+* Multi files
+* IDE Support
+
 
 ## CONCEPT
 
