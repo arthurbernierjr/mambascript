@@ -56,3 +56,6 @@
   result = [[], []]
   result[+!fn item].push item for item in list
   result
+
+@first = (list) -> list[0]
+@last = (list) -> list[list.length-1]

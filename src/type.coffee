@@ -1,6 +1,7 @@
 console = {log: ->}
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
+{first, last, map, concat} = require './functional-helpers'
 
 CS = require './nodes'
 
@@ -208,6 +209,7 @@ class Scope
 
 # Traverse all nodes
 walk = (node, currentScope) ->
+  console.log 'node name', node?.className
   switch
     # undefined(mayby body)
     when node is undefined
@@ -215,7 +217,7 @@ walk = (node, currentScope) ->
 
     # Nodes Array
     when node.length?
-      node.forEach (s) -> walk s, currentScope
+      walk s, currentScope for s in node
 
     # Struct
     # Dirty hack on Number
@@ -227,22 +229,29 @@ walk = (node, currentScope) ->
       walk node.body.statements, currentScope
       node.annotation = type: 'Program'
 
+    when node.instanceof CS.Block
+      walk node.statements, currentScope
+      last_annotation = (node.statements[node.statements.length-1])?.annotation
+      node.annotation ?= last_annotation
+
     # === Controlle flow ===
     # If
     when node.instanceof CS.Conditional
       # condition expr
-      walk node.condition, currentScope
-      # else
-      walk node.alternate, currentScope
+      walk node.condition, currentScope #=> Expr
+
       # else if
-      walk node.consequent.statements, currentScope
+      walk node.consequent, currentScope #=> Block
 
-      last_annotation = (node.consequent.statements[node.consequent.statements.length-1])?.annotation
+      # else
+      if node.alternate?
+        walk node.alternate, currentScope #=> Block
 
-      # console.log 'anns', last_consequent_annotation, last_alternate_annotation
+      # if node.alternate doesn't exist, then return type is Undefined
+      alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined', implicit: true)
 
       possibilities = []
-      for n in (node.alternate.annotation?.possibilities ? []).concat last_annotation
+      for n in [node.consequent.annotation, alternate_annotation] when n?
         if n.possibilities?
           (possibilities.push(i) for i in n.possibilities)
         else
@@ -398,6 +407,11 @@ walk = (node, currentScope) ->
           # x :: Any = "any instance"
           if assigning is 'Any'
             currentScope.addVar symbol, 'Any', true
+
+          # ifが返す可能性
+          else if right.instanceof CS.Conditional
+            for p in right.annotation.possibilities
+              checkAcceptableObject assigning, p.type
 
           # arr = [1,2,3]
           else if right.annotation?.type?.array?

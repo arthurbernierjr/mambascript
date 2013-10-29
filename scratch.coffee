@@ -1,9 +1,18 @@
-struct Point {
-  x :: Number
-  y :: Number
-}
+tf :: () -> Boolean = -> true
+a :: Number =
+  if tf()
+    if true
+      4
+    else
+      6
+  else if true
+    4
+  else
+    8
 
-rp :: () -> Point = () -> { x : 3, y : 5}
-rp().x = 3
-
-# console.log 'done'
+# b :: Number =
+#   if tf()
+#     "String"
+#   # else if true
+#   #   4
+#   else ''
