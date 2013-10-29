@@ -209,10 +209,10 @@ class Scope
 
 # Traverse all nodes
 walk = (node, currentScope) ->
-  console.log 'node name', node?.className
+  console.log '---', node?.className, '---'
   switch
     # undefined(mayby body)
-    when node is undefined
+    when not node?
       return
 
     # Nodes Array
@@ -232,7 +232,7 @@ walk = (node, currentScope) ->
     when node.instanceof CS.Block
       walk node.statements, currentScope
       last_annotation = (node.statements[node.statements.length-1])?.annotation
-      node.annotation ?= last_annotation
+      node.annotation = last_annotation
 
     # === Controlle flow ===
     # If
@@ -258,6 +258,35 @@ walk = (node, currentScope) ->
           possibilities.push n
 
       node.annotation = {possibilities, implicit: true}
+
+    when node.instanceof CS.ForIn
+      walk node.target, currentScope
+
+      if node.valAssignee?
+        currentScope.addVar node.valAssignee.data, (node.valAssignee?.annotation?.type) ? 'Any'
+
+      if node.keyAssignee?
+        currentScope.addVar node.keyAssignee.data, Number
+
+      # check iter target
+      # TODO:  Refactor with type array
+      if node.target.annotation?.type?.array?
+        for el in node.target.annotation?.type?.array
+          if node.valAssignee?
+            target_type = currentScope.extendTypeLiteral(el)
+            checkAcceptableObject(node.valAssignee.annotation.type, target_type)
+
+      # check body
+      walk node.body, currentScope #=> Block
+
+      node.annotation = node.body?.annotation
+
+      # remove after iter
+      delete currentScope._vars[node.valAssignee?.data]
+      delete currentScope._vars[node.keyAssignee?.data]
+
+    when node.instanceof CS.ForOf
+      console.log 'forof', render node
 
     # String
     when node.instanceof CS.String
@@ -291,9 +320,13 @@ walk = (node, currentScope) ->
 
     # Identifier
     when node.instanceof CS.Identifier
-      node.annotation ?=
-        type: currentScope.getVar(node.data) ? 'Any'
-        implicit: true
+      console.log '~~key', currentScope.getVarInScope(node.data)
+      if currentScope.getVarInScope(node.data)
+        node.annotation = type: currentScope.getVarInScope(node.data)
+      else
+        node.annotation ?=
+          type: 'Any'
+          implicit: true
 
     # MemberAccessOps
     when node.instanceof CS.MemberAccessOps
@@ -371,7 +404,8 @@ walk = (node, currentScope) ->
       right = node.expression
 
       walk right, currentScope
-      walk left, currentScope
+      walk left, currentScope #=>
+      # console.log '=============',left
 
       return unless left?
 
@@ -391,7 +425,7 @@ walk = (node, currentScope) ->
         # 既に宣言済みのシンボルに対して型宣言できない
         #    x :: Number = 3
         # -> x :: String = "hello"
-        if assigning? and registered?
+        if assigning? and registered? and assigning isnt 'Any'
           throw new Error 'double bind: '+ symbol
 
         else if registered?
@@ -403,15 +437,20 @@ walk = (node, currentScope) ->
         # 左辺に型宣言が存在する
         # -> x :: Number = 3
         else if assigning?
+          # console.log 'want register', node.raw, left
           # 明示的なAnyは全て受け入れる
           # x :: Any = "any instance"
           if assigning is 'Any'
             currentScope.addVar symbol, 'Any', true
 
-          # ifが返す可能性
+          # ifが返す値
           else if right.instanceof CS.Conditional
             for p in right.annotation.possibilities
               checkAcceptableObject assigning, p.type
+
+          # forが返す可能性
+          else if right.instanceof CS.ForIn
+            checkAcceptableObject(assigning.array, currentScope.extendTypeLiteral(right.annotation.type))
 
           # arr = [1,2,3]
           else if right.annotation?.type?.array?
@@ -419,7 +458,7 @@ walk = (node, currentScope) ->
             for el in right.annotation.type.array
               target_type = currentScope.extendTypeLiteral(el)
               checkAcceptableObject(assigning.array, target_type)
-            currentScope.addVar symbol, 'Any', true
+            currentScope.addVar symbol, 'Any', true # TODO Valid type
 
           # TypedFunction
           # f :: Int -> Int = (n) -> n

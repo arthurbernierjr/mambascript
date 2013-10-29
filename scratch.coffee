@@ -1,18 +1,15 @@
-tf :: () -> Boolean = -> true
-a :: Number =
-  if tf()
-    if true
-      4
-    else
-      6
-  else if true
-    4
-  else
-    8
+hoge_list = [1,2,'hoge']
+_xx_ :: String = 'ss'
 
-# b :: Number =
-#   if tf()
-#     "String"
-#   # else if true
-#   #   4
-#   else ''
+list :: Number[] =
+  for i :: Number, n in [1..3]
+    nn :: Number  = 3
+    nn
+
+list2 :: Number[] =
+  for i :: Number, n in [1..3]
+    i
+
+list3 :: Number[] =
+  for i :: Number, n in [1..3]
+    n
