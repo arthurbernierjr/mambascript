@@ -156,3 +156,26 @@ suite 'Type', ->
       }
       p :: Point = {x: 3, y: 2}
       tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
+
+
+    test 'if', ->
+      f :: Number -> Number = (n) -> n
+
+      tf :: () -> Boolean = -> true
+      a :: Number =
+        if tf()
+          if true
+            f 4
+          else
+            6
+        else if true
+          4
+        else
+          8
+
+    test 'throw function arguments mismatch', ->
+      throws ->
+        CoffeeScript.parse """
+          a :: Number = if true then 3 else ""
+        """
+
