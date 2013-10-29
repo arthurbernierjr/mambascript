@@ -173,9 +173,34 @@ suite 'Type', ->
         else
           8
 
-    test 'throw function arguments mismatch', ->
+    test 'throw if return type mismatch', ->
       throws ->
         CoffeeScript.parse """
           a :: Number = if true then 3 else ""
         """
 
+    test 'for', ->
+      list :: Number[] =
+        for i :: Number, n in [1..3]
+          nn :: Number  = 3
+          nn
+
+      list2 :: Number[] =
+        for i :: Number, n in [1..3]
+          i
+
+      list3 :: Number[] =
+        for i :: Number, n in [1..3]
+          n
+
+    test 'throw return type mismatch', ->
+      throws ->
+        CoffeeScript.parse """
+          arr :: Number[] = ("" for i in [1,2,3])
+        """
+
+    test 'throw target mismatch', ->
+      throws ->
+        CoffeeScript.parse """
+          arr :: Number[] = (i for i :: Number in [1,2,""])
+        """
