@@ -47,7 +47,10 @@ $ tcoffee --js  < scratch.coffee > scratch.js
 * ✅ Typed function definition
 * ✅ Function call with typecheck
 * ✅ Typed Array
-* ✅Check type on member access
+* ✅ Check type on member access
+* ✅ If statement
+* For statement
+* BinaryOperator
 * Generate pure coffee
 * Scope with this
 * Share type context with some scripts
