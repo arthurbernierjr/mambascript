@@ -215,10 +215,7 @@ walk = (node, currentScope) ->
 
     # Nodes Array
     when node.length?
-      # node.forEach (s) -> walk s, currentScope
-      for s in node
-        walk s, currentScope
-
+      node.forEach (s) -> walk s, currentScope
 
     # Struct
     # Dirty hack on Number
@@ -229,6 +226,29 @@ walk = (node, currentScope) ->
     when node.instanceof CS.Program
       walk node.body.statements, currentScope
       node.annotation = type: 'Program'
+
+    # === Controlle flow ===
+    # If
+    when node.instanceof CS.Conditional
+      # condition expr
+      walk node.condition, currentScope
+      # else
+      walk node.alternate, currentScope
+      # else if
+      walk node.consequent.statements, currentScope
+
+      last_annotation = (node.consequent.statements[node.consequent.statements.length-1])?.annotation
+
+      # console.log 'anns', last_consequent_annotation, last_alternate_annotation
+
+      possibilities = []
+      for n in (node.alternate.annotation?.possibilities ? []).concat last_annotation
+        if n.possibilities?
+          (possibilities.push(i) for i in n.possibilities)
+        else
+          possibilities.push n
+
+      node.annotation = {possibilities, implicit: true}
 
     # String
     when node.instanceof CS.String
