@@ -243,3 +243,14 @@ suite 'Type', ->
       throws -> CoffeeScript.parse """
       list :: String[] = [1..10]
       """
+
+    test 'BinOps Num', ->
+      a :: Number = (3 + 3 * 6) / 2
+
+    test 'BinOps String', ->
+      a :: String = "hello" + "world"
+
+    test 'miscast BinOp', ->
+      throws -> CoffeeScript.parse """
+      c :: Number = "" + 3
+      """

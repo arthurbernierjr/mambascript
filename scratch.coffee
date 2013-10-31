@@ -28,6 +28,19 @@
 # f2 :: () -> Number = ->
 #   return ""
 
-x :: Number[] = [1..10]
-list :: Number[] = [1, 10]
-list2 :: Number[] = [1..10]
+
+# n = 1
+# x :: Number =
+#   switch 1
+#     when 1
+#       1
+#     when 2
+#       2
+#     else
+#       3
+# console.log
+
+
+a :: Number = (3 + 3 * 6) / 2
+# b :: String = 3 + 3
+c :: String = {} + ""

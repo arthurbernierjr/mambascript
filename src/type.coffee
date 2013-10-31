@@ -46,7 +46,7 @@ checkAcceptableObject = (left, right) ->
     for key, lval of left
       # when {x: Number} = {z: Number}
       if right[key] is undefined
-        return if key is 'returns' # TODO FunctionTypeをちゃんとどうにかする 色々混線してる
+        return if key in ['returns', 'type'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
         throw new Error "'#{key}' is not defined on right"
       checkAcceptableObject(lval, right[key])
   else if (left is undefined) or (right is undefined)
@@ -254,6 +254,33 @@ walk = (node, currentScope) ->
         currentScope.addReturnable node.expression.annotation.type
         node.annotation = node.expression.annotation
 
+    # bin op
+    when node.instanceof(CS.PlusOp) or node.instanceof(CS.MultiplyOp) or node.instanceof(CS.DivideOp) or node.instanceof(CS.SubtractOp)
+      console.log 'binops', node.className
+      walk node.left, currentScope
+      walk node.right, currentScope
+
+      left_type = node.left?.annotation?.type
+      right_type = node.right?.annotation?.type
+
+      if left_type and right_type
+        # rough...
+        if left_type is 'String' or right_type is 'String'
+          node.annotation = type: 'String'
+        else if left_type is right_type
+          node.annotation = type: left_type, implicit: false
+      else
+        node.annotation = type:'Any', implicit: true
+
+        console.log render node
+
+
+    # subtract
+    when node.instanceof CS.SubtractOp
+      node.annotation = type: 'Number'
+      walk node.left, currentScope
+      walk node.right, currentScope
+
     # === Controlle flow ===
     # If
     when node.instanceof CS.Conditional
@@ -279,6 +306,7 @@ walk = (node, currentScope) ->
 
       node.annotation = {possibilities, implicit: true}
 
+    # For
     when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf)
       walk node.target, currentScope
 
