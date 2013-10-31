@@ -41,7 +41,7 @@ now aliased tcoffee
 $ tcoffee --js  < scratch.coffee > scratch.js
 ```
 
-## Implementation progress
+## Milestone to v1.0.0
 
 * ✅ Struct definition
 * ✅ Typed function definition
@@ -50,7 +50,9 @@ $ tcoffee --js  < scratch.coffee > scratch.js
 * ✅ Member access
 * ✅ If statement
 * ✅ ForIn statement
-* ForOf statement
+* ✅ ForOf statement
+* ✅ Range
+* ✅ Function
 * BinaryOperator
 * Scope about this and class
 * Generics
