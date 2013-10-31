@@ -179,7 +179,7 @@ suite 'Type', ->
           a :: Number = if true then 3 else ""
         """
 
-    test 'for', ->
+    test 'for in' , ->
       list :: Number[] =
         for i :: Number, n in [1..3]
           nn :: Number  = 3
@@ -204,3 +204,15 @@ suite 'Type', ->
         CoffeeScript.parse """
           arr :: Number[] = (i for i :: Number in [1,2,""])
         """
+
+    test 'for of', ->
+      list :: Number[] =
+        for key :: String, val :: Number of {x: 77, y: 6}
+          val
+
+    test 'throw target mismatch', ->
+      throws -> CoffeeScript.parse """
+      list :: Number[] =
+        for key :: String, val :: Number of {x: "hoge", y: 6}
+          val
+      """

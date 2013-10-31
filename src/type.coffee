@@ -259,26 +259,34 @@ walk = (node, currentScope) ->
 
       node.annotation = {possibilities, implicit: true}
 
-    when node.instanceof CS.ForIn
+    when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf)
       walk node.target, currentScope
 
       if node.valAssignee?
         currentScope.addVar node.valAssignee.data, (node.valAssignee?.annotation?.type) ? 'Any'
 
       if node.keyAssignee?
-        currentScope.addVar node.keyAssignee.data, Number
+        # must be number or string
+        currentScope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.type) ? 'Any'
 
-      # check iter target
+      # console.log 'target', render node#.target
+
       # TODO:  Refactor with type array
+      # for in
       if node.target.annotation?.type?.array?
         for el in node.target.annotation?.type?.array
           if node.valAssignee?
             target_type = currentScope.extendTypeLiteral(el)
             checkAcceptableObject(node.valAssignee.annotation.type, target_type)
 
+      # for of
+      else if node.target?.annotation?.type instanceof Object
+        if node.target.annotation.type instanceof Object
+          for nop, type of node.target.annotation.type
+            checkAcceptableObject(currentScope.extendTypeLiteral(node.valAssignee.annotation.type), currentScope.extendTypeLiteral(type))
+
       # check body
       walk node.body, currentScope #=> Block
-
       node.annotation = node.body?.annotation
 
       # remove after iter
@@ -286,7 +294,9 @@ walk = (node, currentScope) ->
       delete currentScope._vars[node.keyAssignee?.data]
 
     when node.instanceof CS.ForOf
-      console.log 'forof', render node
+      console.log '-----------------------------'
+      console.log 'forof', render node.target
+      console.log '-----------------------------'
 
     # String
     when node.instanceof CS.String
