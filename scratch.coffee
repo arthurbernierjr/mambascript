@@ -28,3 +28,6 @@
 # f2 :: () -> Number = ->
 #   return ""
 
+x :: Number[] = [1..10]
+list :: Number[] = [1, 10]
+list2 :: Number[] = [1..10]

@@ -28,7 +28,7 @@ checkNodes = (cs_ast) ->
 # pass obj :: {x :: Number, name :: String} = {x : 3, y : "hello"}
 # ng   obj :: {x :: Number, name :: String} = {x : 3, y : 5 }
 checkAcceptableObject = (left, right) ->
-  console.log left, right
+  console.log 'check', left, right
   # "Number" <> "Number"
   if ((typeof left) is 'string') and ((typeof right) is 'string')
     if (left is right) or (left is 'Any') or (right is 'Any')
@@ -39,8 +39,7 @@ checkAcceptableObject = (left, right) ->
   # {array: "Number"} <> {array: "Number"}
   else if left?.array?
     # TODO: fix it
-    console.log 'leftb', left
-    console.log right
+    console.log 'left', left, 'right', right
 
   # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
@@ -370,6 +369,9 @@ walk = (node, currentScope) ->
         type: {array: (node.members?.map (m) -> m.annotation?.type)}
         implicit: true
 
+    when node.instanceof CS.Range
+      node.annotation = type : {array: 'Number'}
+
     # Object
     when node.instanceof CS.ObjectInitialiser
       obj = {}
@@ -410,8 +412,6 @@ walk = (node, currentScope) ->
 
       # () :: Number -> 3
       if node.annotation?.type?.returns isnt 'Any'
-        console.log '~~~~~~~~~~', node.annotation?.type?.returns
-
         # last expr or single line expr
         last_expr =
           if node.body?.statements?.length # => Blcok
@@ -421,7 +421,6 @@ walk = (node, currentScope) ->
 
         # 明示的に宣言してある場合
         checkAcceptableObject(currentScope.extendTypeLiteral(node.annotation.type.returns), currentScope.extendTypeLiteral(last_expr.annotation?.type))
-        # console.log 'returns', currentScope.getReturnables()
 
       else
         last_expr =
@@ -476,6 +475,7 @@ walk = (node, currentScope) ->
         if assigning? and registered? and assigning isnt 'Any'
           throw new Error 'double bind: '+ symbol
 
+        # 未定義のアクセスなど
         else if registered?
           return if symbol is 'toString' # TODO: fix
           # 推論済みor anyならok
@@ -487,6 +487,10 @@ walk = (node, currentScope) ->
         else if assigning?
           # 明示的なAnyは全て受け入れる
           # x :: Any = "any instance"
+
+          console.log '---- xxx ---'
+          console.log render right
+
           if assigning is 'Any'
             currentScope.addVar symbol, 'Any', true
 
@@ -500,11 +504,18 @@ walk = (node, currentScope) ->
             checkAcceptableObject(assigning.array, currentScope.extendTypeLiteral(right.annotation.type))
 
           # arr = [1,2,3]
+          # else if right.instanceof CS.Range
+          #   console.log 'range here yey!~!!', right
           else if right.annotation?.type?.array?
             # TODO: Refactor to checkAcceptableObject
-            for el in right.annotation.type.array
-              target_type = currentScope.extendTypeLiteral(el)
-              checkAcceptableObject(assigning.array, target_type)
+
+            if (typeof right.annotation.type.array) is 'string'
+              checkAcceptableObject(assigning.array, right.annotation.type.array)
+
+            else if right.annotation.type.array.length?
+              for el in right.annotation.type.array
+                target_type = currentScope.extendTypeLiteral(el)
+                checkAcceptableObject(assigning.array, target_type)
             currentScope.addVar symbol, 'Any', true # TODO Valid type
 
           # TypedFunction

@@ -236,3 +236,10 @@ suite 'Type', ->
         return ""
       """
 
+    test 'Range', ->
+      list :: Number[] = [1..10]
+
+    test 'throw function return type mismatch', ->
+      throws -> CoffeeScript.parse """
+      list :: String[] = [1..10]
+      """
