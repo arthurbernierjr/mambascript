@@ -47,6 +47,7 @@ checkAcceptableObject = (left, right) ->
     for key, lval of left
       # when {x: Number} = {z: Number}
       if right[key] is undefined
+        return if key is 'returns' # TODO FunctionTypeをちゃんとどうにかする 色々混線してる
         throw new Error "'#{key}' is not defined on right"
       checkAcceptableObject(lval, right[key])
   else if (left is undefined) or (right is undefined)
@@ -118,9 +119,23 @@ class Scope
 
     @name = ''
     @nodes  = [] #=> scopeeNode...
+
+    # スコープ変数
     @_vars  = {} #=> symbol -> type
+
+    # 登録されている型
     @_types = {} #=> typeName -> type
+
+    # TODO: This Scope
     @_this  = null #=> null or {}
+
+    # このブロックがReturn する可能性があるもの
+    @_returnables = [] #=> [ReturnableType...]
+
+  addReturnable: (symbol, type) ->
+    @_returnables.push type
+
+  getReturnables: -> @_returnables
 
   addType: (symbol, type) ->
     @_types[symbol] = new TypeSymbol {type}
@@ -209,7 +224,7 @@ class Scope
 
 # Traverse all nodes
 walk = (node, currentScope) ->
-  console.log '---', node?.className, '---'
+  console.log '---', node?.className, '---', node?.raw
   switch
     # undefined(mayby body)
     when not node?
@@ -234,6 +249,12 @@ walk = (node, currentScope) ->
       last_annotation = (node.statements[node.statements.length-1])?.annotation
       node.annotation = last_annotation
 
+    when node.instanceof CS.Return
+      walk node.expression, currentScope
+      if node.expression?.annotation?.type?
+        currentScope.addReturnable node.expression.annotation.type
+        node.annotation = node.expression.annotation
+
     # === Controlle flow ===
     # If
     when node.instanceof CS.Conditional
@@ -251,7 +272,7 @@ walk = (node, currentScope) ->
       alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined', implicit: true)
 
       possibilities = []
-      for n in [node.consequent.annotation, alternate_annotation] when n?
+      for n in [node.consequent?.annotation, alternate_annotation] when n?
         if n.possibilities?
           (possibilities.push(i) for i in n.possibilities)
         else
@@ -268,8 +289,6 @@ walk = (node, currentScope) ->
       if node.keyAssignee?
         # must be number or string
         currentScope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.type) ? 'Any'
-
-      # console.log 'target', render node#.target
 
       # TODO:  Refactor with type array
       # for in
@@ -292,11 +311,6 @@ walk = (node, currentScope) ->
       # remove after iter
       delete currentScope._vars[node.valAssignee?.data]
       delete currentScope._vars[node.keyAssignee?.data]
-
-    when node.instanceof CS.ForOf
-      console.log '-----------------------------'
-      console.log 'forof', render node.target
-      console.log '-----------------------------'
 
     # String
     when node.instanceof CS.String
@@ -330,7 +344,6 @@ walk = (node, currentScope) ->
 
     # Identifier
     when node.instanceof CS.Identifier
-      console.log '~~key', currentScope.getVarInScope(node.data)
       if currentScope.getVarInScope(node.data)
         node.annotation = type: currentScope.getVarInScope(node.data)
       else
@@ -381,18 +394,44 @@ walk = (node, currentScope) ->
       args = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
       node.annotation.type.args = args
 
-      objectScope      = new Scope currentScope
-      objectScope.name = '-lambda-'
+      functionScope      = new Scope currentScope
+      functionScope.name = 'function'
 
       # register arguments to next scope
       node.parameters?.map (param) ->
         try
-          objectScope.addVar? param.data, (param.annotation?.type ? 'Any')
+          functionScope.addVar? param.data, (param.annotation?.type ? 'Any')
         catch
           # TODO あとで調査 register.jsで壊れるっぽい
           'ignore but brake on somewhere. why?'
 
-      walk node.body?.statements, objectScope
+      # walk node.body?.statements, functionScope
+      walk node.body, functionScope
+
+      # () :: Number -> 3
+      if node.annotation?.type?.returns isnt 'Any'
+        console.log '~~~~~~~~~~', node.annotation?.type?.returns
+
+        # last expr or single line expr
+        last_expr =
+          if node.body?.statements?.length # => Blcok
+            node.body.statements?[node.body?.statements?.length-1]
+          else # => Expr
+            node.body
+
+        # 明示的に宣言してある場合
+        checkAcceptableObject(currentScope.extendTypeLiteral(node.annotation.type.returns), currentScope.extendTypeLiteral(last_expr.annotation?.type))
+        # console.log 'returns', currentScope.getReturnables()
+
+      else
+        last_expr =
+          if node.body?.statements?.length # => Blcok
+            node.body.statements?[node.body?.statements?.length-1]
+          else # => Expr
+            node.body
+
+        if node.annotation?
+          node.annotation.type.returns = last_expr?.annotation?.type
 
     # FunctionApplication
     when node.instanceof CS.FunctionApplication
@@ -415,7 +454,6 @@ walk = (node, currentScope) ->
 
       walk right, currentScope
       walk left, currentScope #=>
-      # console.log '=============',left
 
       return unless left?
 
@@ -447,7 +485,6 @@ walk = (node, currentScope) ->
         # 左辺に型宣言が存在する
         # -> x :: Number = 3
         else if assigning?
-          # console.log 'want register', node.raw, left
           # 明示的なAnyは全て受け入れる
           # x :: Any = "any instance"
           if assigning is 'Any'
@@ -476,6 +513,7 @@ walk = (node, currentScope) ->
             # TODO: ノードを推論した結果、関数になる場合はok annotation.typeをみる
             if right.instanceof CS.Function
               currentScope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
+
             else
               throw new Error "Right is not function"
 

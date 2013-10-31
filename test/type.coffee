@@ -216,3 +216,23 @@ suite 'Type', ->
         for key :: String, val :: Number of {x: "hoge", y: 6}
           val
       """
+
+    test 'function return type', ->
+      f0 :: () -> Number = () :: Number -> 3
+
+    test 'function return type mismatch with block', ->
+      list :: Number[] =
+      f1 :: () -> Number = () :: Number ->
+        3
+
+    test 'throw function return type mismatch', ->
+      throws -> CoffeeScript.parse """
+      f0 :: () -> Number = () :: Number -> ''
+      """
+
+    test 'throw function return type mismatch', ->
+      throws -> CoffeeScript.parse """
+      f2 :: () -> Number = ->
+        return ""
+      """
+
