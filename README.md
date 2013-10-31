@@ -53,7 +53,7 @@ $ tcoffee --js  < scratch.coffee > scratch.js
 * ✅ ForOf statement
 * ✅ Range
 * ✅ Function
-* BinaryOperator
+* ✅ BinaryOperator
 * Scope about this and class
 * Generics
 * Generate pure coffee
