@@ -152,7 +152,7 @@ walk = (node, currentScope) ->
       else if node.target?.annotation?.type instanceof Object
         if node.target.annotation.type instanceof Object
           for nop, type of node.target.annotation.type
-            checkAcceptableObject(currentScope.extendTypeLiteral(node.valAssignee.annotation.type), currentScope.extendTypeLiteral(type))
+            currentScope.checkAcceptableObject(node.valAssignee.annotation.type, type)
 
       # check body
       walk node.body, currentScope #=> Block
@@ -271,7 +271,7 @@ walk = (node, currentScope) ->
             node.body
 
         # 明示的に宣言してある場合
-        checkAcceptableObject(currentScope.extendTypeLiteral(node.annotation.type.returns), currentScope.extendTypeLiteral(last_expr.annotation?.type))
+        currentScope.checkAcceptableObject(node.annotation.type.returns, last_expr.annotation?.type)
 
       else
         last_expr =
@@ -348,11 +348,11 @@ walk = (node, currentScope) ->
           # ifが返す値
           else if right.instanceof CS.Conditional
             for p in right.annotation.possibilities
-              checkAcceptableObject assigning, p.type
+              currentScope.checkAcceptableObject assigning, p.type
 
           # forが返す可能性
           else if right.instanceof CS.ForIn
-            checkAcceptableObject(assigning.array, currentScope.extendTypeLiteral(right.annotation.type))
+            currentScope.checkAcceptableObject(assigning.array, currentScope.extendTypeLiteral(right.annotation.type))
 
           # arr = [1,2,3]
           # else if right.instanceof CS.Range
@@ -361,12 +361,11 @@ walk = (node, currentScope) ->
             # TODO: Refactor to checkAcceptableObject
 
             if (typeof right.annotation.type.array) is 'string'
-              checkAcceptableObject(assigning.array, right.annotation.type.array)
+              currentScope.checkAcceptableObject(assigning.array, right.annotation.type.array)
 
             else if right.annotation.type.array.length?
               for el in right.annotation.type.array
-                target_type = currentScope.extendTypeLiteral(el)
-                checkAcceptableObject(assigning.array, target_type)
+                currentScope.checkAcceptableObject(assigning.array, el)
             currentScope.addVar symbol, 'Any', true # TODO Valid type
 
           # TypedFunction
@@ -385,7 +384,7 @@ walk = (node, currentScope) ->
             # TODO: ignore destructive assignation
             # ex) {map, concat, concatMap, difference, nub, union} = require './functional-helpers'
             if right.annotation? and left.annotation?
-              checkAcceptableObject(assigning, right.annotation.type)
+              currentScope.checkAcceptableObject(assigning, right.annotation.type)
               currentScope.addVar symbol, left.annotation.type, false
 
           # 右辺の型が指定した型に一致する場合
@@ -402,7 +401,7 @@ walk = (node, currentScope) ->
         return if left.expression.raw is '@' # ignore @ yet
         if left.annotation?.type? and right.annotation?.type?
           if left.annotation.type isnt 'Any'
-            checkAcceptableObject(currentScope.extendTypeLiteral(left.annotation.type), currentScope.extendTypeLiteral(right.annotation.type))
+            currentScope.checkAcceptableObject(left.annotation.type, right.annotation.type)
 
       # Vanilla CS
       else
