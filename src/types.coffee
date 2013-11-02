@@ -3,22 +3,49 @@ pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 CS = require './nodes'
 
+
+class Type
+  constructor: ->
+
+# ObjectType :: T -> Object
+class ObjectType extends Type
+  # :: String -> ()
+  constructor:(@type) ->
+
+# ArrayType :: {array :: T} = array: T
+class ArrayType extends Type
+  constructor:(type) ->
+    @array = type
+
+# possibilites :: Type[] = []
+class Possibilites extends Array
+  constructor: (arr = []) ->
+    @push i for i in arr
+
 # Exec down casting
 # pass obj :: {x :: Number, name :: String} = {x : 3, y : "hello"}
 # ng   obj :: {x :: Number, name :: String} = {x : 3, y : 5 }
 checkAcceptableObject = (left, right) ->
   console.log 'check', left, right
+
+  # possibilites :: Any[]
+  if right.possibilities?
+    return checkAcceptableObject left, r for r in right.possibilities
+
+  # {array: "Number"} <> {array: "Number"}
+  # {array: "Number"} <> {array: ["Number", 'Number']}
+  if left.array?
+    if right.array instanceof Array
+      checkAcceptableObject left.array, r for r in right.array
+    else
+      checkAcceptableObject left.array, right.array
+
   # "Number" <> "Number"
-  if ((typeof left) is 'string') and ((typeof right) is 'string')
+  else if ((typeof left) is 'string') and ((typeof right) is 'string')
     if (left is right) or (left is 'Any') or (right is 'Any')
       'ok'
     else
       throw (new Error "object deep equal mismatch #{left}, #{right}")
-
-  # {array: "Number"} <> {array: "Number"}
-  else if left?.array?
-    # TODO: fix it
-    console.log 'left', left, 'right', right
 
   # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
@@ -206,4 +233,9 @@ class Scope
     # return type
     checkAcceptableObject(left.returns, right.returns)
 
-module.exports = {checkAcceptableObject, initializeGlobalTypes, VarSymbol, TypeSymbol, Scope}
+module.exports = {
+  checkAcceptableObject, 
+  initializeGlobalTypes, 
+  VarSymbol, TypeSymbol, Scope, 
+  ArrayType, ObjectType, Type, Possibilites
+}
