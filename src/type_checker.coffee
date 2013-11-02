@@ -134,13 +134,9 @@ walk_assignOp = (node, scope) ->
 
     symbol     = left.data
     registered = scope.getVarInScope(symbol)
-    infered    = right.annotation?.type
+    is_registered = !!registered
 
-    # left.annotation.type =
-    #   if left.annotation?
-    #     scope.extendTypeLiteral(left.annotation.type)
-    #   else
-    #     undefined
+    infered    = right.annotation?.type
 
     # 既に宣言済みのシンボルに対して型宣言できない
     #    x :: Number = 3
@@ -150,7 +146,6 @@ walk_assignOp = (node, scope) ->
 
     # 未定義のアクセスなど
     else if registered?
-      return if symbol is 'toString' # TODO: fix
       # 推論済みor anyならok
       unless  (registered is infered) or (registered is 'Any')
         throw new Error "'#{symbol}' is expected to #{registered} indeed #{infered}, by assignee"
@@ -160,9 +155,6 @@ walk_assignOp = (node, scope) ->
     else if left.annotation.type?
       # 明示的なAnyは全て受け入れる
       # x :: Any = "any instance"
-
-      console.log '---- xxx ---'
-      console.log render right
 
       if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
@@ -216,7 +208,6 @@ walk_assignOp = (node, scope) ->
         scope.addVar symbol, left.annotation.type
       # Throw items
       else
-        return if symbol is 'toString' # TODO: なぜかtoStringくることがあるので握りつぶす
         throw new Error "'#{symbol}' is expected to #{left.annotation.type} indeed #{infered}"
 
   # Member access
