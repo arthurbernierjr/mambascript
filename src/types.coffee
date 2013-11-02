@@ -92,6 +92,14 @@ class Scope
   # Get registered type included in parents
   # addTypeInScope  :: (String, String) -> ()
 
+  # for debug
+  @dump: (node, prefix = '') ->
+    console.log prefix + "[#{node.name}]"
+    for key, val of node._vars
+      console.log prefix, ' +', key, '::', val
+    for next in node.nodes
+      Scope.dump next, prefix + '  '
+
   constructor: (@parent = null) ->
     @parent?.nodes.push this
 
@@ -162,6 +170,12 @@ class Scope
             return @extendTypeLiteral(type)
           when 'string'
             return type
+            
+  # check object literal with extended object
+  checkAcceptableObject: (left, right) ->
+    l = @extendTypeLiteral(left)
+    r = @extendTypeLiteral(right)
+    checkAcceptableObject(l, r)
 
   # Check arguments
   checkFunctionLiteral: (left, right) ->
@@ -192,13 +206,7 @@ class Scope
     # return type
     checkAcceptableObject(left.returns, right.returns)
 
-  # for debug
-  @dump: (node, prefix = '') ->
-    console.log prefix + "[#{node.name}]"
-    for key, val of node._vars
-      console.log prefix, ' +', key, '::', val
-    for next in node.nodes
-      Scope.dump next, prefix + '  '
+
 
 
 module.exports = {checkAcceptableObject, initializeGlobalTypes, VarSymbol, TypeSymbol, Scope}

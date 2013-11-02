@@ -20,24 +20,44 @@ checkNodes = (cs_ast) ->
   console.log '================== AST'
   root = new Scope
   root.name = 'root'
+
   for i in ['global', 'exports', 'module']
     root.addVar i, 'Any', true
   initializeGlobalTypes(root)
 
-  walk cs_ast.body.statements, root
+  walk cs_ast, root
 
   console.log 'scope ====================='
   Scope.dump root
-  console.log '================== Scope'
   console.log 'finish ================== checkNodes'
+
+
+# Node -> void
+
+walk_struct = (node, scope) ->
+  scope.addType node.name, node.expr
+
+walk_program = (node, scope) ->
+  walk node.body.statements, scope
+  node.annotation = type: 'Program'
+
+walk_block = (node, scope) ->
+  walk node.statements, scope
+  last_annotation = (node.statements[node.statements.length-1])?.annotation
+  node.annotation = last_annotation
+
+walk_return = (node, scope) ->
+  walk node.expression, scope
+  if node.expression?.annotation?.type?
+    scope.addReturnable node.expression.annotation.type
+    node.annotation = node.expression.annotation
 
 # Traverse all nodes
 walk = (node, currentScope) ->
   console.log '---', node?.className, '---', node?.raw
   switch
-    # undefined(mayby body)
-    when not node?
-      return
+    # undefined(mayby null body)
+    when not node? then return
 
     # Nodes Array
     when node.length?
@@ -46,23 +66,17 @@ walk = (node, currentScope) ->
     # Struct
     # Dirty hack on Number
     when node.type is 'struct'
-      currentScope.addType node.name, node.expr
+      walk_struct node, currentScope
 
     # Program
     when node.instanceof CS.Program
-      walk node.body.statements, currentScope
-      node.annotation = type: 'Program'
+      walk_program node, currentScope
 
     when node.instanceof CS.Block
-      walk node.statements, currentScope
-      last_annotation = (node.statements[node.statements.length-1])?.annotation
-      node.annotation = last_annotation
+      walk_block node, currentScope
 
     when node.instanceof CS.Return
-      walk node.expression, currentScope
-      if node.expression?.annotation?.type?
-        currentScope.addReturnable node.expression.annotation.type
-        node.annotation = node.expression.annotation
+      walk_return node, currentScope
 
     # bin op
     when node.instanceof(CS.PlusOp) or node.instanceof(CS.MultiplyOp) or node.instanceof(CS.DivideOp) or node.instanceof(CS.SubtractOp)
@@ -132,8 +146,7 @@ walk = (node, currentScope) ->
       if node.target.annotation?.type?.array?
         for el in node.target.annotation?.type?.array
           if node.valAssignee?
-            target_type = currentScope.extendTypeLiteral(el)
-            checkAcceptableObject(node.valAssignee.annotation.type, target_type)
+            currentScope.checkAcceptableObject(node.valAssignee.annotation.type, el)
 
       # for of
       else if node.target?.annotation?.type instanceof Object
