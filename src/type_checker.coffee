@@ -32,8 +32,6 @@ checkNodes = (cs_ast) ->
   console.log 'finish ================== checkNodes'
 
 
-# Node -> void
-
 walk_struct = (node, scope) ->
   scope.addType node.name, node.expr
 
@@ -53,7 +51,8 @@ walk_return = (node, scope) ->
     node.annotation = node.expression.annotation
 
 # Traverse all nodes
-walk = (node, currentScope) ->
+# Node -> void
+walk = (node, scope) ->
   console.log '---', node?.className, '---', node?.raw
   switch
     # undefined(mayby null body)
@@ -61,28 +60,28 @@ walk = (node, currentScope) ->
 
     # Nodes Array
     when node.length?
-      walk s, currentScope for s in node
+      walk s, scope for s in node
 
     # Struct
     # Dirty hack on Number
     when node.type is 'struct'
-      walk_struct node, currentScope
+      walk_struct node, scope
 
     # Program
     when node.instanceof CS.Program
-      walk_program node, currentScope
+      walk_program node, scope
 
     when node.instanceof CS.Block
-      walk_block node, currentScope
+      walk_block node, scope
 
     when node.instanceof CS.Return
-      walk_return node, currentScope
+      walk_return node, scope
 
     # bin op
     when node.instanceof(CS.PlusOp) or node.instanceof(CS.MultiplyOp) or node.instanceof(CS.DivideOp) or node.instanceof(CS.SubtractOp)
       console.log 'binops', node.className
-      walk node.left, currentScope
-      walk node.right, currentScope
+      walk node.left, scope
+      walk node.right, scope
 
       left_type = node.left?.annotation?.type
       right_type = node.right?.annotation?.type
@@ -102,21 +101,21 @@ walk = (node, currentScope) ->
     # subtract
     when node.instanceof CS.SubtractOp
       node.annotation = type: 'Number'
-      walk node.left, currentScope
-      walk node.right, currentScope
+      walk node.left, scope
+      walk node.right, scope
 
     # === Controlle flow ===
     # If
     when node.instanceof CS.Conditional
       # condition expr
-      walk node.condition, currentScope #=> Expr
+      walk node.condition, scope #=> Expr
 
       # else if
-      walk node.consequent, currentScope #=> Block
+      walk node.consequent, scope #=> Block
 
       # else
       if node.alternate?
-        walk node.alternate, currentScope #=> Block
+        walk node.alternate, scope #=> Block
 
       # if node.alternate doesn't exist, then return type is Undefined
       alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined', implicit: true)
@@ -132,35 +131,35 @@ walk = (node, currentScope) ->
 
     # For
     when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf)
-      walk node.target, currentScope
+      walk node.target, scope
 
       if node.valAssignee?
-        currentScope.addVar node.valAssignee.data, (node.valAssignee?.annotation?.type) ? 'Any'
+        scope.addVar node.valAssignee.data, (node.valAssignee?.annotation?.type) ? 'Any'
 
       if node.keyAssignee?
         # must be number or string
-        currentScope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.type) ? 'Any'
+        scope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.type) ? 'Any'
 
       # TODO:  Refactor with type array
       # for in
       if node.target.annotation?.type?.array?
         for el in node.target.annotation?.type?.array
           if node.valAssignee?
-            currentScope.checkAcceptableObject(node.valAssignee.annotation.type, el)
+            scope.checkAcceptableObject(node.valAssignee.annotation.type, el)
 
       # for of
       else if node.target?.annotation?.type instanceof Object
         if node.target.annotation.type instanceof Object
           for nop, type of node.target.annotation.type
-            currentScope.checkAcceptableObject(node.valAssignee.annotation.type, type)
+            scope.checkAcceptableObject(node.valAssignee.annotation.type, type)
 
       # check body
-      walk node.body, currentScope #=> Block
+      walk node.body, scope #=> Block
       node.annotation = node.body?.annotation
 
       # remove after iter
-      delete currentScope._vars[node.valAssignee?.data]
-      delete currentScope._vars[node.keyAssignee?.data]
+      delete scope._vars[node.valAssignee?.data]
+      delete scope._vars[node.keyAssignee?.data]
 
     # String
     when node.instanceof CS.String
@@ -194,8 +193,8 @@ walk = (node, currentScope) ->
 
     # Identifier
     when node.instanceof CS.Identifier
-      if currentScope.getVarInScope(node.data)
-        node.annotation = type: currentScope.getVarInScope(node.data)
+      if scope.getVarInScope(node.data)
+        node.annotation = type: scope.getVarInScope(node.data)
       else
         node.annotation ?=
           type: 'Any'
@@ -204,9 +203,9 @@ walk = (node, currentScope) ->
     # MemberAccessOps
     when node.instanceof CS.MemberAccessOps
       if node.instanceof CS.MemberAccessOp
-        walk node.expression, currentScope
+        walk node.expression, scope
 
-        type = currentScope.extendTypeLiteral(node.expression.annotation?.type)
+        type = scope.extendTypeLiteral(node.expression.annotation?.type)
         if type?
           node.annotation = type: type[node.memberName], implicit: false
         else
@@ -214,7 +213,7 @@ walk = (node, currentScope) ->
 
     # Array
     when node.instanceof CS.ArrayInitialiser
-      walk node.members, currentScope
+      walk node.members, scope
 
       node.annotation ?=
         type: {array: (node.members?.map (m) -> m.annotation?.type)}
@@ -226,7 +225,7 @@ walk = (node, currentScope) ->
     # Object
     when node.instanceof CS.ObjectInitialiser
       obj = {}
-      nextScope = new Scope currentScope
+      nextScope = new Scope scope
       nextScope.name = 'object'
 
       for {expression, key} in node.members when key?
@@ -240,14 +239,14 @@ walk = (node, currentScope) ->
 
     # Class
     when node.instanceof CS.Class
-      walk node.body.statements, new Scope currentScope
+      walk node.body.statements, new Scope scope
 
     # Function
     when node.instanceof CS.Function
       args = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
       node.annotation.type.args = args
 
-      functionScope      = new Scope currentScope
+      functionScope      = new Scope scope
       functionScope.name = 'function'
 
       # register arguments to next scope
@@ -271,7 +270,7 @@ walk = (node, currentScope) ->
             node.body
 
         # 明示的に宣言してある場合
-        currentScope.checkAcceptableObject(node.annotation.type.returns, last_expr.annotation?.type)
+        scope.checkAcceptableObject(node.annotation.type.returns, last_expr.annotation?.type)
 
       else
         last_expr =
@@ -285,13 +284,13 @@ walk = (node, currentScope) ->
 
     # FunctionApplication
     when node.instanceof CS.FunctionApplication
-      walk node.arguments, currentScope
-      expected = currentScope.getVarInScope(node.function.data)
+      walk node.arguments, scope
+      expected = scope.getVarInScope(node.function.data)
 
       # args
       if expected? and expected isnt 'Any'
         args = node.arguments?.map (arg) -> arg.annotation?.type
-        currentScope.checkFunctionLiteral expected, {args: args, returns: 'Any'}
+        scope.checkFunctionLiteral expected, {args: args, returns: 'Any'}
 
         node.annotation ?=
           type: expected.returns
@@ -302,8 +301,8 @@ walk = (node, currentScope) ->
       left  = node.assignee
       right = node.expression
 
-      walk right, currentScope
-      walk left, currentScope #=>
+      walk right, scope
+      walk left, scope #=>
 
       return unless left?
 
@@ -311,12 +310,12 @@ walk = (node, currentScope) ->
       if left.instanceof CS.Identifier
 
         symbol     = left.data
-        registered = currentScope.getVarInScope(symbol)
+        registered = scope.getVarInScope(symbol)
         infered    = right.annotation?.type
 
         assigning =
           if left.annotation?
-            currentScope.extendTypeLiteral(left.annotation.type)
+            scope.extendTypeLiteral(left.annotation.type)
           else
             undefined
 
@@ -343,16 +342,16 @@ walk = (node, currentScope) ->
           console.log render right
 
           if assigning is 'Any'
-            currentScope.addVar symbol, 'Any', true
+            scope.addVar symbol, 'Any', true
 
           # ifが返す値
           else if right.instanceof CS.Conditional
             for p in right.annotation.possibilities
-              currentScope.checkAcceptableObject assigning, p.type
+              scope.checkAcceptableObject assigning, p.type
 
           # forが返す可能性
           else if right.instanceof CS.ForIn
-            currentScope.checkAcceptableObject(assigning.array, currentScope.extendTypeLiteral(right.annotation.type))
+            scope.checkAcceptableObject(assigning.array, scope.extendTypeLiteral(right.annotation.type))
 
           # arr = [1,2,3]
           # else if right.instanceof CS.Range
@@ -361,36 +360,36 @@ walk = (node, currentScope) ->
             # TODO: Refactor to checkAcceptableObject
 
             if (typeof right.annotation.type.array) is 'string'
-              currentScope.checkAcceptableObject(assigning.array, right.annotation.type.array)
+              scope.checkAcceptableObject(assigning.array, right.annotation.type.array)
 
             else if right.annotation.type.array.length?
               for el in right.annotation.type.array
-                currentScope.checkAcceptableObject(assigning.array, el)
-            currentScope.addVar symbol, 'Any', true # TODO Valid type
+                scope.checkAcceptableObject(assigning.array, el)
+            scope.addVar symbol, 'Any', true # TODO Valid type
 
           # TypedFunction
           # f :: Int -> Int = (n) -> n
           else if left.annotation.type.args? and right.annotation.type.args?
             # TODO: ノードを推論した結果、関数になる場合はok annotation.typeをみる
             if right.instanceof CS.Function
-              currentScope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
+              scope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
 
             else
               throw new Error "Right is not function"
 
-            currentScope.addVar symbol, left.annotation.type
+            scope.addVar symbol, left.annotation.type
 
           else if (typeof assigning) is 'object'
             # TODO: ignore destructive assignation
             # ex) {map, concat, concatMap, difference, nub, union} = require './functional-helpers'
             if right.annotation? and left.annotation?
-              currentScope.checkAcceptableObject(assigning, right.annotation.type)
-              currentScope.addVar symbol, left.annotation.type, false
+              scope.checkAcceptableObject(assigning, right.annotation.type)
+              scope.addVar symbol, left.annotation.type, false
 
           # 右辺の型が指定した型に一致する場合
           # x :: Number = 3
           else if assigning is infered
-            currentScope.addVar symbol, left.annotation.type
+            scope.addVar symbol, left.annotation.type
           # Throw items
           else
             return if symbol is 'toString' # TODO: なぜかtoStringくることがあるので握りつぶす
@@ -401,10 +400,10 @@ walk = (node, currentScope) ->
         return if left.expression.raw is '@' # ignore @ yet
         if left.annotation?.type? and right.annotation?.type?
           if left.annotation.type isnt 'Any'
-            currentScope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+            scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
 
       # Vanilla CS
       else
-        currentScope.addVar symbol, 'Any'
+        scope.addVar symbol, 'Any'
 
 module.exports = {checkNodes}
