@@ -2,7 +2,7 @@
 Nodes = require './nodes'
 {Preprocessor} = require './preprocessor'
 Parser = require './parser'
-Type = require './type'
+Type = require './type_checker'
 {Optimiser} = require './optimiser'
 {Compiler} = require './compiler'
 cscodegen = try require 'cscodegen'
