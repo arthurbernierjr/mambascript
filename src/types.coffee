@@ -206,7 +206,4 @@ class Scope
     # return type
     checkAcceptableObject(left.returns, right.returns)
 
-
-
-
 module.exports = {checkAcceptableObject, initializeGlobalTypes, VarSymbol, TypeSymbol, Scope}
