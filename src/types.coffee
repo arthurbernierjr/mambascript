@@ -2,7 +2,7 @@ console = {log: ->}
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 CS = require './nodes'
-
+util = require 'util'
 
 class Type
   constructor: ->
@@ -25,16 +25,19 @@ class Possibilites extends Array
 # Exec down casting
 # pass obj :: {x :: Number, name :: String} = {x : 3, y : "hello"}
 # ng   obj :: {x :: Number, name :: String} = {x : 3, y : 5 }
+
+# TODO: Add Transparent, Passable, Unknown
+
 checkAcceptableObject = (left, right) ->
   console.log 'check', left, right
 
-  # possibilites :: Any[]
-  if right.possibilities?
+  # possibilites :: Type[]
+  if right?.possibilities?
     return checkAcceptableObject left, r for r in right.possibilities
 
   # {array: "Number"} <> {array: "Number"}
   # {array: "Number"} <> {array: ["Number", 'Number']}
-  if left.array?
+  if left?.array?
     if right.array instanceof Array
       checkAcceptableObject left.array, r for r in right.array
     else
@@ -45,7 +48,9 @@ checkAcceptableObject = (left, right) ->
     if (left is right) or (left is 'Any') or (right is 'Any')
       'ok'
     else
-      throw (new Error "object deep equal mismatch #{left}, #{right}")
+      for k, v of right
+        console.log k, v
+      throw (new Error "object deep equal mismatch #{util.inspect left}, #{util.inspect right}")
 
   # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
@@ -218,20 +223,6 @@ class Scope
     # TODO: Now I will not infer function return type
     if right.returns isnt 'Any'
       checkAcceptableObject(left.returns, right.returns)
-
-  # Check arrays
-  # TODO: no use yet
-  checkArrayLiteral: (left, right) ->
-    left  = @extendTypeLiteral left
-    right = @extendTypeLiteral right
-
-    # check args
-    for l_arg, i in left.args
-      r_arg = right.args[i]
-      checkAcceptableObject(l_arg, r_arg)
-
-    # return type
-    checkAcceptableObject(left.returns, right.returns)
 
 module.exports = {
   checkAcceptableObject, 

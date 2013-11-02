@@ -11,7 +11,7 @@ CS = require './nodes'
   Scope
 } = require './types'
 
-# CS AST -> void
+# CS_AST -> Scope
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
   console.log 'AST =================='
@@ -28,8 +28,7 @@ checkNodes = (cs_ast) ->
 
   console.log 'scope ====================='
   Scope.dump root
-  console.log 'finish ================== checkNodes'
-
+  return root
 
 walk_struct = (node, scope) ->
   scope.addType node.name, node.expr
@@ -101,18 +100,17 @@ walk_for = (node, scope) ->
     # must be number or string
     scope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.type) ? 'Any'
 
-  # TODO:  Refactor with type array
-  # for in
-  if node.target.annotation?.type?.array?
-    for el in node.target.annotation?.type?.array
-      if node.valAssignee?
-        scope.checkAcceptableObject(node.valAssignee.annotation.type, el)
+  # TODO: Fix something wrong type and type.array
+  if node.valAssignee?
+    # ForIn
+    if node.target.annotation?.type?.array?
+      scope.checkAcceptableObject(node.valAssignee.annotation.type, node.target.annotation.type.array)
 
-  # for of
-  else if node.target?.annotation?.type instanceof Object
-    if node.target.annotation.type instanceof Object
-      for nop, type of node.target.annotation.type
-        scope.checkAcceptableObject(node.valAssignee.annotation.type, type)
+    # ForOf
+    else if node.target?.annotation?.type instanceof Object
+      if node.target.annotation.type instanceof Object
+        for nop, type of node.target.annotation.type
+          scope.checkAcceptableObject(node.valAssignee.annotation.type, type)
 
   # check body
   walk node.body, scope #=> Block
