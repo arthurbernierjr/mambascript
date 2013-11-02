@@ -136,16 +136,16 @@ walk_assignOp = (node, scope) ->
     registered = scope.getVarInScope(symbol)
     infered    = right.annotation?.type
 
-    assigning =
-      if left.annotation?
-        scope.extendTypeLiteral(left.annotation.type)
-      else
-        undefined
+    # left.annotation.type =
+    #   if left.annotation?
+    #     scope.extendTypeLiteral(left.annotation.type)
+    #   else
+    #     undefined
 
     # 既に宣言済みのシンボルに対して型宣言できない
     #    x :: Number = 3
     # -> x :: String = "hello"
-    if assigning? and registered? and assigning isnt 'Any'
+    if left.annotation.type? and registered? and left.annotation.type isnt 'Any'
       throw new Error 'double bind: '+ symbol
 
     # 未定義のアクセスなど
@@ -157,24 +157,24 @@ walk_assignOp = (node, scope) ->
 
     # 左辺に型宣言が存在する
     # -> x :: Number = 3
-    else if assigning?
+    else if left.annotation.type?
       # 明示的なAnyは全て受け入れる
       # x :: Any = "any instance"
 
       console.log '---- xxx ---'
       console.log render right
 
-      if assigning is 'Any'
+      if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
 
       # ifが返す値
       else if right.instanceof CS.Conditional
         for p in right.annotation.possibilities
-          scope.checkAcceptableObject assigning, p.type
+          scope.checkAcceptableObject left.annotation.type, p.type
 
       # forが返す可能性
       else if right.instanceof CS.ForIn
-        scope.checkAcceptableObject(assigning.array, scope.extendTypeLiteral(right.annotation.type))
+        scope.checkAcceptableObject(left.annotation.type.array, scope.extendTypeLiteral(right.annotation.type))
 
       # arr = [1,2,3]
       # else if right.instanceof CS.Range
@@ -183,11 +183,11 @@ walk_assignOp = (node, scope) ->
         # TODO: Refactor to checkAcceptableObject
 
         if (typeof right.annotation.type.array) is 'string'
-          scope.checkAcceptableObject(assigning.array, right.annotation.type.array)
+          scope.checkAcceptableObject(left.annotation.type.array, right.annotation.type.array)
 
         else if right.annotation.type.array.length?
           for el in right.annotation.type.array
-            scope.checkAcceptableObject(assigning.array, el)
+            scope.checkAcceptableObject(left.annotation.type.array, el)
         scope.addVar symbol, 'Any', true # TODO Valid type
 
       # TypedFunction
@@ -202,16 +202,17 @@ walk_assignOp = (node, scope) ->
 
         scope.addVar symbol, left.annotation.type
 
-      else if (typeof assigning) is 'object'
+      # TODO FIX
+      else if (typeof scope.extendTypeLiteral(left.annotation.type)) is 'object'
         # TODO: ignore destructive assignation
         # ex) {map, concat, concatMap, difference, nub, union} = require './functional-helpers'
         if right.annotation? and left.annotation?
-          scope.checkAcceptableObject(assigning, right.annotation.type)
+          scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
           scope.addVar symbol, left.annotation.type, false
 
       # 右辺の型が指定した型に一致する場合
       # x :: Number = 3
-      else if assigning is infered
+      else if left.annotation.type is infered
         scope.addVar symbol, left.annotation.type
       # Throw items
       else
@@ -400,7 +401,7 @@ walk = (node, scope) ->
     when node.instanceof CS.Function          then walk_function node, scope
     # FunctionApplication
     when node.instanceof CS.FunctionApplication then walk_functionApplication node, scope
-    # Assigning
+    # left.annotation.type
     when node.instanceof CS.AssignOp then walk_assignOp node, scope
 
 module.exports = {checkNodes}
