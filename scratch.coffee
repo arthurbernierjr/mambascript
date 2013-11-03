@@ -5,4 +5,13 @@
 # list :: String[] = [1..10]
 
 # a :: Number = if true then 3 else ""
-arr :: Number[] = ("" for i in [1,2,3])
+
+struct Hoge {
+  arr :: Number[]
+  name :: String
+}
+
+# arr :: Number[] = ("" for i in [1,2,3])
+
+v :: Hoge = { arr : [1,2,3], name: 'hoge'}
+v2 :: Hoge = { arr : [1,2,''], name: 'hoge'}

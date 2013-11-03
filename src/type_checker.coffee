@@ -123,11 +123,9 @@ walk_assignOp = (node, scope) ->
   right = node.expression
 
   walk right, scope
-  walk left, scope #=>
+  walk left,  scope
 
-  return unless left?
-
-  # NOT member access
+  # Identifier
   if left.instanceof CS.Identifier
 
     symbol     = left.data
@@ -145,7 +143,6 @@ walk_assignOp = (node, scope) ->
     else if left.annotation.type?
       # 明示的なAnyは全て受け入れる
       # x :: Any = "any instance"
-
       if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
 
@@ -163,18 +160,12 @@ walk_assignOp = (node, scope) ->
           throw new Error "Right is not function"
         scope.addVar symbol, left.annotation.type
 
-      # TODO FIX
-      else if (typeof scope.extendTypeLiteral(left.annotation.type)) is 'object'
-        # TODO: ignore destructive assignation
-        # ex) {map, concat, concatMap, difference, nub, union} = require './functional-helpers'
-        if right.annotation? and left.annotation?
-          scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
-          scope.addVar symbol, left.annotation.type, false
-
       # 右辺の型が指定した型に一致する場合
       # x :: Number = 3
       else 
-        scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+        # TODO: grasp unknown yet
+        if right.annotation? and left.annotation?
+          scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
 
   # Member access
