@@ -1,46 +1,8 @@
-# hoge_list = [1,2,'hoge']
-# _xx_ :: String = 'ss'
+# arr1 :: Number[] = [1,2,3]
+# arr2 :: Number[] = (i for i in [1,2,3])
 
-# list :: Number[] =
-#   for i :: Number, n in [1..3]
-#     nn :: Number  = 3
-#     nn
+# arr3 = (i for i in [1,2,3])
+# list :: String[] = [1..10]
 
-# list2 :: Number[] =
-#   for i :: Number, n in [1..3]
-#     i
-
-# list3 :: Number[] =
-#   for i :: Number, n in [1..3]
-#     n
-
-# list :: Number[] =
-#   for key :: String, val :: Number of {x: 77, y: 6}
-#     val
-
-# f0 :: () -> Number = () :: Number -> 3
-
-# f0 :: () -> Number = () :: Number -> ''
-
-# f1 :: () -> Number = () :: Number ->
-  # 3
-
-# f2 :: () -> Number = ->
-#   return ""
-
-
-# n = 1
-# x :: Number =
-#   switch 1
-#     when 1
-#       1
-#     when 2
-#       2
-#     else
-#       3
-# console.log
-
-
-a :: Number = (3 + 3 * 6) / 2
-# b :: String = 3 + 3
-c :: String = {} + ""
+# a :: Number = if true then 3 else ""
+arr :: Number[] = ("" for i in [1,2,3])

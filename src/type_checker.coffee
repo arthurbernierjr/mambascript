@@ -79,13 +79,14 @@ walk_conditional = (node, scope) ->
   alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined', implicit: true)
 
   possibilities = []
-  for n in [node.consequent?.annotation, alternate_annotation] when n?
-    if n.possibilities?
-      (possibilities.push(i) for i in n.possibilities)
-    else
-      possibilities.push n
+  for annotation in [node.consequent?.annotation, alternate_annotation] when annotation?
+    if annotation.type?.possibilities?
+      possibilities.push type for type in annotation.type.possibilities
+        
+    else if annotation.type?
+      possibilities.push annotation.type
 
-  node.annotation = {possibilities, implicit: true}
+  node.annotation = type: {possibilities, implicit: true}
 
 walk_for = (node, scope) ->
   walk node.target, scope
@@ -133,19 +134,11 @@ walk_assignOp = (node, scope) ->
     registered = scope.getVarInScope(symbol)
     is_registered = !!registered
 
-    infered    = right.annotation?.type
-
     # 既に宣言済みのシンボルに対して型宣言できない
     #    x :: Number = 3
     # -> x :: String = "hello"
     if left.annotation.type? and registered? and left.annotation.type isnt 'Any'
       throw new Error 'double bind: '+ symbol
-
-    # 未定義のアクセスなど
-    else if registered?
-      # 推論済みor anyならok
-      unless  (registered is infered) or (registered is 'Any')
-        throw new Error "'#{symbol}' is expected to #{registered} indeed #{infered}, by assignee"
 
     # 左辺に型宣言が存在する
     # -> x :: Number = 3
@@ -156,37 +149,18 @@ walk_assignOp = (node, scope) ->
       if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
 
-      # ifが返す値
-      else if right.instanceof CS.Conditional
-        for p in right.annotation.possibilities
-          scope.checkAcceptableObject left.annotation.type, p.type
-
-      # forが返す可能性
       else if right.instanceof CS.ForIn
-        scope.checkAcceptableObject(left.annotation.type.array, scope.extendTypeLiteral(right.annotation.type))
-
-      # arr = [1,2,3]
-      else if right.annotation?.type?.array?
-        # TODO: Refactor to checkAcceptableObject
-
-        if (typeof right.annotation.type.array) is 'string'
-          scope.checkAcceptableObject(left.annotation.type.array, right.annotation.type.array)
-
-        else if right.annotation.type.array.length?
-          for el in right.annotation.type.array
-            scope.checkAcceptableObject(left.annotation.type.array, el)
-        scope.addVar symbol, 'Any', true # TODO Valid type
+        # TODO: absorb in checkAcceptableObject
+        scope.checkAcceptableObject(left.annotation.type.array, right.annotation.type)
 
       # TypedFunction
       # f :: Int -> Int = (n) -> n
       else if left.annotation.type.args? and right.annotation.type.args?
-        # TODO: ノードを推論した結果、関数になる場合はok annotation.typeをみる
+        # TODO: ノードを推論した結果、関数になる場合はok
         if right.instanceof CS.Function
           scope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
-
         else
           throw new Error "Right is not function"
-
         scope.addVar symbol, left.annotation.type
 
       # TODO FIX
@@ -199,11 +173,9 @@ walk_assignOp = (node, scope) ->
 
       # 右辺の型が指定した型に一致する場合
       # x :: Number = 3
-      else if left.annotation.type is infered
+      else 
+        scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
-      # Throw items
-      else
-        throw new Error "'#{symbol}' is expected to #{left.annotation.type} indeed #{infered}"
 
   # Member access
   else if left.instanceof CS.MemberAccessOp

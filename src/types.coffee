@@ -1,4 +1,5 @@
-console = {log: ->}
+console = log: ->
+
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 CS = require './nodes'
@@ -17,7 +18,7 @@ class ArrayType extends Type
   constructor:(type) ->
     @array = type
 
-# possibilites :: Type[] = []
+# possibilities :: Type[] = []
 class Possibilites extends Array
   constructor: (arr = []) ->
     @push i for i in arr
@@ -33,7 +34,10 @@ checkAcceptableObject = (left, right) ->
 
   # possibilites :: Type[]
   if right?.possibilities?
-    return checkAcceptableObject left, r for r in right.possibilities
+    console.log "--right---", right
+    for r in right.possibilities
+      checkAcceptableObject left, r
+    return
 
   # {array: "Number"} <> {array: "Number"}
   # {array: "Number"} <> {array: ["Number", 'Number']}
@@ -48,9 +52,7 @@ checkAcceptableObject = (left, right) ->
     if (left is right) or (left is 'Any') or (right is 'Any')
       'ok'
     else
-      for k, v of right
-        console.log k, v
-      throw (new Error "object deep equal mismatch #{util.inspect left}, #{util.inspect right}")
+      throw (new Error "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}")
 
   # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
@@ -64,7 +66,7 @@ checkAcceptableObject = (left, right) ->
     # TODO: valid code later
     "ignore now"
   else
-    throw (new Error "object deep equal mismatch #{left}, #{right}")
+    throw (new Error "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}")
 
 # Initialize primitive types
 # Number, Boolean, Object, Array, Any
