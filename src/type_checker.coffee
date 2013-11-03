@@ -14,7 +14,7 @@ CS = require './nodes'
 # CS_AST -> Scope
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
-  console.log 'AST =================='
+  console.log "AST =================="
   # console.log render cs_ast
   console.log '================== AST'
   root = new Scope
@@ -49,7 +49,6 @@ walk_return = (node, scope) ->
     node.annotation = node.expression.annotation
 
 walk_binOp = (node, scope) ->
-  console.log 'binops', node.className
   walk node.left, scope
   walk node.right, scope
 
@@ -64,8 +63,6 @@ walk_binOp = (node, scope) ->
       node.annotation = type: left_type, implicit: false
   else
     node.annotation = type:'Any', implicit: true
-
-    console.log render node
 
 walk_conditional = (node, scope) ->
   # condition expr
@@ -169,8 +166,6 @@ walk_assignOp = (node, scope) ->
         scope.checkAcceptableObject(left.annotation.type.array, scope.extendTypeLiteral(right.annotation.type))
 
       # arr = [1,2,3]
-      # else if right.instanceof CS.Range
-      #   console.log 'range here yey!~!!', right
       else if right.annotation?.type?.array?
         # TODO: Refactor to checkAcceptableObject
 
