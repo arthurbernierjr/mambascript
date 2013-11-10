@@ -1,4 +1,4 @@
-# console = log: ->
+console = log: ->
 
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj

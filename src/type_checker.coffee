@@ -1,4 +1,4 @@
-# console = {log: ->}
+console = {log: ->}
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 
@@ -159,7 +159,9 @@ walk_classProtoAssignOp = (node, scope) ->
   walk left,  scope
 
   symbol = left.data
-  scope.addThis symbol, right.annotation.type
+
+  if right.annotation?
+    scope.addThis symbol, right.annotation.type
 
 walk_assignOp = (node, scope) ->
   pre_registered_annotation = node.assignee.annotation
@@ -169,7 +171,8 @@ walk_assignOp = (node, scope) ->
 
   walk right, scope
   walk left,  scope
-  scope.addVar symbol, left.annotation.type
+  
+  scope.addVar symbol, left.annotation.type if left.annotation? # TODO why left undefinedable?
 
   # Identifier
   if left.instanceof CS.Identifier
@@ -306,7 +309,7 @@ walk_objectInitializer = (node, scope) ->
 walk_class = (node, scope) ->
   classScope = new Scope scope
   walk node.body, classScope
-    
+
   if node.nameAssignee?.data
     scope.addType node.nameAssignee.data, classScope._this
 
