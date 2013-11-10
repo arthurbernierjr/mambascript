@@ -5,6 +5,42 @@ render = (obj) -> pj?.render obj
 CS = require './nodes'
 util = require 'util'
 
+NumberInterface = ->
+  toString:
+    name: 'function'
+    args: []
+    returns: 'String'
+
+ArrayInterface = (T = 'Any') ->
+  length: 'Number'
+  push:
+    name: 'function'
+    args: [T]
+    returns: 'void'
+  unshift:
+    name: 'function'
+    args: [T]
+    returns: 'void'
+  shift:
+    name: 'function'
+    args: []
+    returns: T
+  toString:
+    name: 'function'
+    args: []
+    returns: 'String'
+
+ObjectInterface = ->
+  toString:
+    name: 'function'
+    args: []
+    returns: 'String'
+  keys:
+    name: 'function'
+    args: ['Any']
+    returns:
+      array: 'String'
+
 class Type
   constructor: ->
 
@@ -29,6 +65,11 @@ class Possibilites extends Array
 
 # TODO: Add Transparent, Passable, Unknown
 
+
+# struct Array<T> {
+#   array: T
+# }
+
 checkAcceptableObject = (left, right) ->
   console.log 'check', left, right
 
@@ -42,12 +83,18 @@ checkAcceptableObject = (left, right) ->
   # {array: "Number"} <> {array: "Number"}
   # {array: "Number"} <> {array: ["Number", 'Number']}
   if left?.array?
+
     if right.array instanceof Array
       checkAcceptableObject left.array, r for r in right.array
     else
       checkAcceptableObject left.array, right.array
 
-  # "Number" <> "Number"
+  # "Array" <> array: Number
+  else if right?.array?
+    if left is 'Array' or left is 'Any' or left is undefined then 'ok'
+    else
+      throw (new Error "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}")
+
   else if ((typeof left) is 'string') and ((typeof right) is 'string')
     if (left is right) or (left is 'Any') or (right is 'Any')
       'ok'

@@ -1099,6 +1099,7 @@ TypeNameSymbol
   }
   / "(" _ base:ObjectInitialiserKeys _ "<" _ target:ObjectInitialiserKeys  _ ">" _ ")" {
     return {
+      name: 'generics',
       base: base.data,
       target: target.data
     };
