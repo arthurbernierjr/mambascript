@@ -66,9 +66,9 @@ walk_binOp = (node, scope) ->
     if left_type is 'String' or right_type is 'String'
       node.annotation = type: 'String'
     else if left_type is right_type
-      node.annotation = type: left_type, implicit: false
+      node.annotation = type: left_type
   else
-    node.annotation = type:'Any', implicit: true
+    node.annotation = type:'Any'
 
 walk_conditional = (node, scope) ->
   # condition expr
@@ -82,7 +82,7 @@ walk_conditional = (node, scope) ->
     walk node.alternate, scope #=> Block
 
   # if node.alternate doesn't exist, then return type is Undefined
-  alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined', implicit: true)
+  alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined')
 
   possibilities = []
   for annotation in [node.consequent?.annotation, alternate_annotation] when annotation?
@@ -92,7 +92,7 @@ walk_conditional = (node, scope) ->
     else if annotation.type?
       possibilities.push annotation.type
 
-  node.annotation = type: {possibilities, implicit: true}
+  node.annotation = type: {possibilities}
 
 walk_switch = (node, scope) ->
   walk node.expression, scope
@@ -112,15 +112,17 @@ walk_switch = (node, scope) ->
     walk node.alternate, scope #=> Block
 
   # if node.alternate doesn't exist, then return type is Undefined
-  alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined', implicit: true)
+  alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined')
 
   possibilities = []
   for c in node.cases when c.annotation?
     possibilities.push c.consequent.annotation
 
   possibilities.push alternate_annotation.type
-  node.annotation = type: {possibilities, implicit: true}
+  node.annotation = type: {possibilities}
 
+walk_newOp = (node, scope) ->
+  node.annotation = type: scope.getTypeInScope node.ctor.data
 
 walk_for = (node, scope) ->
   walk node.target, scope
@@ -236,19 +238,16 @@ walk_primitives = (node, scope) ->
 walk_string = (node, scope) ->
   node.annotation ?=
     type: 'String'
-    implicit: true
     primitive: true
 
 walk_numbers = (node, scope) ->
   node.annotation ?=
     type: 'Number'
-    implicit: true
     primitive: true
 
 walk_bool = (node, scope) ->
   node.annotation ?=
     type: 'Boolean'
-    implicit: true
     primitive: true
 
 walk_identifier = (node, scope) ->
@@ -257,7 +256,6 @@ walk_identifier = (node, scope) ->
   else
     node.annotation ?=
       type: 'Any'
-      implicit: true
 
 walk_memberAccess = (node, scope) ->
   # hoge?.fuga
@@ -268,25 +266,23 @@ walk_memberAccess = (node, scope) ->
       node.annotation =
         type:
           possibilities:['Undefined', type[node.memberName]]
-        implicit: false
     else
-      node.annotation = type: 'Any', implicit: true
+      node.annotation = type: 'Any'
 
   else if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
 
     type = scope.extendTypeLiteral(node.expression.annotation?.type)
     if type?
-      node.annotation = type: type[node.memberName], implicit: false
+      node.annotation = type: type[node.memberName]
     else
-      node.annotation = type: 'Any', implicit: true
+      node.annotation = type: 'Any'
 
 walk_arrayInializer = (node, scope) ->
   walk node.members, scope
 
   node.annotation ?=
     type: {array: (node.members?.map (m) -> m.annotation?.type)}
-    implicit: true
 
 walk_range = (node, scope) ->
   node.annotation = type : {array: 'Number'}
@@ -301,26 +297,26 @@ walk_objectInitializer = (node, scope) ->
     walk expression, nextScope
     obj[key.data] = expression.annotation?.type
 
-  # TODO: implicit ルールをどうするか決める
   node.annotation ?=
     type: obj
-    implicit: true
 
 walk_class = (node, scope) ->
   classScope = new Scope scope
   walk node.body, classScope
-
   if node.nameAssignee?.data
-    scope.addType node.nameAssignee.data, classScope._this
+    obj = {}
+    for fname, val of classScope._this
+      obj[fname] = val.type
+    scope.addType node.nameAssignee.data, obj
 
 walk_function = (node, scope) ->
   args = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
-  node.annotation.type.args = args
 
+  node.annotation.type.args = args
   functionScope      = new Scope scope
   functionScope.name = 'function'
 
-  # register arguments to next scope
+  # register arguments to function scope
   node.parameters?.map (param) ->
     try
       functionScope.addVar? param.data, (param.annotation?.type ? 'Any')
@@ -328,7 +324,6 @@ walk_function = (node, scope) ->
       # TODO あとで調査 register.jsで壊れるっぽい
       'ignore but brake on somewhere. why?'
 
-  # walk node.body?.statements, functionScope
   walk node.body, functionScope
 
   # () :: Number -> 3
@@ -354,18 +349,14 @@ walk_function = (node, scope) ->
       node.annotation.type.returns = last_expr?.annotation?.type
 
 walk_functionApplication = (node, scope) ->
-  walk node.arguments, scope
-  expected = scope.getVarInScope(node.function.data)
+  for arg in node.arguments
+    walk arg, scope
+  walk node.function, scope
+  node.annotation = type: (node.function.annotation?.type?.returns)
 
-  # args
-  if expected? and expected isnt 'Any'
+  if node.function.annotation
     args = node.arguments?.map (arg) -> arg.annotation?.type
-    scope.checkFunctionLiteral expected, {args: args, returns: 'Any'}
-
-    node.annotation ?=
-      type: expected.returns
-      implicit: true
-
+    scope.checkFunctionLiteral node.function.annotation.type, {args: (args ? []), returns: 'Any'}
 
 # Traverse all nodes
 # Node -> void
@@ -385,6 +376,8 @@ walk = (node, scope) ->
     when node.instanceof CS.Block        then walk_block node, scope
     # Retrun
     when node.instanceof CS.Return       then  walk_return node, scope
+    # New
+    when node.instanceof CS.NewOp        then  walk_newOp node, scope
     # BinaryOperator
     when node.instanceof(CS.PlusOp) or node.instanceof(CS.MultiplyOp) or node.instanceof(CS.DivideOp) or node.instanceof(CS.SubtractOp)
       walk_binOp node, scope

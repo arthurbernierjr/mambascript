@@ -82,6 +82,8 @@ checkAcceptableObject = (left, right) ->
 
   # {array: "Number"} <> {array: "Number"}
   # {array: "Number"} <> {array: ["Number", 'Number']}
+  if left is 'Any' then return
+
   if left?.array?
 
     if right.array instanceof Array
@@ -222,7 +224,7 @@ class Scope
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
 
   addThis: (symbol, type, implicit = true) ->
-    @_this[symbol] = new VarSymbol {type, implicit}
+    @_this[symbol] = {type, implicit}
 
   getThis: (symbol) ->
     @_this[symbol]?.type ? undefined
@@ -270,11 +272,18 @@ class Scope
     checkAcceptableObject(l, r)
 
   # Check arguments
+  # TODO: integrate to checkAcceptableObject
   checkFunctionLiteral: (left, right) ->
+    console.log 'checkFunctionLiteral', left, right 
     # flat extend
     left  = @extendTypeLiteral left
     right = @extendTypeLiteral right
+    return if left is undefined or left is 'Any'
+    left.args ?= []
     # check args
+    console.log left
+    if left?.args is undefined
+      throw new Error "left is not arguments: #{JSON.stringify left}, #{JSON.stringify right}"
     for l_arg, i in left.args
       r_arg = right.args[i]
       checkAcceptableObject(l_arg, r_arg)

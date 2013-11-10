@@ -840,7 +840,7 @@ functionLiteral
       var ret = rp(new constructor(params && params[2] || [], body || null));
       ret.annotation = {
         type: {
-          returns: (returns ? returns : 'Any')
+          returns: (returns ? returns : 'Any'),
         }
        };
       return ret;

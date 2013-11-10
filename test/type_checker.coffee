@@ -287,3 +287,23 @@ suite 'TypeChecker', ->
       throws -> CoffeeScript.parse """
       x :: Number = global?.require
       """
+
+    test 'basic assign', ->
+      x :: Number = 3
+      eq x, 3
+
+    test 'new', ->
+      class X
+        f: (n :: Number) :: Number -> 
+          n * n
+      x :: X = new X
+      n :: Number = x.f 3
+
+    test 'new', ->
+      throws -> CoffeeScript.parse """
+      class X
+        f: (n :: Number) :: Number -> 
+          n * n
+      x :: X = new X
+      n :: String = x.f 3
+      """
