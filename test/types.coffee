@@ -32,6 +32,12 @@ suite 'Types', ->
         throws -> checkAcceptableObject {x: 'Number', y: 'Number'}, {x: 'Number'}
 
     suite 'Array', ->
+      test 'pure array', ->
+        checkAcceptableObject "Array", (array: 'String')
+
+      test 'throw non-array definition', ->
+        throws -> checkAcceptableObject "Number", (array: 'String')
+
       test 'fill array', ->
         checkAcceptableObject (new ArrayType "Number"), (new ArrayType "Number")
 
@@ -62,3 +68,7 @@ suite 'Types', ->
             {x: 'Number', y: 'Number'},
             {x: 'Number', name: 'String'}
           ])
+
+    suite 'Generics', ->
+      test 'fill array', ->
+        checkAcceptableObject {}
