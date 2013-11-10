@@ -1,4 +1,4 @@
-console = log: ->
+# console = log: ->
 
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
@@ -199,7 +199,7 @@ class Scope
     @_types = {} #=> typeName -> type
 
     # TODO: This Scope
-    @_this  = null #=> null or {}
+    @_this  = {} #=> null or {}
 
     # このブロックがReturn する可能性があるもの
     @_returnables = [] #=> [ReturnableType...]
@@ -220,6 +220,12 @@ class Scope
 
   getTypeInScope: (symbol) ->
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
+
+  addThis: (symbol, type, implicit = true) ->
+    @_this[symbol] = new VarSymbol {type, implicit}
+
+  getThis: (symbol) ->
+    @_this[symbol]?.type ? undefined
 
   addVar: (symbol, type, implicit = true) ->
     @_vars[symbol] = new VarSymbol {type, implicit}

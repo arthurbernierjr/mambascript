@@ -1,4 +1,4 @@
-console = {log: ->}
+# console = {log: ->}
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 
@@ -152,6 +152,15 @@ walk_for = (node, scope) ->
   delete scope._vars[node.valAssignee?.data]
   delete scope._vars[node.keyAssignee?.data]
 
+walk_classProtoAssignOp = (node, scope) ->
+  left  = node.assignee
+  right = node.expression
+  walk right, scope
+  walk left,  scope
+
+  symbol = left.data
+  scope.addThis symbol, right.annotation.type
+
 walk_assignOp = (node, scope) ->
   pre_registered_annotation = node.assignee.annotation
 
@@ -160,6 +169,7 @@ walk_assignOp = (node, scope) ->
 
   walk right, scope
   walk left,  scope
+  scope.addVar symbol, left.annotation.type
 
   # Identifier
   if left.instanceof CS.Identifier
@@ -294,7 +304,11 @@ walk_objectInitializer = (node, scope) ->
     implicit: true
 
 walk_class = (node, scope) ->
-  walk node.body.statements, new Scope scope
+  classScope = new Scope scope
+  walk node.body, classScope
+    
+  if node.nameAssignee?.data
+    scope.addType node.nameAssignee.data, classScope._this
 
 walk_function = (node, scope) ->
   args = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
@@ -383,6 +397,8 @@ walk = (node, scope) ->
     when node.instanceof CS.Primitives   then walk_primitives node, scope
     # Identifier
     when node.instanceof CS.Identifier        then walk_identifier node, scope
+    # ClassProto
+    when node.instanceof CS.ClassProtoAssignOp then walk_classProtoAssignOp node, scope
     # MemberAccessOps TODO: imperfect
     when node.instanceof CS.MemberAccessOps   then walk_memberAccess node, scope
     # Array
