@@ -88,6 +88,34 @@ walk_conditional = (node, scope) ->
 
   node.annotation = type: {possibilities, implicit: true}
 
+walk_switch = (node, scope) ->
+  walk node.expression, scope
+
+  # condition expr
+  for c in node.cases
+    # when a, b, c
+    for cond in c.conditions
+      walk c, scope #=> Expr
+    walk c.consequent, scope
+
+  # else if
+  walk node.consequent, scope #=> Block
+
+  # else
+  if node.alternate?
+    walk node.alternate, scope #=> Block
+
+  # if node.alternate doesn't exist, then return type is Undefined
+  alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined', implicit: true)
+
+  possibilities = []
+  for c in node.cases when c.annotation?
+    possibilities.push c.consequent.annotation
+
+  possibilities.push alternate_annotation.type
+  node.annotation = type: {possibilities, implicit: true}
+
+
 walk_for = (node, scope) ->
   walk node.target, scope
 
@@ -327,7 +355,10 @@ walk = (node, scope) ->
     # BinaryOperator
     when node.instanceof(CS.PlusOp) or node.instanceof(CS.MultiplyOp) or node.instanceof(CS.DivideOp) or node.instanceof(CS.SubtractOp)
       walk_binOp node, scope
+
     # === Controlle flow ===
+    # Switch
+    when node.instanceof CS.Switch then walk_switch node, scope
     # If
     when node.instanceof CS.Conditional  then walk_conditional node, scope
     # For

@@ -254,3 +254,23 @@ suite 'TypeChecker', ->
       throws -> CoffeeScript.parse """
       c :: Number = "" + 3
       """
+
+    test 'Switch', ->
+      x :: String =
+        switch true
+          when 0
+            'foo'
+          when 1
+            'bar'
+          else
+            'fuga'
+
+    test 'miscast Switch', ->
+      throws -> CoffeeScript.parse """
+      x :: Number =
+        switch true
+          when 0
+            1
+          else
+            'str'
+      """
