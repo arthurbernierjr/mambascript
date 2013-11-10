@@ -1097,6 +1097,18 @@ TypeNameSymbol
     if(!isArray) return key.data;
     else return {array: key.data}
   }
+  / "(" _ base:ObjectInitialiserKeys _ "<" _ target:ObjectInitialiserKeys  _ ">" _ ")" {
+    return {
+      base: base.data,
+      target: target.data
+    };
+  }
+  / base:ObjectInitialiserKeys _ "<" _ target:ObjectInitialiserKeys  _ ">" {
+    return {
+      base: base.data,
+      target: target.data
+    };
+  }
   / key:ObjectInitialiserKeys isArray:"[]"? {
     if(!isArray) return key.data;
     else return {array: key.data}
