@@ -153,6 +153,8 @@ walk_for = (node, scope) ->
   delete scope._vars[node.keyAssignee?.data]
 
 walk_assignOp = (node, scope) ->
+  pre_registered_annotation = node.assignee.annotation
+
   left  = node.assignee
   right = node.expression
 
@@ -161,7 +163,6 @@ walk_assignOp = (node, scope) ->
 
   # Identifier
   if left.instanceof CS.Identifier
-
     symbol     = left.data
     registered = scope.getVarInScope(symbol)
     is_registered = !!registered
@@ -169,7 +170,7 @@ walk_assignOp = (node, scope) ->
     # 既に宣言済みのシンボルに対して型宣言できない
     #    x :: Number = 3
     # -> x :: String = "hello"
-    if left.annotation.type? and registered? and left.annotation.type isnt 'Any'
+    if scope.getVarInScope(symbol) and pre_registered_annotation
       throw new Error 'double bind: '+ symbol
 
     # 左辺に型宣言が存在する

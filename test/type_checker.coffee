@@ -4,6 +4,11 @@ suite 'TypeChecker', ->
       x :: Number = 3
       eq x, 3
 
+    test 'basic assign', ->
+      x :: Number = 3
+      x = 5
+      eq x, 5
+
     test 'throw type mismatch', ->
       throws ->
         CoffeeScript.parse """
