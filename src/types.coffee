@@ -97,6 +97,11 @@ initializeGlobalTypes = (node) ->
     instanceof: (expr) -> (typeof expr.data) is 'object'
   }
 
+  node.addTypeObject 'Undefined', new TypeSymbol {
+    type: 'Undefined'
+    # instanceof: (expr) -> expr.data is 'undefined'
+  }
+
   # Any
   node.addTypeObject 'Any', new TypeSymbol {
     type: 'Any'

@@ -274,3 +274,8 @@ suite 'TypeChecker', ->
           else
             'str'
       """
+
+    test 'cant catch undefined', ->
+      throws -> CoffeeScript.parse """
+      x :: Number = global?.require
+      """

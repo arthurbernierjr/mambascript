@@ -243,7 +243,19 @@ walk_identifier = (node, scope) ->
       implicit: true
 
 walk_memberAccess = (node, scope) ->
-  if node.instanceof CS.MemberAccessOp
+  # hoge?.fuga
+  if node.instanceof CS.SoakedMemberAccessOp
+    walk node.expression, scope
+    type = scope.extendTypeLiteral(node.expression.annotation?.type)
+    if type?
+      node.annotation =
+        type:
+          possibilities:['Undefined', type[node.memberName]]
+        implicit: false
+    else
+      node.annotation = type: 'Any', implicit: true
+
+  else if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
 
     type = scope.extendTypeLiteral(node.expression.annotation?.type)
