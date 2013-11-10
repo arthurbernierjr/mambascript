@@ -12,17 +12,23 @@ CS = require './nodes'
 } = require './types'
 
 # CS_AST -> Scope
+
+g = window ? global
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
   console.log "AST =================="
   # console.log render cs_ast
   console.log '================== AST'
-  root = new Scope
-  root.name = 'root'
 
-  for i in ['global', 'exports', 'module']
-    root.addVar i, 'Any', true
-  initializeGlobalTypes(root)
+  if g._root_
+    root = g._root_
+  else
+    g._root_ = root = new Scope
+    root.name = 'root'
+
+    for i in ['global', 'exports', 'module']
+      root.addVar i, 'Any', true
+    initializeGlobalTypes(root)
 
   walk cs_ast, root
 
