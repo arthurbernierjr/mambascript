@@ -1,2 +1,2 @@
-x :: Number = 3
-x = 6
+f :: Number -> Number = (n) -> n
+g :: Number -> Number = f

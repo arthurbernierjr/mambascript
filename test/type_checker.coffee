@@ -9,6 +9,10 @@ suite 'TypeChecker', ->
       x = 5
       eq x, 5
 
+    test 'assign function', ->
+      f :: Number -> Number = (n) -> n
+      g :: Number -> Number = f
+
     test 'throw type mismatch', ->
       throws ->
         CoffeeScript.parse """
@@ -269,7 +273,6 @@ suite 'TypeChecker', ->
             'bar'
           else
             'fuga'
-
     test 'miscast Switch', ->
       throws -> CoffeeScript.parse """
       x :: Number =

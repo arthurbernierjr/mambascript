@@ -189,10 +189,7 @@ walk_assignOp = (node, scope) ->
       # f :: Int -> Int = (n) -> n
       else if left.annotation.type.args? and right.annotation.type.args?
         # TODO: ノードを推論した結果、関数になる場合はok
-        if right.instanceof CS.Function
-          scope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
-        else
-          throw new Error "Right is not function"
+        scope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
 
       # 右辺の型が指定した型に一致する場合
