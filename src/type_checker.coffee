@@ -16,9 +16,9 @@ CS = require './nodes'
 g = window ? global
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
-  console.log "AST =================="
+  # console.log "AST =================="
   # console.log render cs_ast
-  console.log '================== AST'
+  # console.log '================== AST'
 
   if g._root_
     root = g._root_
@@ -32,12 +32,16 @@ checkNodes = (cs_ast) ->
 
   walk cs_ast, root
 
-  console.log 'scope ====================='
+  # console.log 'scope ====================='
+  # console.log render root
   Scope.dump root
   return root
 
 walk_struct = (node, scope) ->
-  scope.addType node.name, node.expr
+  if node.name instanceof Object
+    scope.addType node.name.base, node.expr, node.name.templates
+  else
+    scope.addType node.name, node.expr
 
 walk_program = (node, scope) ->
   walk node.body.statements, scope
@@ -134,7 +138,6 @@ walk_for = (node, scope) ->
     # must be number or string
     scope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.type) ? 'Any'
 
-  # TODO: Fix something wrong type and type.array
   if node.valAssignee?
     # ForIn
     if node.target.annotation?.type?.array?
@@ -166,21 +169,19 @@ walk_classProtoAssignOp = (node, scope) ->
     scope.addThis symbol, right.annotation.type
 
 walk_assignOp = (node, scope) ->
-  pre_registered_annotation = node.assignee.annotation
+  pre_registered_annotation = node.assignee.annotation #TODO: I don't want this
 
   left  = node.assignee
   right = node.expression
 
   walk right, scope
   walk left,  scope
-  
-  scope.addVar symbol, left.annotation.type if left.annotation? # TODO why left undefinedable?
 
+  symbol = left.data
+  
   # Identifier
   if left.instanceof CS.Identifier
-    symbol     = left.data
-    registered = scope.getVarInScope(symbol)
-    is_registered = !!registered
+    symbol = left.data
 
     # 既に宣言済みのシンボルに対して型宣言できない
     #    x :: Number = 3
@@ -188,22 +189,22 @@ walk_assignOp = (node, scope) ->
     if scope.getVarInScope(symbol) and pre_registered_annotation
       throw new Error 'double bind: '+ symbol
 
+    scope.addVar symbol, left.annotation.type
+
     # 左辺に型宣言が存在する
     # -> x :: Number = 3
-    else if left.annotation.type?
+    if left.annotation.type?
       # 明示的なAnyは全て受け入れる
       # x :: Any = "any instance"
       if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
 
       else if right.instanceof CS.ForIn
-        # TODO: absorb in checkAcceptableObject
         scope.checkAcceptableObject(left.annotation.type.array, right.annotation.type)
 
       # TypedFunction
       # f :: Int -> Int = (n) -> n
       else if left.annotation.type.args? and right.annotation.type.args?
-        # TODO: ノードを推論した結果、関数になる場合はok
         scope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
 
@@ -361,7 +362,7 @@ walk_functionApplication = (node, scope) ->
 # Traverse all nodes
 # Node -> void
 walk = (node, scope) ->
-  console.log '---', node?.className, '---', node?.raw
+  console.log '---', node?.className, '---' #, node?.raw
   switch
     # undefined(mayby null body)
     when not node? then return

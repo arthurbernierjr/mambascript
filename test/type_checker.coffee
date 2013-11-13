@@ -307,3 +307,61 @@ suite 'TypeChecker', ->
       x :: X = new X
       n :: String = x.f 3
       """
+
+    test 'generics', ->
+      struct Singleton<T> {
+        getInstance :: () -> T
+      }
+      origin :: Singleton<Number> = {
+        getInstance: -> 3
+      }
+      s :: Numbertgra = origin.getInstance()
+
+    test 'throw generics', ->
+      throws -> CoffeeScript.parse """
+        struct Singleton<T> {
+          getInstance :: () -> T
+        }
+        origin :: Singleton<Number> = getInstance: -> ""
+        s :: String = origin.getInstance()
+      """
+
+    test 'generics hash', ->
+      struct Hash<K, V> {
+        get :: K -> V
+        set :: K * V -> ()
+      }
+      hash :: Hash<String, Number> = {
+        get: (key) -> @[key]
+        set: (key, val) -> @[key] = val
+      }
+
+      hash.set "a", 1
+      num :: Number = hash.get "a"
+
+    test 'throw generics hash', ->
+      throws -> CoffeeScript.parse """
+      struct Hash<K, V> {
+        get :: K -> V
+        set :: K * V -> ()
+      }
+      hash :: Hash<String, Number> = {
+        get: (key) -> val
+        set: (key, val) -> @[key] = val
+      }
+      hash.set "a", 1
+      hash.get 3
+      """
+
+    test 'throw generics hash', ->
+      throws -> CoffeeScript.parse """
+      struct Hash<K, V> {
+        get :: K -> V
+        set :: K * V -> ()
+      }
+      hash :: Hash<String, Number> = {
+        get: (key) -> val
+        set: (key, val) -> @[key] = val
+      }
+      hash.set 5, 1
+      """

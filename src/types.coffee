@@ -5,6 +5,39 @@ render = (obj) -> pj?.render obj
 CS = require './nodes'
 util = require 'util'
 
+# ref: http://coffeescriptcookbook.com/chapters/classes_and_objects/cloning
+clone = (obj) ->
+  if not obj? or typeof obj isnt 'object'
+    return obj
+
+  if obj instanceof Date
+    return new Date(obj.getTime()) 
+
+  if obj instanceof RegExp
+    flags = ''
+    flags += 'g' if obj.global?
+    flags += 'i' if obj.ignoreCase?
+    flags += 'm' if obj.multiline?
+    flags += 'y' if obj.sticky?
+    return new RegExp(obj.source, flags) 
+
+  newInstance = new obj.constructor()
+
+  for key of obj
+    newInstance[key] = clone obj[key]
+
+  return newInstance
+
+# rewrite :: Object * Hash<String, String> -> ()
+rewrite = (obj, replacer) ->
+  return if (typeof obj) in ['string', 'number']
+  for key, val of obj
+    if (typeof val) is 'string'
+      if replacer[val]?
+        obj[key] = replacer[val]
+    else if val instanceof Object
+      rewrite(val, replacer)
+
 NumberInterface = ->
   toString:
     name: 'function'
@@ -71,11 +104,13 @@ class Possibilites extends Array
 # }
 
 checkAcceptableObject = (left, right) ->
-  console.log 'check', left, right
+  # TODO: fix
+  if left?.base? and left.templates? then left = left.base
+
+  console.log 'checkAcceptableObject /', left, right
 
   # possibilites :: Type[]
   if right?.possibilities?
-    console.log "--right---", right
     for r in right.possibilities
       checkAcceptableObject left, r
     return
@@ -107,12 +142,12 @@ checkAcceptableObject = (left, right) ->
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
     for key, lval of left
       # when {x: Number} = {z: Number}
-      if right[key] is undefined
+      if right[key] is undefined and lval?
         return if key in ['returns', 'type'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
         throw new Error "'#{key}' is not defined on right"
+
       checkAcceptableObject(lval, right[key])
   else if (left is undefined) or (right is undefined)
-    # TODO: valid code later
     "ignore now"
   else
     throw (new Error "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}")
@@ -167,7 +202,7 @@ class VarSymbol
 class TypeSymbol
   # type :: String or Object
   # instanceof :: (Any) -> Boolean
-  constructor: ({@type, @instanceof}) ->
+  constructor: ({@type, @instanceof, @templates}) ->
     @instanceof ?= (t) -> t instanceof @constructor
 
 # Var and type scope as node
@@ -184,7 +219,7 @@ class Scope
   @dump: (node, prefix = '') ->
     console.log prefix + "[#{node.name}]"
     for key, val of node._vars
-      console.log prefix, ' +', key, '::', val
+      console.log prefix, ' +', key, '::', JSON.stringify(val)
     for next in node.nodes
       Scope.dump next, prefix + '  '
 
@@ -211,14 +246,18 @@ class Scope
 
   getReturnables: -> @_returnables
 
-  addType: (symbol, type) ->
-    @_types[symbol] = new TypeSymbol {type}
+  # addType :: String * Object * Object -> Type
+  addType: (symbol, type, templates) ->
+    @_types[symbol] = new TypeSymbol {type, templates}
 
   addTypeObject: (symbol, type_object) ->
     @_types[symbol] = type_object
 
   getType: (symbol) ->
-    @_types[symbol]?.type ? undefined
+    @_types[symbol]?.type or undefined
+
+  getTypeObject: (symbol) ->
+    @_types[symbol]
 
   getTypeInScope: (symbol) ->
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
@@ -230,7 +269,25 @@ class Scope
     @_this[symbol]?.type ? undefined
 
   addVar: (symbol, type, implicit = true) ->
-    @_vars[symbol] = new VarSymbol {type, implicit}
+    console.log 'addvar;', symbol, type
+
+    if type?.base?
+      # modify type
+      T = @getTypeObject(type.base)
+      return undefined unless T
+      obj = clone T.type
+      if T.templates
+        # create replacer and replace
+        # TODO: length match
+        rewrite_to = type.templates
+        replacer = {} #=> inpupt => ouput
+        for t, n in T.templates
+          replacer[t] = rewrite_to[n]
+        rewrite obj, replacer
+
+      @_vars[symbol] = new VarSymbol {type:obj, implicit}
+    else
+      @_vars[symbol] = new VarSymbol {type, implicit}
 
   getVar: (symbol) ->
     @_vars[symbol]?.type ? undefined

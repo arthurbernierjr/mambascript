@@ -1,10 +1,25 @@
-class X
-  f: (n :: Number) :: Number -> 
-    n * n
-x :: X = new X
-x.f 3
+struct Singleton<T> {
+  getInstance :: () -> T
+}
+struct Point {
+  x :: Number
+  y :: Number
+}
 
-f = (n :: Number) -> n
-f(6)
-f :: Number -> Number = (n :: Number) :: Number ->  n * n
-# (f "hello")
+origin :: Singleton<Point> =
+  getInstance: () :: Point -> {x: 0, y: 0}
+
+s :: Point = origin.getInstance()
+
+struct Hash<K, V> {
+  get :: K -> V
+  set :: K * V -> ()
+}
+
+hash :: Hash<String, Number> = {
+  get: (key) -> val
+  set: (key, val) -> @[key] = val
+}
+
+hash.set "", 1
+hash.get 1

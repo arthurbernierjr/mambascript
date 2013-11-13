@@ -1091,23 +1091,26 @@ typeLiteral
         return [key, val];
       }
 
+TemplateKeys = e:ObjectInitialiserKeys _ es:("," _ ObjectInitialiserKeys)* {
+  return [e.data].concat(es.map(function(e){ return e[2].data; }));
+}
+
 TypeNameSymbol
   = "(" _ ")" {return 'void';}
   / "(" _ key:ObjectInitialiserKeys isArray:"[]"? _ ")" {
     if(!isArray) return key.data;
     else return {array: key.data}
   }
-  / "(" _ base:ObjectInitialiserKeys _ "<" _ target:ObjectInitialiserKeys  _ ">" _ ")" {
+  / "(" _ base:ObjectInitialiserKeys _ "<" _ templates:TemplateKeys  _ ">" _ ")" {
     return {
-      name: 'generics',
       base: base.data,
-      target: target.data
+      templates: templates
     };
   }
-  / base:ObjectInitialiserKeys _ "<" _ target:ObjectInitialiserKeys  _ ">" {
+  / base:ObjectInitialiserKeys _ "<" _ templates:TemplateKeys _ ">" {
     return {
       base: base.data,
-      target: target.data
+      templates: templates
     };
   }
   / key:ObjectInitialiserKeys isArray:"[]"? {
