@@ -13,16 +13,34 @@ Super set of CoffeeScript with types
 ## Examples
 
 ```coffeescript
+# define struct
 struct Point {
   x :: Number
   y :: Number
 }
 
+# structure
 p :: Point = {x: 3, y: 3}
 line :: Point[] = [{x: 3, y: 4}, {x: 8, y: 5}, p]
 
+# typed function
 f :: Number -> Number = (n) ->  n * n
 ((n :: Number) :: Number ->  n * n)(3)
+
+# generics
+struct Hash<K, V> {
+  get :: K -> V
+  set :: K * V -> ()
+}
+
+hash :: Hash<String, Number> = {
+  get: (key) -> @[key]
+  set: (key, val) -> @[key] = val
+}
+
+hash.set "a", 1
+num :: Number = hash.get "a"
+
 ```
 
 See test/type.coffee as working codes.
@@ -54,8 +72,8 @@ $ tcoffee --js  < scratch.coffee > scratch.js
 * ✅ Range
 * ✅ Function
 * ✅ BinaryOperator
+* ✅ Generics
 * Scope about this and class
-* Generics
 * Generate pure coffee
 * Share type context with some scripts
 
