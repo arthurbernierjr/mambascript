@@ -24,7 +24,7 @@ class Possibilites extends Array
   constructor: (arr = []) ->
     @push i for i in arr
 
-checkAcceptableObject = (left, right) ->
+checkAcceptableObject = (left, right) =>
   # TODO: fix
   if left?._base_? and left._templates_? then left = left._base_
 
@@ -36,9 +36,25 @@ checkAcceptableObject = (left, right) ->
       checkAcceptableObject left, r
     return
 
-  # {array: "Number"} <> {array: "Number"}
-  # {array: "Number"} <> {array: ["Number", 'Number']}
   if left is 'Any' then return
+
+  if left?._args_
+    # flat extend
+    return if left is undefined or left is 'Any'
+    left._args_ ?= []
+    # check _args_
+    console.log left
+    if left?._args_ is undefined
+      return reporter.add_error node, "left is not arguments: #{JSON.stringify left}, #{JSON.stringify right}"
+    for l_arg, i in left._args_
+      r_arg = right._args_[i]
+      checkAcceptableObject(l_arg, r_arg)
+
+    # check return type
+    # TODO: Now I will not infer function return type
+    if right._return_ isnt 'Any'
+      checkAcceptableObject(left._return_, right._return_)
+    return
 
   if left?.array?
 
@@ -64,7 +80,7 @@ checkAcceptableObject = (left, right) ->
     for key, lval of left
       # when {x: Number} = {z: Number}
       if right[key] is undefined and lval?
-        return if key in ['_return_', 'type'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
+        return if key in ['_return_', 'type', 'possibilities'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
         return reporter.add_error {}, "'#{key}' is not defined on right"
 
       checkAcceptableObject(lval, right[key])
@@ -177,7 +193,7 @@ class Scope
 
   # Extend symbol to type object
   # ex. {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
-  extendTypeLiteral: (node) ->
+  extendTypeLiteral: (node) =>
     switch (typeof node)
       when 'object'
         # array
@@ -202,27 +218,6 @@ class Scope
     l = @extendTypeLiteral(left)
     r = @extendTypeLiteral(right)
     checkAcceptableObject(l, r)
-
-  # Check arguments
-  checkFunctionLiteral: (left, right) ->
-    console.log 'checkFunctionLiteral', left, right 
-    # flat extend
-    left  = @extendTypeLiteral left
-    right = @extendTypeLiteral right
-    return if left is undefined or left is 'Any'
-    left._args_ ?= []
-    # check _args_
-    console.log left
-    if left?._args_ is undefined
-      return reporter.add_error node, "left is not arguments: #{JSON.stringify left}, #{JSON.stringify right}"
-    for l_arg, i in left._args_
-      r_arg = right._args_[i]
-      checkAcceptableObject(l_arg, r_arg)
-
-    # check return type
-    # TODO: Now I will not infer function return type
-    if right._return_ isnt 'Any'
-      checkAcceptableObject(left._return_, right._return_)
 
 module.exports = {
   checkAcceptableObject, 

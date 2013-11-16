@@ -202,7 +202,7 @@ walk_assignOp = (node, scope) ->
       # TypedFunction
       # f :: Int -> Int = (n) -> n
       else if left.annotation.type._args_? and right.annotation.type._args_?
-        scope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
+        scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
 
       # 右辺の型が指定した型に一致する場合
@@ -354,7 +354,7 @@ walk_functionApplication = (node, scope) ->
 
   if node.function.annotation
     _args_ = node.arguments?.map (arg) -> arg.annotation?.type
-    scope.checkFunctionLiteral node.function.annotation.type, {_args_: (_args_ ? []), _return_: 'Any'}
+    scope.checkAcceptableObject node.function.annotation.type, {_args_: (_args_ ? []), _return_: 'Any'}
 
 # Traverse all nodes
 # Node -> void
