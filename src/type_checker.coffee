@@ -202,7 +202,6 @@ walk_assignOp = (node, scope) ->
       if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
       else 
-        # TODO: grasp unknown yet
         if right.annotation? and left.annotation?
           scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
@@ -302,11 +301,7 @@ walk_function = (node, scope) ->
 
   # register arguments to function scope
   node.parameters?.map (param) ->
-    try
-      functionScope.addVar? param.data, (param.annotation?.type ? 'Any')
-    catch
-      # TODO あとで調査 register.jsで壊れるっぽい
-      'ignore but brake on somewhere. why?'
+    functionScope.addVar? param.data, (param.annotation?.type ? 'Any')
 
   walk node.body, functionScope
 
