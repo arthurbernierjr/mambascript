@@ -5,8 +5,11 @@ Parser = require './parser'
 Type = require './type_checker'
 {Optimiser} = require './optimiser'
 {Compiler} = require './compiler'
+reporter = require './reporter'
+{TypeError} = require './type-helpers'
 cscodegen = try require 'cscodegen'
 escodegen = try require 'escodegen'
+
 
 pkg = require './../package.json'
 
@@ -18,7 +21,6 @@ escodegenFormat =
   hexadecimal: yes
   quotes: 'auto'
   parentheses: no
-
 
 CoffeeScript =
 
@@ -37,10 +39,16 @@ CoffeeScript =
       parsed = Parser.parse preprocessed,
         raw: options.raw
         inputSource: options.inputSource
+
+      # type check
       Type.checkNodes(parsed)
+
+      if reporter.has_errors()
+        throw new TypeError reporter.report()
 
       if options.optimise then Optimiser.optimise parsed else parsed
     catch e
+      throw e if e instanceof TypeError
       throw e unless e instanceof Parser.SyntaxError
       throw new Error formatParserError preprocessed, e
 

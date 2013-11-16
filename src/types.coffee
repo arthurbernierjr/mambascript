@@ -2,62 +2,30 @@ console = log: ->
 
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
-CS = require './nodes'
-util = require 'util'
 
-# ref: http://coffeescriptcookbook.com/chapters/classes_and_objects/cloning
-clone = (obj) ->
-  if not obj? or typeof obj isnt 'object'
-    return obj
+{clone, rewrite} = require './type-helpers'
+reporter = require './reporter'
 
-  if obj instanceof Date
-    return new Date(obj.getTime()) 
-
-  if obj instanceof RegExp
-    flags = ''
-    flags += 'g' if obj.global?
-    flags += 'i' if obj.ignoreCase?
-    flags += 'm' if obj.multiline?
-    flags += 'y' if obj.sticky?
-    return new RegExp(obj.source, flags) 
-
-  newInstance = new obj.constructor()
-
-  for key of obj
-    newInstance[key] = clone obj[key]
-
-  return newInstance
-
-# rewrite :: Object * Hash<String, String> -> ()
-rewrite = (obj, replacer) ->
-  return if (typeof obj) in ['string', 'number']
-  for key, val of obj
-    if (typeof val) is 'string'
-      if replacer[val]?
-        obj[key] = replacer[val]
-    else if val instanceof Object
-      rewrite(val, replacer)
-
-NumberInterface = ->
+NumberInterface =
   toString:
     name: 'function'
     args: []
     returns: 'String'
 
-ArrayInterface = (T = 'Any') ->
+ArrayInterface =
   length: 'Number'
   push:
     name: 'function'
-    args: [T]
+    args: ['T']
     returns: 'void'
   unshift:
     name: 'function'
-    args: [T]
+    args: ['T']
     returns: 'void'
   shift:
     name: 'function'
     args: []
-    returns: T
+    returns: 'T'
   toString:
     name: 'function'
     args: []
@@ -97,12 +65,6 @@ class Possibilites extends Array
 # ng   obj :: {x :: Number, name :: String} = {x : 3, y : 5 }
 
 # TODO: Add Transparent, Passable, Unknown
-
-
-# struct Array<T> {
-#   array: T
-# }
-
 checkAcceptableObject = (left, right) ->
   # TODO: fix
   if left?.base? and left.templates? then left = left.base
@@ -130,13 +92,13 @@ checkAcceptableObject = (left, right) ->
   else if right?.array?
     if left is 'Array' or left is 'Any' or left is undefined then 'ok'
     else
-      throw (new Error "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}")
+      reporter.add_error {}, "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
 
   else if ((typeof left) is 'string') and ((typeof right) is 'string')
     if (left is right) or (left is 'Any') or (right is 'Any')
       'ok'
     else
-      throw (new Error "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}")
+      reporter.add_error {}, "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
 
   # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
@@ -144,13 +106,13 @@ checkAcceptableObject = (left, right) ->
       # when {x: Number} = {z: Number}
       if right[key] is undefined and lval?
         return if key in ['returns', 'type'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
-        throw new Error "'#{key}' is not defined on right"
+        return reporter.add_error {}, "'#{key}' is not defined on right"
 
       checkAcceptableObject(lval, right[key])
   else if (left is undefined) or (right is undefined)
     "ignore now"
   else
-    throw (new Error "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}")
+    reporter.add_error {}, "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
 
 # Initialize primitive types
 # Number, Boolean, Object, Array, Any
@@ -183,7 +145,7 @@ initializeGlobalTypes = (node) ->
 
   node.addTypeObject 'Undefined', new TypeSymbol {
     type: 'Undefined'
-    # instanceof: (expr) -> expr.data is 'undefined'
+    instanceof: (expr) -> expr.data is 'undefined'
   }
 
   # Any
@@ -208,21 +170,6 @@ class TypeSymbol
 # Var and type scope as node
 class Scope
   # constructor :: (Scope) -> Scope
-
-  # Get registered type in my scope
-  # addType  :: (String, String) -> ()
-
-  # Get registered type included in parents
-  # addTypeInScope  :: (String, String) -> ()
-
-  # for debug
-  @dump: (node, prefix = '') ->
-    console.log prefix + "[#{node.name}]"
-    for key, val of node._vars
-      console.log prefix, ' +', key, '::', JSON.stringify(val)
-    for next in node.nodes
-      Scope.dump next, prefix + '  '
-
   constructor: (@parent = null) ->
     @parent?.nodes.push this
 
@@ -329,7 +276,6 @@ class Scope
     checkAcceptableObject(l, r)
 
   # Check arguments
-  # TODO: integrate to checkAcceptableObject
   checkFunctionLiteral: (left, right) ->
     console.log 'checkFunctionLiteral', left, right 
     # flat extend
@@ -340,7 +286,7 @@ class Scope
     # check args
     console.log left
     if left?.args is undefined
-      throw new Error "left is not arguments: #{JSON.stringify left}, #{JSON.stringify right}"
+      return reporter.add_error node, "left is not arguments: #{JSON.stringify left}, #{JSON.stringify right}"
     for l_arg, i in left.args
       r_arg = right.args[i]
       checkAcceptableObject(l_arg, r_arg)

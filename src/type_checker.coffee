@@ -2,17 +2,15 @@ console = {log: ->}
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 
+reporter = require './reporter'
 CS = require './nodes'
 
 {
   initializeGlobalTypes,
-  VarSymbol,
-  TypeSymbol,
   Scope
 } = require './types'
 
 # CS_AST -> Scope
-
 g = window ? global
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
@@ -31,10 +29,9 @@ checkNodes = (cs_ast) ->
     initializeGlobalTypes(root)
 
   walk cs_ast, root
-
   # console.log 'scope ====================='
   # console.log render root
-  Scope.dump root
+  # Scope.dump root
   return root
 
 walk_struct = (node, scope) ->
@@ -187,7 +184,7 @@ walk_assignOp = (node, scope) ->
     #    x :: Number = 3
     # -> x :: String = "hello"
     if scope.getVarInScope(symbol) and pre_registered_annotation
-      throw new Error 'double bind: '+ symbol
+      report.add_error node, 'double bind: '+ symbol
 
     scope.addVar symbol, left.annotation.type
 

@@ -23,3 +23,4 @@ hash :: Hash<String, Number> = {
 
 hash.set "", 1
 hash.get 1
+a :: Object = hash.get 1
