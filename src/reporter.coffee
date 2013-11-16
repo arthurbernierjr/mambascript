@@ -14,7 +14,7 @@ class Reporter
   # () -> String
   report: ->
     errors = @errors.map ([node, text])->
-      text
+      "#{text} :: on #{node}"
 
     """
     [Error]

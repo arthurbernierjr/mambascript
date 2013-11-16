@@ -123,7 +123,8 @@ walk_switch = (node, scope) ->
   node.annotation = type: {possibilities}
 
 walk_newOp = (node, scope) ->
-  node.annotation = type: scope.getTypeInScope node.ctor.data
+  Type = scope.getTypeInScope node.ctor.data
+  node.annotation = type: Type?.type
 
 walk_for = (node, scope) ->
   walk node.target, scope
@@ -235,7 +236,8 @@ walk_bool = (node, scope) ->
 
 walk_identifier = (node, scope) ->
   if scope.getVarInScope(node.data)
-    node.annotation = type: scope.getVarInScope(node.data)
+    Var = scope.getVarInScope(node.data)
+    node.annotation = type: Var?.type
   else
     node.annotation ?=
       type: 'Any'

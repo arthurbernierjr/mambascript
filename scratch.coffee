@@ -1,1 +1,1 @@
-a :: Number[] = (i for i in [1, 3, 10])
+a :: Number[] = (i for i in [1, "hogehoge", 10])

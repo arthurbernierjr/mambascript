@@ -147,9 +147,6 @@ class Scope
     @_types[symbol] = type_object
 
   getType: (symbol) ->
-    @_types[symbol]?.type or undefined
-
-  getTypeObject: (symbol) ->
     @_types[symbol]
 
   getTypeInScope: (symbol) ->
@@ -159,13 +156,13 @@ class Scope
     @_this[symbol] = {type, implicit}
 
   getThis: (symbol) ->
-    @_this[symbol]?.type ? undefined
+    @_this[symbol]
 
   addVar: (symbol, type, implicit = true) ->
     console.log 'addvar;', symbol, type
 
     if type?._base_?
-      T = @getTypeObject(type._base_)
+      T = @getType(type._base_)
       return undefined unless T
       obj = clone T.type
       if T._templates_
@@ -181,7 +178,7 @@ class Scope
       @_vars[symbol] = new VarSymbol {type, implicit}
 
   getVar: (symbol) ->
-    @_vars[symbol]?.type ? undefined
+    @_vars[symbol]
 
   getVarInScope: (symbol) ->
     @getVar(symbol) or @parent?.getVarInScope(symbol) or undefined
@@ -206,7 +203,8 @@ class Scope
             ret[key] = @extendTypeLiteral(val)
           return ret
       when 'string'
-        type = @getTypeInScope(node)
+        Type = @getTypeInScope(node)
+        type = Type?.type
         switch typeof type
           when 'object'
             return @extendTypeLiteral(type)
