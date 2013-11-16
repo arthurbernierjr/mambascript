@@ -1103,14 +1103,14 @@ TypeNameSymbol
   }
   / "(" _ base:ObjectInitialiserKeys _ "<" _ templates:TemplateKeys  _ ">" _ ")" {
     return {
-      base: base.data,
-      templates: templates
+      _base_: base.data,
+      _templates_: templates
     };
   }
   / base:ObjectInitialiserKeys _ "<" _ templates:TemplateKeys _ ">" {
     return {
-      base: base.data,
-      templates: templates
+      _base_: base.data,
+      _templates_: templates
     };
   }
   / key:ObjectInitialiserKeys isArray:"[]"? {

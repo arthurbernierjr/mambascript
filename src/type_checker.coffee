@@ -36,7 +36,7 @@ checkNodes = (cs_ast) ->
 
 walk_struct = (node, scope) ->
   if node.name instanceof Object
-    scope.addType node.name.base, node.expr, node.name.templates
+    scope.addType node.name._base_, node.expr, node.name.templates
   else
     scope.addType node.name, node.expr
 

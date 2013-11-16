@@ -67,7 +67,7 @@ class Possibilites extends Array
 # TODO: Add Transparent, Passable, Unknown
 checkAcceptableObject = (left, right) ->
   # TODO: fix
-  if left?.base? and left.templates? then left = left.base
+  if left?._base_? and left._templates_? then left = left._base_
 
   console.log 'checkAcceptableObject /', left, right
 
@@ -164,7 +164,7 @@ class VarSymbol
 class TypeSymbol
   # type :: String or Object
   # instanceof :: (Any) -> Boolean
-  constructor: ({@type, @instanceof, @templates}) ->
+  constructor: ({@type, @instanceof, @_templates_}) ->
     @instanceof ?= (t) -> t instanceof @constructor
 
 # Var and type scope as node
@@ -194,8 +194,8 @@ class Scope
   getReturnables: -> @_returnables
 
   # addType :: String * Object * Object -> Type
-  addType: (symbol, type, templates) ->
-    @_types[symbol] = new TypeSymbol {type, templates}
+  addType: (symbol, type, _templates_) ->
+    @_types[symbol] = new TypeSymbol {type, _templates_}
 
   addTypeObject: (symbol, type_object) ->
     @_types[symbol] = type_object
@@ -218,17 +218,17 @@ class Scope
   addVar: (symbol, type, implicit = true) ->
     console.log 'addvar;', symbol, type
 
-    if type?.base?
+    if type?._base_?
       # modify type
-      T = @getTypeObject(type.base)
+      T = @getTypeObject(type._base_)
       return undefined unless T
       obj = clone T.type
-      if T.templates
+      if T._templates_
         # create replacer and replace
         # TODO: length match
-        rewrite_to = type.templates
+        rewrite_to = type._templates_
         replacer = {} #=> inpupt => ouput
-        for t, n in T.templates
+        for t, n in T._templates_
           replacer[t] = rewrite_to[n]
         rewrite obj, replacer
 
