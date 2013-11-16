@@ -9,36 +9,36 @@ reporter = require './reporter'
 NumberInterface =
   toString:
     name: 'function'
-    args: []
+    _args_: []
     returns: 'String'
 
 ArrayInterface =
   length: 'Number'
   push:
     name: 'function'
-    args: ['T']
+    _args_: ['T']
     returns: 'void'
   unshift:
     name: 'function'
-    args: ['T']
+    _args_: ['T']
     returns: 'void'
   shift:
     name: 'function'
-    args: []
+    _args_: []
     returns: 'T'
   toString:
     name: 'function'
-    args: []
+    _args_: []
     returns: 'String'
 
 ObjectInterface = ->
   toString:
     name: 'function'
-    args: []
+    _args_: []
     returns: 'String'
   keys:
     name: 'function'
-    args: ['Any']
+    _args_: ['Any']
     returns:
       array: 'String'
 
@@ -282,13 +282,13 @@ class Scope
     left  = @extendTypeLiteral left
     right = @extendTypeLiteral right
     return if left is undefined or left is 'Any'
-    left.args ?= []
-    # check args
+    left._args_ ?= []
+    # check _args_
     console.log left
-    if left?.args is undefined
+    if left?._args_ is undefined
       return reporter.add_error node, "left is not arguments: #{JSON.stringify left}, #{JSON.stringify right}"
-    for l_arg, i in left.args
-      r_arg = right.args[i]
+    for l_arg, i in left._args_
+      r_arg = right._args_[i]
       checkAcceptableObject(l_arg, r_arg)
 
     # check return type

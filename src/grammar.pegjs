@@ -1119,7 +1119,7 @@ TypeNameSymbol
   }
 
 TypeFunction = args:TypeArgs _ "->" _ returns:TypeNameSymbol {
-  return {args: args, returns: returns, type: 'Function'};
+  return {_args_: args, returns: returns, type: 'Function'};
 }
 TypeArgs
   = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {

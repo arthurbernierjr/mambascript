@@ -201,7 +201,7 @@ walk_assignOp = (node, scope) ->
 
       # TypedFunction
       # f :: Int -> Int = (n) -> n
-      else if left.annotation.type.args? and right.annotation.type.args?
+      else if left.annotation.type._args_? and right.annotation.type._args_?
         scope.checkFunctionLiteral(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
 
@@ -308,9 +308,9 @@ walk_class = (node, scope) ->
     scope.addType node.nameAssignee.data, obj
 
 walk_function = (node, scope) ->
-  args = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
+  _args_ = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
 
-  node.annotation.type.args = args
+  node.annotation.type._args_ = _args_
   functionScope      = new Scope scope
   functionScope.name = 'function'
 
@@ -353,8 +353,8 @@ walk_functionApplication = (node, scope) ->
   node.annotation = type: (node.function.annotation?.type?.returns)
 
   if node.function.annotation
-    args = node.arguments?.map (arg) -> arg.annotation?.type
-    scope.checkFunctionLiteral node.function.annotation.type, {args: (args ? []), returns: 'Any'}
+    _args_ = node.arguments?.map (arg) -> arg.annotation?.type
+    scope.checkFunctionLiteral node.function.annotation.type, {_args_: (_args_ ? []), returns: 'Any'}
 
 # Traverse all nodes
 # Node -> void
