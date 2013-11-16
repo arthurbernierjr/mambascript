@@ -325,7 +325,7 @@ walk_function = (node, scope) ->
   walk node.body, functionScope
 
   # () :: Number -> 3
-  if node.annotation?.type?.returns isnt 'Any'
+  if node.annotation?.type?._return_ isnt 'Any'
     # last expr or single line expr
     last_expr =
       if node.body?.statements?.length # => Blcok
@@ -334,7 +334,7 @@ walk_function = (node, scope) ->
         node.body
 
     # 明示的に宣言してある場合
-    scope.checkAcceptableObject(node.annotation.type.returns, last_expr.annotation?.type)
+    scope.checkAcceptableObject(node.annotation.type._return_, last_expr.annotation?.type)
 
   else
     last_expr =
@@ -344,17 +344,17 @@ walk_function = (node, scope) ->
         node.body
 
     if node.annotation?
-      node.annotation.type.returns = last_expr?.annotation?.type
+      node.annotation.type._return_ = last_expr?.annotation?.type
 
 walk_functionApplication = (node, scope) ->
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
-  node.annotation = type: (node.function.annotation?.type?.returns)
+  node.annotation = type: (node.function.annotation?.type?._return_)
 
   if node.function.annotation
     _args_ = node.arguments?.map (arg) -> arg.annotation?.type
-    scope.checkFunctionLiteral node.function.annotation.type, {_args_: (_args_ ? []), returns: 'Any'}
+    scope.checkFunctionLiteral node.function.annotation.type, {_args_: (_args_ ? []), _return_: 'Any'}
 
 # Traverse all nodes
 # Node -> void

@@ -10,36 +10,36 @@ NumberInterface =
   toString:
     name: 'function'
     _args_: []
-    returns: 'String'
+    _return_: 'String'
 
 ArrayInterface =
   length: 'Number'
   push:
     name: 'function'
     _args_: ['T']
-    returns: 'void'
+    _return_: 'void'
   unshift:
     name: 'function'
     _args_: ['T']
-    returns: 'void'
+    _return_: 'void'
   shift:
     name: 'function'
     _args_: []
-    returns: 'T'
+    _return_: 'T'
   toString:
     name: 'function'
     _args_: []
-    returns: 'String'
+    _return_: 'String'
 
 ObjectInterface = ->
   toString:
     name: 'function'
     _args_: []
-    returns: 'String'
+    _return_: 'String'
   keys:
     name: 'function'
     _args_: ['Any']
-    returns:
+    _return_:
       array: 'String'
 
 class Type
@@ -105,7 +105,7 @@ checkAcceptableObject = (left, right) ->
     for key, lval of left
       # when {x: Number} = {z: Number}
       if right[key] is undefined and lval?
-        return if key in ['returns', 'type'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
+        return if key in ['_return_', 'type'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
         return reporter.add_error {}, "'#{key}' is not defined on right"
 
       checkAcceptableObject(lval, right[key])
@@ -293,8 +293,8 @@ class Scope
 
     # check return type
     # TODO: Now I will not infer function return type
-    if right.returns isnt 'Any'
-      checkAcceptableObject(left.returns, right.returns)
+    if right._return_ isnt 'Any'
+      checkAcceptableObject(left._return_, right._return_)
 
 module.exports = {
   checkAcceptableObject, 
