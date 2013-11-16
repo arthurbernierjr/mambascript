@@ -176,8 +176,15 @@ walk_assignOp = (node, scope) ->
 
   symbol = left.data
   
+  # Member
+  if left.instanceof CS.MemberAccessOp
+    return if left.expression.raw is '@' # ignore @ yet
+    if left.annotation?.type? and right.annotation?.type?
+      if left.annotation.type isnt 'Any'
+        scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+
   # Identifier
-  if left.instanceof CS.Identifier
+  else if left.instanceof CS.Identifier
     symbol = left.data
 
     # 既に宣言済みのシンボルに対して型宣言できない
@@ -199,14 +206,6 @@ walk_assignOp = (node, scope) ->
         if right.annotation? and left.annotation?
           scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
         scope.addVar symbol, left.annotation.type
-
-  # Member access
-  else if left.instanceof CS.MemberAccessOp
-    return if left.expression.raw is '@' # ignore @ yet
-    if left.annotation?.type? and right.annotation?.type?
-      if left.annotation.type isnt 'Any'
-        scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
-
   # Vanilla CS
   else
     scope.addVar symbol, 'Any'
