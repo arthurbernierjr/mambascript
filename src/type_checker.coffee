@@ -148,7 +148,7 @@ walk_for = (node, scope) ->
 
   # check body
   walk node.body, scope #=> Block
-  node.annotation = node.body?.annotation
+  node.annotation = node.target?.annotation
 
   # remove after iter
   delete scope._vars[node.valAssignee?.data]
@@ -184,29 +184,16 @@ walk_assignOp = (node, scope) ->
     #    x :: Number = 3
     # -> x :: String = "hello"
     if scope.getVarInScope(symbol) and pre_registered_annotation
-      report.add_error node, 'double bind: '+ symbol
+      return report.add_error node, 'double bind: '+ symbol
 
     scope.addVar symbol, left.annotation.type
 
     # 左辺に型宣言が存在する
-    # -> x :: Number = 3
     if left.annotation.type?
       # 明示的なAnyは全て受け入れる
       # x :: Any = "any instance"
       if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
-
-      else if right.instanceof CS.ForIn
-        scope.checkAcceptableObject(left.annotation.type.array, right.annotation.type)
-
-      # TypedFunction
-      # f :: Int -> Int = (n) -> n
-      else if left.annotation.type._args_? and right.annotation.type._args_?
-        scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
-        scope.addVar symbol, left.annotation.type
-
-      # 右辺の型が指定した型に一致する場合
-      # x :: Number = 3
       else 
         # TODO: grasp unknown yet
         if right.annotation? and left.annotation?
