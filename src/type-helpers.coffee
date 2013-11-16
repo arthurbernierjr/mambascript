@@ -33,3 +33,40 @@
 
 class @TypeError
   constructor: (@message) ->
+    
+NumberInterface =
+  toString:
+    name: 'function'
+    _args_: []
+    _return_: 'String'
+
+ArrayInterface =
+  length: 'Number'
+  push:
+    name: 'function'
+    _args_: ['T']
+    _return_: 'void'
+  unshift:
+    name: 'function'
+    _args_: ['T']
+    _return_: 'void'
+  shift:
+    name: 'function'
+    _args_: []
+    _return_: 'T'
+  toString:
+    name: 'function'
+    _args_: []
+    _return_: 'String'
+
+ObjectInterface = ->
+  toString:
+    name: 'function'
+    _args_: []
+    _return_: 'String'
+  keys:
+    name: 'function'
+    _args_: ['Any']
+    _return_:
+      array: 'String'
+

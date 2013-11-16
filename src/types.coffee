@@ -6,42 +6,6 @@ render = (obj) -> pj?.render obj
 {clone, rewrite} = require './type-helpers'
 reporter = require './reporter'
 
-NumberInterface =
-  toString:
-    name: 'function'
-    _args_: []
-    _return_: 'String'
-
-ArrayInterface =
-  length: 'Number'
-  push:
-    name: 'function'
-    _args_: ['T']
-    _return_: 'void'
-  unshift:
-    name: 'function'
-    _args_: ['T']
-    _return_: 'void'
-  shift:
-    name: 'function'
-    _args_: []
-    _return_: 'T'
-  toString:
-    name: 'function'
-    _args_: []
-    _return_: 'String'
-
-ObjectInterface = ->
-  toString:
-    name: 'function'
-    _args_: []
-    _return_: 'String'
-  keys:
-    name: 'function'
-    _args_: ['Any']
-    _return_:
-      array: 'String'
-
 class Type
   constructor: ->
 
@@ -60,11 +24,6 @@ class Possibilites extends Array
   constructor: (arr = []) ->
     @push i for i in arr
 
-# Exec down casting
-# pass obj :: {x :: Number, name :: String} = {x : 3, y : "hello"}
-# ng   obj :: {x :: Number, name :: String} = {x : 3, y : 5 }
-
-# TODO: Add Transparent, Passable, Unknown
 checkAcceptableObject = (left, right) ->
   # TODO: fix
   if left?._base_? and left._templates_? then left = left._base_
@@ -118,41 +77,13 @@ checkAcceptableObject = (left, right) ->
 # Number, Boolean, Object, Array, Any
 initializeGlobalTypes = (node) ->
   # Primitive
-  node.addTypeObject 'String', new TypeSymbol {
-    type: 'String'
-    instanceof: (expr) -> (typeof expr.data) is 'string'
-  }
-
-  node.addTypeObject 'Number', new TypeSymbol {
-    type: 'Number'
-    instanceof: (expr) -> (typeof expr.data) is 'number'
-  }
-
-  node.addTypeObject 'Boolean', new TypeSymbol {
-    type: 'Boolean'
-    instanceof: (expr) -> (typeof expr.data) is 'boolean'
-  }
-
-  node.addTypeObject 'Object', new TypeSymbol {
-    type: 'Object'
-    instanceof: (expr) -> (typeof expr.data) is 'object'
-  }
-
-  node.addTypeObject 'Array', new TypeSymbol {
-    type: 'Array'
-    instanceof: (expr) -> (typeof expr.data) is 'object'
-  }
-
-  node.addTypeObject 'Undefined', new TypeSymbol {
-    type: 'Undefined'
-    instanceof: (expr) -> expr.data is 'undefined'
-  }
-
-  # Any
-  node.addTypeObject 'Any', new TypeSymbol {
-    type: 'Any'
-    instanceof: (expr) -> true
-  }
+  node.addTypeObject 'String', new TypeSymbol {type: 'String'}
+  node.addTypeObject 'Number', new TypeSymbol {type: 'Number'}
+  node.addTypeObject 'Boolean', new TypeSymbol {type: 'Boolean'}
+  node.addTypeObject 'Object', new TypeSymbol {type: 'Object'}
+  node.addTypeObject 'Array', new TypeSymbol {type: 'Array'}
+  node.addTypeObject 'Undefined', new TypeSymbol {type: 'Undefined'}
+  node.addTypeObject 'Any', new TypeSymbol {type: 'Any'}
 
 # Known vars in scope
 class VarSymbol
@@ -174,19 +105,18 @@ class Scope
     @parent?.nodes.push this
 
     @name = ''
-    @nodes  = [] #=> scopeeNode...
+    @nodes  = [] #=> Scope[]
 
-    # スコープ変数
-    @_vars  = {} #=> symbol -> type
+    # Scope vars
+    @_vars  = {} #=> String -> Type
 
-    # 登録されている型
-    @_types = {} #=> typeName -> type
+    # Scope types
+    @_types = {} #=> String -> Type
 
-    # TODO: This Scope
-    @_this  = {} #=> null or {}
+    # This scope
+    @_this  = {}
 
-    # このブロックがReturn する可能性があるもの
-    @_returnables = [] #=> [ReturnableType...]
+    @_returnables = [] #=> Type[]
 
   addReturnable: (symbol, type) ->
     @_returnables.push type
@@ -219,15 +149,13 @@ class Scope
     console.log 'addvar;', symbol, type
 
     if type?._base_?
-      # modify type
       T = @getTypeObject(type._base_)
       return undefined unless T
       obj = clone T.type
       if T._templates_
-        # create replacer and replace
         # TODO: length match
         rewrite_to = type._templates_
-        replacer = {} #=> inpupt => ouput
+        replacer = {}
         for t, n in T._templates_
           replacer[t] = rewrite_to[n]
         rewrite obj, replacer
