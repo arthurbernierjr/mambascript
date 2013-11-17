@@ -376,8 +376,23 @@ suite 'TypeChecker', ->
       a :: Number
       a = 3
 
-    test 'throw when function args mismatch', ->
+    test 'throw pre-defined', ->
       throws -> CoffeeScript.parse """
       a :: Number
       a = "str"
+      """
+
+    test 'throw generics object', ->
+      throws -> CoffeeScript.parse """
+      struct Hash<K, V> {
+        get :: K -> V
+        set :: K * V -> ()
+      }
+
+      hash :: Hash<String, Number> =
+        get: (key) -> @[key]
+        set: (key, val) -> @[key] = val
+
+      hash.set "", 1
+      hash.get 1
       """
