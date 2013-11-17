@@ -7,7 +7,9 @@ CS = require './nodes'
 
 {
   initializeGlobalTypes,
-  Scope
+  Scope,
+  ClassScope,
+  FunctionScope
 } = require './types'
 
 # CS_AST -> Scope
@@ -30,8 +32,8 @@ checkNodes = (cs_ast) ->
 
   walk cs_ast, root
   # console.log 'scope ====================='
-  # console.log render root
-  # Scope.dump root
+  # reporter.dump root
+  # console.log root.nodes[0]
   return root
 
 walk_struct = (node, scope) ->
@@ -41,7 +43,10 @@ walk_struct = (node, scope) ->
     scope.addType node.name, node.expr
 
 walk_vardef = (node, scope) ->
-  scope.addVar node.name, node.expr
+  if scope instanceof ClassScope
+    scope.addThis node.name, node.expr
+  else
+    scope.addVar node.name, node.expr
 
 walk_program = (node, scope) ->
   walk node.body.statements, scope
@@ -161,6 +166,8 @@ walk_for = (node, scope) ->
   delete scope._vars[node.keyAssignee?.data]
 
 walk_classProtoAssignOp = (node, scope) ->
+  # console.log 'ClassProtoAssignOp'
+  # console.log render node
   left  = node.assignee
   right = node.expression
   walk right, scope
@@ -176,20 +183,34 @@ walk_assignOp = (node, scope) ->
 
   left  = node.assignee
   right = node.expression
+  symbol = left.data
 
   walk left,  scope
 
-  if right.instanceof?(CS.Function) and pre_registered_annotation
+  if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
+    walk_function right, scope, scope.getVarInScope(symbol).type
+  else if right.instanceof?(CS.Function) and pre_registered_annotation
     walk_function right, scope, left.annotation.type
   else
     walk right, scope
 
-  symbol = left.data
   
   # Member
   if left.instanceof CS.MemberAccessOp
-    return if left.expression.raw is '@' # ignore @ yet
-    if left.annotation?.type? and right.annotation?.type?
+    if left.expression.instanceof CS.This
+      console.log 'MemberAccessOp# THIS', 
+      console.log render left
+      console.log scope._this
+      console.log T = scope.getThis(left.memberName)
+      left.annotation = T if T?
+
+      if T?
+        if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+          return reporter.add_error node, err
+
+      return
+    # return if left.expression.raw is '@' # ignore @ yet
+    else if left.annotation?.type? and right.annotation?.type?
       if left.annotation.type isnt 'Any'
         if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
           return reporter.add_error node, err
@@ -294,8 +315,34 @@ walk_objectInitializer = (node, scope) ->
     type: obj
 
 walk_class = (node, scope) ->
-  classScope = new Scope scope
-  walk node.body, classScope
+  classScope = new ClassScope scope
+  # console.log "[class]"
+  # console.log render node
+
+  # collect @values first 
+  if node.body?.statements?
+    for statement in node.body.statements when statement.type is 'vardef'
+      walk_vardef statement, classScope
+  
+  # constructor
+  if node.ctor?
+    constructorScope = new FunctionScope classScope
+    constructorScope._this = classScope._this # delegate this scope
+    # arguments
+    if node.ctor.expression.parameters?
+      # TODO addVar
+      for param in node.ctor.expression.parameters
+        walk param, classScope
+    # constructor body
+    if node.ctor.expression.body?.statements?
+      for statement in node.ctor.expression.body.statements
+        walk statement, constructorScope
+
+  # walk
+  if node.body?.statements?
+    for statement in node.body.statements when statement.type isnt 'vardef'
+      walk statement, classScope
+
   if node.nameAssignee?.data
     obj = {}
     for fname, val of classScope._this
@@ -305,7 +352,6 @@ walk_class = (node, scope) ->
 # Node * Scope * Type
 # predef :: Type defined at assignee
 walk_function = (node, scope, predef = null) ->
-  console.log 'walk_function', predef
   _args_ = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
 
   node.annotation.type._args_ = _args_
@@ -319,10 +365,10 @@ walk_function = (node, scope, predef = null) ->
     if predef
       node.annotation.type = predef
       for param, index in node.parameters
-        functionScope.addVar param.data, predef._args_[index]
+        functionScope.addVar param.data, (predef._args_?[index] ? 'Any')
     else
       for param, index in node.parameters
-        functionScope.addVar param.data, (param.annotation?.type ? 'Any')
+        functionScope.addVar param.data, (param?.annotation?.type ? 'Any')
 
   walk node.body, functionScope
 
@@ -336,7 +382,7 @@ walk_function = (node, scope, predef = null) ->
         node.body
 
     # 明示的に宣言してある場合
-    if err = scope.checkAcceptableObject(node.annotation.type._return_, last_expr.annotation?.type)
+    if err = scope.checkAcceptableObject(node.annotation?.type._return_, last_expr?.annotation?.type)
       return reporter.add_error node, err
 
   else

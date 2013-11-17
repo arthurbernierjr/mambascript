@@ -1,28 +1,8 @@
-struct Hash<K, V> {
-  get :: K -> V
-  set :: K * V -> ()
-}
+class X
+  foo :: Number
+  bar :: String
+  constructor: ->
+    @foo = 'fuga'
 
-hash :: Hash<String, Number> =
-  get: (key) -> @[key]
-  set: (key, val) -> @[key] = val
-# hash :: Hash<String, Number>
-# hash =
-#   get: (key) -> @[key]
-#   set: (key, val) -> @[key] = val
-
-hash.set "", 1
-hash.get 1
-
-# struct Hash<K, V> {
-#   get :: K -> V
-#   set :: K * V -> ()
-# }
-# hash :: Hash<String, Number> = {
-#   get: (key) -> @[key]
-#   set: (key, val) -> @[key] = val
-# }
-# hash.set "a", 1
-# hash.get 3
-
-hoge
+  f :: Number -> Number
+  f : (n) -> n

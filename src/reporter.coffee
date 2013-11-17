@@ -36,6 +36,6 @@ class Reporter
     for key, val of node._vars
       console.log prefix, ' +', key, '::', JSON.stringify(val)
     for next in node.nodes
-      Scope.dump next, prefix + '  '
+      @dump next, prefix + '  '
 
 module.exports = new Reporter

@@ -146,14 +146,28 @@ class Scope
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
 
   addThis: (symbol, type, implicit = true) ->
-    @_this[symbol] = {type, implicit}
+    # TODO: Refactor with addVar
+    if type?._base_?
+      T = @getType(type._base_)
+      return undefined unless T
+      obj = clone T.type
+      if T._templates_
+        # TODO: length match
+        rewrite_to = type._templates_
+        replacer = {}
+        for t, n in T._templates_
+          replacer[t] = rewrite_to[n]
+        rewrite obj, replacer
+
+      @_this[symbol] = new VarSymbol {type:obj, implicit}
+    else
+      @_this[symbol] = new VarSymbol {type, implicit}
 
   getThis: (symbol) ->
     @_this[symbol]
 
   addVar: (symbol, type, implicit = true) ->
-    console.log 'addvar;', symbol, type
-
+    # TODO: Refactor
     if type?._base_?
       T = @getType(type._base_)
       return undefined unless T
@@ -210,9 +224,12 @@ class Scope
     r = @extendTypeLiteral(right)
     return checkAcceptableObject(l, r)
 
+class ClassScope extends Scope
+class FunctionScope extends Scope
+
 module.exports = {
   checkAcceptableObject, 
   initializeGlobalTypes, 
-  VarSymbol, TypeSymbol, Scope, 
+  VarSymbol, TypeSymbol, Scope, ClassScope, FunctionScope
   ArrayType, ObjectType, Type, Possibilites
 }

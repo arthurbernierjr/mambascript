@@ -382,6 +382,17 @@ suite 'TypeChecker', ->
       a = "str"
       """
 
+    test 'pre-defined function', ->
+      a :: Number -> Number
+      a = (n) -> n
+
+    test 'throw pre-defined args mismatch', ->
+      throws -> CoffeeScript.parse """
+      a :: Number -> Number
+      a = (n) ->
+        n2 :: String = n
+      """
+
     test 'throw generics object', ->
       throws -> CoffeeScript.parse """
       struct Hash<K, V> {
