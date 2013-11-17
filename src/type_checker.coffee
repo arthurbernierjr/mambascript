@@ -169,13 +169,17 @@ walk_classProtoAssignOp = (node, scope) ->
     scope.addThis symbol, right.annotation.type
 
 walk_assignOp = (node, scope) ->
-  pre_registered_annotation = node.assignee.annotation #TODO: I don't want this
+  pre_registered_annotation = node.assignee.annotation #TODO: dirty...
 
   left  = node.assignee
   right = node.expression
 
-  walk right, scope
   walk left,  scope
+
+  if right.instanceof?(CS.Function) and pre_registered_annotation
+    walk_function right, scope, left.annotation.type
+  else
+    walk right, scope
 
   symbol = left.data
   
@@ -183,7 +187,6 @@ walk_assignOp = (node, scope) ->
   if left.instanceof CS.MemberAccessOp
     return if left.expression.raw is '@' # ignore @ yet
     if left.annotation?.type? and right.annotation?.type?
-
       if left.annotation.type isnt 'Any'
         if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
           return reporter.add_error node, err
@@ -192,9 +195,6 @@ walk_assignOp = (node, scope) ->
   else if left.instanceof CS.Identifier
     symbol = left.data
 
-    # 既に宣言済みのシンボルに対して型宣言できない
-    #    x :: Number = 3
-    # -> x :: String = "hello"
     if scope.getVarInScope(symbol) and pre_registered_annotation
       return report.add_error node, 'double bind: '+ symbol
 
@@ -299,16 +299,27 @@ walk_class = (node, scope) ->
       obj[fname] = val.type
     scope.addType node.nameAssignee.data, obj
 
-walk_function = (node, scope) ->
+# Node * Scope * Type
+# predef :: Type defined at assignee
+walk_function = (node, scope, predef = null) ->
+  console.log 'walk_function', predef
   _args_ = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
 
   node.annotation.type._args_ = _args_
-  functionScope      = new Scope scope
-  functionScope.name = 'function'
+  functionScope = new Scope scope
+  functionScope._name_ = 'function'
 
   # register arguments to function scope
-  node.parameters?.map (param) ->
-    functionScope.addVar? param.data, (param.annotation?.type ? 'Any')
+  cur = 0
+  if node.parameters?
+    # if exist pre-defined parameters, override inferred object
+    if predef
+      node.annotation.type = predef
+      for param, index in node.parameters
+        functionScope.addVar param.data, predef._args_[index]
+    else
+      for param, index in node.parameters
+        functionScope.addVar param.data, (param.annotation?.type ? 'Any')
 
   walk node.body, functionScope
 
