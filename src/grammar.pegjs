@@ -335,7 +335,7 @@ secondaryStatement
   / throw
   / debugger
 // secondaryExpression forbids anything lower precedence than assignmentExpression
-secondaryExpression = expressionworthy / assignmentExpression
+secondaryExpression = expressionworthy / vardef / assignmentExpression
 secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressionNoImplicitObjectCall
 
 // TODO: FIX CS.Int hack
@@ -346,6 +346,16 @@ structdef = 'struct' !(_ "=") __ name:TypeNameSymbol _ expr: TypeExpr {
   s.expr = expr;
   return s;
 }
+
+// TODO: FIX CS.Int hack
+vardef = name:TypeNameSymbol __ '::' _ expr: TypeExpr !(_ "=") {
+  var s = rp(new CS.Int(line()))
+  s.type = 'vardef';
+  s.name = name;
+  s.expr = expr;
+  return s;
+}
+
 // TODO: rename?
 expressionworthy
   = structdef

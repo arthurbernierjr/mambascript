@@ -40,6 +40,9 @@ walk_struct = (node, scope) ->
   else
     scope.addType node.name, node.expr
 
+walk_vardef = (node, scope) ->
+  scope.addVar node.name, node.expr
+
 walk_program = (node, scope) ->
   walk node.body.statements, scope
   node.annotation = type: 'Program'
@@ -369,6 +372,7 @@ walk = (node, scope) ->
     # Struct
     # Dirty hack on Number
     when node.type is 'struct'           then walk_struct node, scope
+    when node.type is 'vardef'           then walk_vardef node, scope
     # Program
     when node.instanceof CS.Program      then walk_program node, scope
     # Block

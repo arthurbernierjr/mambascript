@@ -371,3 +371,13 @@ suite 'TypeChecker', ->
       f :: Number * String -> String = (n, s) ->
         a :: Number = s
       """
+
+    test 'pre-defined syntax', ->
+      a :: Number
+      a = 3
+
+    test 'throw when function args mismatch', ->
+      throws -> CoffeeScript.parse """
+      a :: Number
+      a = "str"
+      """
