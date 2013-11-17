@@ -407,3 +407,18 @@ suite 'TypeChecker', ->
       hash.set "", 1
       hash.get 1
       """
+
+
+    test 'access this in class', ->
+      class X
+        foo :: Number
+        constructor: ->
+          @foo = 3
+
+    test 'throw access this in class', ->
+      throws -> CoffeeScript.parse """
+      class X
+        foo :: Number
+        constructor: ->
+          @foo = 'fuga'
+      """
