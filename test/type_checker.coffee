@@ -365,3 +365,9 @@ suite 'TypeChecker', ->
       }
       hash.set 5, 1
       """
+
+    test 'throw when function args mismatch', ->
+      throws -> CoffeeScript.parse """
+      f :: Number * String -> String = (n, s) ->
+        a :: Number = s
+      """
