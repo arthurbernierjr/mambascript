@@ -1,3 +1,8 @@
+reporter = require '../lib/reporter'
+parse = (coffee) ->
+  reporter.errors = []
+  parse coffee
+
 suite 'TypeChecker', ->
   suite 'Assignment', ->
     test 'basic assign', ->
@@ -15,7 +20,7 @@ suite 'TypeChecker', ->
 
     test 'throw type mismatch', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           x :: Number = "3"
         """
 
@@ -24,19 +29,19 @@ suite 'TypeChecker', ->
 
     test 'throw object literal mitmatching', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           obj :: { x :: Number } = { x : '' }
         """
 
     test 'throw at lacking of object member', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           obj :: { x :: Number, y :: Number } = { x : 3 }
         """
 
     test 'throw member access error', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           obj :: { x :: Number } = { x : 3 }
           obj.x = ""
         """
@@ -73,7 +78,7 @@ suite 'TypeChecker', ->
 
     test 'typed function mismatching application', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           f :: Number -> Number = 3
         """
 
@@ -123,7 +128,7 @@ suite 'TypeChecker', ->
 
     test 'throw struct member access with mismatch type', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           struct Point {
             x :: Number
             y :: Number
@@ -142,7 +147,7 @@ suite 'TypeChecker', ->
 
     test 'throw function arguments mismatch', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           f :: Number -> Number = (n :: Number) :: Number ->  n * n
           (f "hello")
         """
@@ -153,7 +158,7 @@ suite 'TypeChecker', ->
 
     test 'throw function arguments mismatch', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           f :: Number -> Number = (n :: Number) :: Number ->  n * n
           y :: String = (f 3)
         """
@@ -184,7 +189,7 @@ suite 'TypeChecker', ->
 
     test 'throw if return type mismatch', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           a :: Number = if true then 3 else ""
         """
 
@@ -204,13 +209,13 @@ suite 'TypeChecker', ->
 
     test 'throw return type mismatch', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           arr :: Number[] = ("" for i in [1,2,3])
         """
 
     test 'throw target mismatch', ->
       throws ->
-        CoffeeScript.parse """
+        parse """
           arr :: Number[] = (i for i :: Number in [1,2,""])
         """
 
@@ -220,7 +225,7 @@ suite 'TypeChecker', ->
           val
 
     test 'throw target mismatch', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       list :: Number[] =
         for key :: String, val :: Number of {x: "hoge", y: 6}
           val
@@ -235,12 +240,12 @@ suite 'TypeChecker', ->
         3
 
     test 'throw function return type mismatch', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       f0 :: () -> Number = () :: Number -> ''
       """
 
     test 'throw function return type mismatch', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       f2 :: () -> Number = ->
         return ""
       """
@@ -249,7 +254,7 @@ suite 'TypeChecker', ->
       list :: Number[] = [1..10]
 
     test 'throw function return type mismatch', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       list :: String[] = [1..10]
       """
 
@@ -260,7 +265,7 @@ suite 'TypeChecker', ->
       a :: String = "hello" + "world"
 
     test 'miscast BinOp', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       c :: Number = "" + 3
       """
 
@@ -274,7 +279,7 @@ suite 'TypeChecker', ->
           else
             'fuga'
     test 'miscast Switch', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       x :: Number =
         switch true
           when 0
@@ -284,7 +289,7 @@ suite 'TypeChecker', ->
       """
 
     test 'cant catch undefined', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       x :: Number = global?.require
       """
 
@@ -300,7 +305,7 @@ suite 'TypeChecker', ->
       n :: Number = x.f 3
 
     test 'new', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       class X
         f: (n :: Number) :: Number -> 
           n * n
@@ -318,7 +323,7 @@ suite 'TypeChecker', ->
       s :: Numbertgra = origin.getInstance()
 
     test 'throw generics', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
         struct Singleton<T> {
           getInstance :: () -> T
         }
@@ -340,7 +345,7 @@ suite 'TypeChecker', ->
       num :: Number = hash.get "a"
 
     test 'throw generics hash', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       struct Hash<K, V> {
         get :: K -> V
         set :: K * V -> ()
@@ -354,7 +359,7 @@ suite 'TypeChecker', ->
       """
 
     test 'throw generics hash', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       struct Hash<K, V> {
         get :: K -> V
         set :: K * V -> ()
@@ -367,7 +372,7 @@ suite 'TypeChecker', ->
       """
 
     test 'throw when function args mismatch', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       f :: Number * String -> String = (n, s) ->
         a :: Number = s
       """
@@ -377,7 +382,7 @@ suite 'TypeChecker', ->
       a = 3
 
     test 'throw pre-defined', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       a :: Number
       a = "str"
       """
@@ -387,7 +392,7 @@ suite 'TypeChecker', ->
       a = (n) -> n
 
     test 'throw pre-defined args mismatch', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       a :: Number -> Number
       a = (n) ->
         n2 :: String = n
@@ -401,7 +406,7 @@ suite 'TypeChecker', ->
           @text = n.toString()
 
     test 'throw pre-defined args mismatch in class', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       class X
         text :: String
         f :: Number -> Number
@@ -410,7 +415,7 @@ suite 'TypeChecker', ->
       """
 
     test 'throw generics object', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       struct Hash<K, V> {
         get :: K -> V
         set :: K * V -> ()
@@ -438,7 +443,7 @@ suite 'TypeChecker', ->
           @foo = 3
 
     test 'throw access this in class', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       class Z
         foo :: Number
         constructor: ->
@@ -446,9 +451,9 @@ suite 'TypeChecker', ->
       """
 
     test 'throw access proto this in class', ->
-      throws -> CoffeeScript.parse """
+      throws -> parse """
       class K
         bar :: String
         f : (n) ->
-          @bar = ""
+          @bar = 2
       """
