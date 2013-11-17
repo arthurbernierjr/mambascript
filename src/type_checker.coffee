@@ -36,7 +36,7 @@ checkNodes = (cs_ast) ->
 
 walk_struct = (node, scope) ->
   if node.name instanceof Object
-    scope.addType node.name._base_, node.expr, node.name.templates
+    scope.addType node.name._base_, node.expr, node.name._templates_
   else
     scope.addType node.name, node.expr
 
@@ -358,7 +358,7 @@ walk_functionApplication = (node, scope) ->
   if node.function.annotation
     _args_ = node.arguments?.map (arg) -> arg.annotation?.type
     if err = scope.checkAcceptableObject node.function.annotation.type, {_args_: (_args_ ? []), _return_: 'Any'}
-      return reporter.add_error node, ret
+      return reporter.add_error node, err
 
 # Traverse all nodes
 # Node -> void
