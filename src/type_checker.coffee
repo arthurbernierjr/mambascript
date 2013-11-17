@@ -168,10 +168,11 @@ walk_for = (node, scope) ->
 walk_classProtoAssignOp = (node, scope) ->
   left  = node.assignee
   right = node.expression
+  symbol = left.data
 
   walk left, scope
-  if right.instanceof CS.Function
-    walk_function right, scope
+  if (right.instanceof CS.Function) and scope.getThis(symbol)
+    walk_function right, scope, scope.getThis(symbol).type
   else
     walk right, scope
 

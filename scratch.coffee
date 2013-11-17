@@ -1,9 +1,6 @@
 class X
-  foo :: Number
-  bar :: String
-  constructor: ->
-    @foo = 3
+  text :: String
 
   f :: Number -> Number
-  f : (n) ->
-    @bar = ""
+  f: (n) ->
+    @text = n
