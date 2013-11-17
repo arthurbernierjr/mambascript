@@ -27,67 +27,60 @@ class Possibilites extends Array
 checkAcceptableObject = (left, right) =>
   # TODO: fix
   if left?._base_? and left._templates_? then left = left._base_
-
   console.log 'checkAcceptableObject /', left, right
 
   # possibilites :: Type[]
   if right?.possibilities?
-    for r in right.possibilities
-      checkAcceptableObject left, r
-    return
+    results = (checkAcceptableObject left, r for r in right.possibilities)
+    return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
 
-  if left is 'Any' then return
+  # Any
+  if left is 'Any'
+    return false
 
   if left?._args_
-    # flat extend
     return if left is undefined or left is 'Any'
     left._args_ ?= []
-    # check _args_
-    console.log left
-    if left?._args_ is undefined
-      return reporter.add_error node, "left is not arguments: #{JSON.stringify left}, #{JSON.stringify right}"
-    for l_arg, i in left._args_
-      r_arg = right._args_[i]
-      checkAcceptableObject(l_arg, r_arg)
+    results = (checkAcceptableObject(l_arg, right._args_[i]) for l_arg, i in left._args_)
+    return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
 
     # check return type
     # TODO: Now I will not infer function return type
     if right._return_ isnt 'Any'
-      checkAcceptableObject(left._return_, right._return_)
-    return
+      return checkAcceptableObject(left._return_, right._return_)
+    return false
 
   if left?.array?
-
     if right.array instanceof Array
-      checkAcceptableObject left.array, r for r in right.array
+      results = (checkAcceptableObject left.array, r for r in right.array)
+      return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
     else
-      checkAcceptableObject left.array, right.array
+      return checkAcceptableObject left.array, right.array
 
-  # "Array" <> array: Number
   else if right?.array?
-    if left is 'Array' or left is 'Any' or left is undefined then 'ok'
+    if left is 'Array' or left is 'Any' or left is undefined
+      return false
     else
-      reporter.add_error {}, "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
+      return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
 
   else if ((typeof left) is 'string') and ((typeof right) is 'string')
     if (left is right) or (left is 'Any') or (right is 'Any')
-      'ok'
+      return false
     else
-      reporter.add_error {}, "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
+      return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
 
-  # {x: "Nubmer", y: "Number"} <> {x: "Nubmer", y: "Number"}
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
-    for key, lval of left
-      # when {x: Number} = {z: Number}
-      if right[key] is undefined and lval?
-        return if key in ['_return_', 'type', 'possibilities'] # TODO ArrayTypeをこっちで吸収してないから色々きちゃう
-        return reporter.add_error {}, "'#{key}' is not defined on right"
-
-      checkAcceptableObject(lval, right[key])
+    results =
+      for key, lval of left
+        if right[key] is undefined and lval? and not (key in ['_return_', 'type', 'possibilities']) # TODO avoid system values
+          "'#{key}' is not defined on right"
+        else
+          checkAcceptableObject(lval, right[key])
+    return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
   else if (left is undefined) or (right is undefined)
-    "ignore now"
+    return false
   else
-    reporter.add_error {}, "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
+    return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
 
 # Initialize primitive types
 # Number, Boolean, Object, Array, Any
@@ -215,7 +208,7 @@ class Scope
   checkAcceptableObject: (left, right) ->
     l = @extendTypeLiteral(left)
     r = @extendTypeLiteral(right)
-    checkAcceptableObject(l, r)
+    return checkAcceptableObject(l, r)
 
 module.exports = {
   checkAcceptableObject, 

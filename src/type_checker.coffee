@@ -139,13 +139,15 @@ walk_for = (node, scope) ->
   if node.valAssignee?
     # ForIn
     if node.target.annotation?.type?.array?
-      scope.checkAcceptableObject(node.valAssignee.annotation.type, node.target.annotation.type.array)
+      if err = scope.checkAcceptableObject(node.valAssignee.annotation.type, node.target.annotation.type.array) 
+        return reporter.add_error node, err
 
     # ForOf
     else if node.target?.annotation?.type instanceof Object
       if node.target.annotation.type instanceof Object
         for nop, type of node.target.annotation.type
-          scope.checkAcceptableObject(node.valAssignee.annotation.type, type)
+          if err = scope.checkAcceptableObject(node.valAssignee.annotation.type, type)
+            return reporter.add_error node, err
 
   # check body
   walk node.body, scope #=> Block
@@ -181,8 +183,10 @@ walk_assignOp = (node, scope) ->
   if left.instanceof CS.MemberAccessOp
     return if left.expression.raw is '@' # ignore @ yet
     if left.annotation?.type? and right.annotation?.type?
+
       if left.annotation.type isnt 'Any'
-        scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+        if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+          return reporter.add_error node, err
 
   # Identifier
   else if left.instanceof CS.Identifier
@@ -204,7 +208,8 @@ walk_assignOp = (node, scope) ->
         scope.addVar symbol, 'Any', true
       else 
         if right.annotation? and left.annotation?
-          scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+          if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+            return reporter.add_error node, err
         scope.addVar symbol, left.annotation.type
   # Vanilla CS
   else
@@ -317,7 +322,8 @@ walk_function = (node, scope) ->
         node.body
 
     # 明示的に宣言してある場合
-    scope.checkAcceptableObject(node.annotation.type._return_, last_expr.annotation?.type)
+    if err = scope.checkAcceptableObject(node.annotation.type._return_, last_expr.annotation?.type)
+      return reporter.add_error node, err
 
   else
     last_expr =
@@ -337,7 +343,8 @@ walk_functionApplication = (node, scope) ->
 
   if node.function.annotation
     _args_ = node.arguments?.map (arg) -> arg.annotation?.type
-    scope.checkAcceptableObject node.function.annotation.type, {_args_: (_args_ ? []), _return_: 'Any'}
+    if err = scope.checkAcceptableObject node.function.annotation.type, {_args_: (_args_ ? []), _return_: 'Any'}
+      return reporter.add_error node, ret
 
 # Traverse all nodes
 # Node -> void

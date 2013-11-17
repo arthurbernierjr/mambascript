@@ -14,15 +14,18 @@ class Reporter
   # () -> String
   report: ->
     errors = @errors.map ([node, text])->
-      "#{text} :: on #{node}"
+      """
+      #{text}
+        at | #{node.raw}
+      """
 
     """
     [Error]
     #{errors.join '\n'}
     """
 
-  add_error: (node, es...) =>
-    @errors.push [node, es.join '']
+  add_error: (node, text) =>
+    @errors.push [node, text]
 
   add_warning: (node, ws...) =>
     @warnings.push [node, ws.join '']

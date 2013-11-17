@@ -4,6 +4,7 @@
 } = require '../src/types'
 reporter = require '../src/reporter'
 {ok} = require 'assert'
+ng = (v) -> !v
 
 fail_typecheck = ->
   ok reporter.has_errors() is true
@@ -13,17 +14,16 @@ suite 'Types', ->
   suite '.checkAcceptableObject', ->
 
     test 'string <> string', ->
-      checkAcceptableObject 'Number', 'Number'
+      ok false is checkAcceptableObject 'Number', 'Number'
 
     test 'Any <> string', ->
-      checkAcceptableObject 'Any', 'String'
+      ok false is checkAcceptableObject 'Any', 'String'
 
     test 'String <> Possibities[String...]', ->
-      checkAcceptableObject 'String', possibilities: ['String', 'String']
+      ok false is checkAcceptableObject 'String', possibilities: ['String', 'String']
 
     test 'String <> Possibities[...]', ->
-      checkAcceptableObject 'String', possibilities: ['Number', 'String']
-      fail_typecheck()
+      ok !!checkAcceptableObject 'String', possibilities: ['Number', 'String']
 
     suite 'Object', ->
       test 'throw Object <> string'
@@ -31,38 +31,35 @@ suite 'Types', ->
         # fail_typecheck()
 
       test 'Fill all', ->
-        checkAcceptableObject {x: 'Number'}, {x: 'Number'}
+        ok false is checkAcceptableObject {x: 'Number'}, {x: 'Number'}
 
       test 'Fill all with unused right params', ->
-        checkAcceptableObject {x: 'Number'}, {x: 'Number', y: 'Number'}
+        ok false is checkAcceptableObject {x: 'Number'}, {x: 'Number', y: 'Number'}
 
       test 'throw not filled right', ->
-        checkAcceptableObject {x: 'Number', y: 'Number'}, {x: 'Number'}
-        fail_typecheck()
+        ok !!checkAcceptableObject {x: 'Number', y: 'Number'}, {x: 'Number'}
 
     suite 'Array', ->
       test 'pure array', ->
-        checkAcceptableObject "Array", (array: 'String')
+        ok false is checkAcceptableObject "Array", (array: 'String')
 
       test 'throw non-array definition', ->
-        checkAcceptableObject "Number", (array: 'String')
-        fail_typecheck()
+        ok !!checkAcceptableObject "Number", (array: 'String')
 
       test 'fill array', ->
-        checkAcceptableObject (new ArrayType "Number"), (new ArrayType "Number")
+        ok false is checkAcceptableObject (new ArrayType "Number"), (new ArrayType "Number")
 
       test 'fill array with raw object', ->
-        checkAcceptableObject (array: {n: 'String'}), (array: {n:'String'})
+        ok false is checkAcceptableObject (array: {n: 'String'}), (array: {n:'String'})
 
       test 'throw not filled array', ->
-        checkAcceptableObject (new ArrayType "Number"), (new ArrayType "String")
-        fail_typecheck()
+        ok !!checkAcceptableObject (new ArrayType "Number"), (new ArrayType "String")
 
       test 'fill all array possibilities ', ->
-        checkAcceptableObject (array: {n: 'String'}), (array:[{n:'String'}, {n: 'String'}])
+        ok false is checkAcceptableObject (array: {n: 'String'}), (array:[{n:'String'}, {n: 'String'}])
 
       test 'fill array with complecated object', ->
-        checkAcceptableObject (array: {
+        ok false is checkAcceptableObject (array: {
           x: 'Number'
           y: 'Number'
         }), (array:[
@@ -71,11 +68,10 @@ suite 'Types', ->
         ])
 
       test 'throw not filled array(with complecated object)', ->
-        checkAcceptableObject (array: {
+        ok !!checkAcceptableObject (array: {
           x: 'Number'
           y: 'Number'
         }), (array:[
           {x: 'Number', y: 'Number'},
           {x: 'Number', name: 'String'}
         ])
-        fail_typecheck()
