@@ -393,6 +393,22 @@ suite 'TypeChecker', ->
         n2 :: String = n
       """
 
+    test 'pre-defined args in class', ->
+      class X
+        text :: String
+        f :: Number -> Number
+        f: (n) ->
+          @text = n.toString()
+
+    test 'throw pre-defined args mismatch in class', ->
+      throws -> CoffeeScript.parse """
+      class X
+        text :: String
+        f :: Number -> Number
+        f: (n) ->
+          @text = n
+      """
+
     test 'throw generics object', ->
       throws -> CoffeeScript.parse """
       struct Hash<K, V> {
