@@ -166,12 +166,14 @@ walk_for = (node, scope) ->
   delete scope._vars[node.keyAssignee?.data]
 
 walk_classProtoAssignOp = (node, scope) ->
-  # console.log 'ClassProtoAssignOp'
-  # console.log render node
   left  = node.assignee
   right = node.expression
-  walk right, scope
-  walk left,  scope
+
+  walk left, scope
+  if right.instanceof CS.Function
+    walk_function right, scope
+  else
+    walk right, scope
 
   symbol = left.data
 
@@ -198,12 +200,8 @@ walk_assignOp = (node, scope) ->
   # Member
   if left.instanceof CS.MemberAccessOp
     if left.expression.instanceof CS.This
-      console.log 'MemberAccessOp# THIS', 
-      console.log render left
-      console.log scope._this
-      console.log T = scope.getThis(left.memberName)
+      T = scope.getThis(left.memberName)
       left.annotation = T if T?
-
       if T?
         if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
           return reporter.add_error node, err
@@ -271,6 +269,12 @@ walk_identifier = (node, scope) ->
     node.annotation ?=
       type: 'Any'
 
+walk_this = (node, scope) ->
+  type = {}
+  for key, val of scope._this
+    type[key] = val.type
+  node.annotation ?= {type}
+
 walk_memberAccess = (node, scope) ->
   # hoge?.fuga
   if node.instanceof CS.SoakedMemberAccessOp
@@ -285,7 +289,6 @@ walk_memberAccess = (node, scope) ->
 
   else if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
-
     type = scope.extendTypeLiteral(node.expression.annotation?.type)
     if type?
       node.annotation = type: type[node.memberName]
@@ -316,8 +319,6 @@ walk_objectInitializer = (node, scope) ->
 
 walk_class = (node, scope) ->
   classScope = new ClassScope scope
-  # console.log "[class]"
-  # console.log render node
 
   # collect @values first 
   if node.body?.statements?
@@ -355,11 +356,14 @@ walk_function = (node, scope, predef = null) ->
   _args_ = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
 
   node.annotation.type._args_ = _args_
+
   functionScope = new Scope scope
   functionScope._name_ = 'function'
 
+  if scope instanceof ClassScope
+    functionScope._this = scope._this
+
   # register arguments to function scope
-  cur = 0
   if node.parameters?
     # if exist pre-defined parameters, override inferred object
     if predef
@@ -439,7 +443,9 @@ walk = (node, scope) ->
     # For
     when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf) then walk_for node, scope
     # Primitives
-    when node.instanceof CS.Primitives   then walk_primitives node, scope
+    when node.instanceof CS.Primitives        then walk_primitives node, scope
+    # This
+    when node.instanceof CS.This              then walk_this node, scope
     # Identifier
     when node.instanceof CS.Identifier        then walk_identifier node, scope
     # ClassProto

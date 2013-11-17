@@ -415,10 +415,24 @@ suite 'TypeChecker', ->
         constructor: ->
           @foo = 3
 
+    test 'access this proto in class', ->
+      class Y
+        foo :: Number
+        bar: ->
+          @foo = 3
+
     test 'throw access this in class', ->
       throws -> CoffeeScript.parse """
-      class X
+      class Z
         foo :: Number
         constructor: ->
           @foo = 'fuga'
+      """
+
+    test 'throw access proto this in class', ->
+      throws -> CoffeeScript.parse """
+      class K
+        bar :: String
+        f : (n) ->
+          @bar = ""
       """
