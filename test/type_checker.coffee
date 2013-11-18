@@ -283,6 +283,17 @@ suite 'TypeChecker', ->
     test 'BinOps Num', ->
       a :: Number = (3 + 3 * 6) / 2
 
+    test 'BinOps Int * Int -> Int', ->
+      a :: Int = 3 + 5
+
+    test 'BinOps Int * Float -> Float', ->
+      a :: Float = 3 + 5.5
+
+    test 'throw BinOps Int * Int -> Int', ->
+      throws -> parse """
+      a :: Int = 3 + 5.5
+      """
+
     test 'BinOps String', ->
       a :: String = "hello" + "world"
 

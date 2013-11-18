@@ -76,6 +76,12 @@ walk_binOp = (node, scope) ->
     # rough...
     if left_type is 'String' or right_type is 'String'
       node.annotation = type: 'String'
+    else if left_type is 'Int' and right_type is 'Int'
+      node.annotation = type: 'Int'
+    else if left_type in ['Int', 'Float'] and right_type in ['Int', 'Float']
+      node.annotation = type: 'Float'
+    else if left_type in ['Int', 'Float', 'Number'] and right_type in ['Int', 'Float', 'Number']
+      node.annotation = type: 'Number'
     else if left_type is right_type
       node.annotation = type: left_type
   else
