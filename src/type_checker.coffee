@@ -43,10 +43,13 @@ walk_struct = (node, scope) ->
     scope.addType node.name, node.expr
 
 walk_vardef = (node, scope) ->
+  # avoid 'constructor' because it's property has special action on EcmaScript
+  symbol = if node.name is 'constructor' then '_constructor_' else node.name
+  console.log 'vardef', node.name, symbol
   if scope instanceof ClassScope
-    scope.addThis node.name, node.expr
+    scope.addThis symbol, node.expr
   else
-    scope.addVar node.name, node.expr
+    scope.addVar symbol, node.expr
 
 walk_program = (node, scope) ->
   walk node.body.statements, scope
@@ -131,8 +134,23 @@ walk_switch = (node, scope) ->
   node.annotation = type: {possibilities}
 
 walk_newOp = (node, scope) ->
+
+  for arg in node.arguments
+    walk arg, scope
+
+  console.log 'newOp'
+  console.log render node
+
   Type = scope.getTypeInScope node.ctor.data
+  if Type
+    _args_ = node.arguments?.map (arg) -> arg.annotation?.type
+    console.log 'constructor', Type.type._constructor_
+    console.log 'args', {_args_: (_args_ ? []), _return_: 'Any'}
+    if err = scope.checkAcceptableObject Type.type._constructor_, {_args_: (_args_ ? []), _return_: 'Any'}
+      return reporter.add_error node, err
+
   node.annotation = type: Type?.type
+
 
 walk_for = (node, scope) ->
   walk node.target, scope
@@ -332,9 +350,10 @@ walk_class = (node, scope) ->
     constructorScope._this = classScope._this # delegate this scope
     # arguments
     if node.ctor.expression.parameters?
-      # TODO addVar
-      for param in node.ctor.expression.parameters
-        walk param, classScope
+      for param, index in node.ctor.expression.parameters
+        walk param, constructorScope
+        constructorScope.addVar param.data, (param?.annotation?.type ? 'Any')
+
     # constructor body
     if node.ctor.expression.body?.statements?
       for statement in node.ctor.expression.body.statements

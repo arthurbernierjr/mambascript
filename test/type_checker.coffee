@@ -429,7 +429,6 @@ suite 'TypeChecker', ->
       hash.get 1
       """
 
-
     test 'access this in class', ->
       class X
         foo :: Number
@@ -456,4 +455,20 @@ suite 'TypeChecker', ->
         bar :: String
         f : (n) ->
           @bar = 2
+      """
+
+    test 'throw access proto this in class', ->
+      class X
+        constructor :: Number * String -> ()
+        constructor: (num, fuga) ->
+          @num = num
+      x :: X = new X 3, ""
+
+    test 'throw access proto this in class', ->
+      throws -> parse """
+      class X
+        constructor :: Number -> ()
+        constructor: (num, fuga) ->
+          @num = num
+      x :: X = new X ""
       """

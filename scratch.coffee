@@ -1,6 +1,9 @@
 class X
-  text :: String
+  num :: String
+  constructor :: Number * String -> ()
+  constructor: (num, fuga) ->
+    @num = num
 
-  f :: Number -> Number
-  f: (n) ->
-    @text = n
+x :: X = new X 3, ""
+
+# x.num = ""
