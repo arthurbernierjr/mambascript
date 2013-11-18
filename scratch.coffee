@@ -1,9 +1,9 @@
-a :: Int = 3
-b :: Number = a
+class Point
+  x :: Int
+  y :: Int
 
-c :: Float = 3.4
-d :: Number = 6 
+class Entity extends Point
+  width  :: Int
+  height :: Int
 
-# e :: Int = 3.5
-
-hoge :: Int = 3 + 5.5
+e :: {x :: Int, y :: Int} = new Entity

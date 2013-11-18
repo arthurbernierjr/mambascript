@@ -382,6 +382,11 @@ walk_class = (node, scope) ->
 
   if node.nameAssignee?.data
     obj = {}
+    if node.parent?.data
+      parent = scope.getTypeInScope node.parent.data
+      if parent
+        for key, val of parent.type
+          obj[key] = val
     for fname, val of classScope._this
       obj[fname] = val.type
     scope.addType node.nameAssignee.data, obj
