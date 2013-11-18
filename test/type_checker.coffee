@@ -474,29 +474,29 @@ suite 'TypeChecker', ->
         bar: ->
           @foo = 3
 
-    # test 'extends properties', ->
-    #   class Point
-    #     x :: Int
-    #     y :: Int
+    test 'extends properties', ->
+      class Point
+        x :: Int
+        y :: Int
 
-    #   class Entity extends Point
-    #     width  :: Int
-    #     height :: Int
+      class Entity extends Point
+        width  :: Int
+        height :: Int
 
-    #   e :: {x :: Int, y :: Int} = new Entity     
+      e :: {x :: Int, y :: Int} = new Entity     
 
-    # test 'throw extends properties', ->
-    #   throws -> parse """
-    #   class Point
-    #     x :: String
-    #     y :: Int
+    test 'throw extends properties', ->
+      throws -> parse """
+      class Point
+        x :: String
+        y :: Int
 
-    #   class Entity extends Point
-    #     width  :: Int
-    #     height :: Int
+      class Entity extends Point
+        width  :: Int
+        height :: Int
 
-    #   e :: {x :: Int, y :: Int} = new Entity     
-    #   """
+      e :: {x :: Int, y :: Int} = new Entity     
+      """
 
     test 'throw access this in class', ->
       throws -> parse """
