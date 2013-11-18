@@ -459,6 +459,23 @@ suite 'TypeChecker', ->
 
     test 'throw access proto this in class', ->
       class X
+        num :: Number
+        constructor :: Number -> ()
+        constructor: (num) ->
+          @num = num
+
+    test 'throw access proto this in class', ->
+      throws -> parse """
+      class X
+        num :: String
+        constructor :: Number -> ()
+        constructor: (num) ->
+          @num = num
+      """
+
+    test 'throw access proto this in class', ->
+
+      class X
         constructor :: Number * String -> ()
         constructor: (num, fuga) ->
           @num = num
