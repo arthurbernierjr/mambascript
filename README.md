@@ -1,14 +1,15 @@
 TypedCoffeeScript
 ==================================
 
-Super set of CoffeeScript with types
+Superset of CoffeeScript with types
 
+## Concept
 
-## WARNING!
-
-* extremely incomplete yet.
-* heavily under development
-* some dirty hack of CS
+* Allow to compile all coffee-script
+* Optional type and restrict member access under definition
+* Easy to add type to symbol from the middle of development
+* Easy to replace coffee-script
+* Check type againt cscodegen AST, not in compiler
 
 ## Examples
 
@@ -24,27 +25,37 @@ p :: Point = {x: 3, y: 3}
 line :: Point[] = [{x: 3, y: 4}, {x: 8, y: 5}, p]
 
 # typed function
-f :: Number -> Number = (n) ->  n * n
-((n :: Number) :: Number ->  n * n)(3)
+f1 :: Number -> Number = (n) ->  n * n
+f2 = (n :: Number) ->  n * n
+
+# pre-defined symbol
+f3 :: Number -> Number
+f3 = (n) ->  n * n
 
 # generics
 struct Hash<K, V> {
   get :: K -> V
   set :: K * V -> ()
 }
-
 hash :: Hash<String, Number> = {
   get: (key) -> @[key]
   set: (key, val) -> @[key] = val
 }
-
 hash.set "a", 1
 num :: Number = hash.get "a"
 
+# class property field
+class X
+  num :: Number
+  f :: Number -> Number
+  f: (n) ->
+    @num = n
+x :: X = new X
+x.f 3
 ```
 
-See test/type.coffee as working codes.
-
+When TypeError occur, AST type checker notifies you why.
+See test/type_checker.coffee in detail.
 
 ## Install
 
@@ -52,8 +63,7 @@ See test/type.coffee as working codes.
 $ npm install typed-coffee-script
 ```
 
-
-now aliased tcoffee
+Now, this project aliased to `tcoffee`
 
 ```
 $ tcoffee --js  < scratch.coffee > scratch.js
@@ -73,15 +83,9 @@ $ tcoffee --js  < scratch.coffee > scratch.js
 * ✅ Function
 * ✅ BinaryOperator
 * ✅ Generics
-* Scope about this and class
+* ✅ Scope about this and class
 * Generate pure coffee
 * Share type context with some scripts
-
-## CONCEPT
-
-* Super set of CoffeeScript (must be passed all coffee tests)
-* Type check target is CS AST, not compiler.
-* Inspired by TypeScript, Roy and other altjs.
 
 
 CoffeeScript II: The Wrath of Khan
