@@ -24,14 +24,14 @@ class Possibilites extends Array
   constructor: (arr = []) ->
     @push i for i in arr
 
-checkAcceptableObject = (left, right) =>
+checkAcceptableObject = (left, right, scope) =>
   # TODO: fix
   if left?._base_? and left._templates_? then left = left._base_
   console.log 'checkAcceptableObject /', left, right
 
   # possibilites :: Type[]
   if right?.possibilities?
-    results = (checkAcceptableObject left, r for r in right.possibilities)
+    results = (checkAcceptableObject left, r, scope for r in right.possibilities)
     return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
 
   # Any
@@ -41,21 +41,21 @@ checkAcceptableObject = (left, right) =>
   if left?._args_
     return if left is undefined or left is 'Any'
     left._args_ ?= []
-    results = (checkAcceptableObject(l_arg, right._args_[i]) for l_arg, i in left._args_)
+    results = (checkAcceptableObject(l_arg, right._args_[i], scope) for l_arg, i in left._args_)
     return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
 
     # check return type
     # TODO: Now I will not infer function return type
     if right._return_ isnt 'Any'
-      return checkAcceptableObject(left._return_, right._return_)
+      return checkAcceptableObject(left._return_, right._return_, scope)
     return false
 
   if left?.array?
     if right.array instanceof Array
-      results = (checkAcceptableObject left.array, r for r in right.array)
+      results = (checkAcceptableObject left.array, r, scope for r in right.array)
       return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
     else
-      return checkAcceptableObject left.array, right.array
+      return checkAcceptableObject left.array, right.array, scope
 
   else if right?.array?
     if left is 'Array' or left is 'Any' or left is undefined
@@ -64,7 +64,14 @@ checkAcceptableObject = (left, right) =>
       return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
 
   else if ((typeof left) is 'string') and ((typeof right) is 'string')
-    if (left is right) or (left is 'Any') or (right is 'Any')
+    cur = scope.getTypeInScope(left)
+    extended_list = [left]
+    while cur._extends_
+      extended_list.push cur._extends_
+      cur = scope.getTypeInScope cur._extends_
+    # TODO: handle object
+    # now only allow primitive
+    if (left is 'Any') or (right is 'Any') or right in extended_list
       return false
     else
       return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
@@ -75,7 +82,7 @@ checkAcceptableObject = (left, right) =>
         if right[key] is undefined and lval? and not (key in ['_return_', 'type', 'possibilities']) # TODO avoid system values
           "'#{key}' is not defined on right"
         else
-          checkAcceptableObject(lval, right[key])
+          checkAcceptableObject(lval, right[key], scope)
     return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
   else if (left is undefined) or (right is undefined)
     return false
@@ -87,7 +94,9 @@ checkAcceptableObject = (left, right) =>
 initializeGlobalTypes = (node) ->
   # Primitive
   node.addTypeObject 'String', new TypeSymbol {type: 'String'}
-  node.addTypeObject 'Number', new TypeSymbol {type: 'Number'}
+  node.addTypeObject 'Number', new TypeSymbol {type: 'Number', _extends_: 'Float'}
+  node.addTypeObject 'Int', new TypeSymbol {type: 'Int'}
+  node.addTypeObject 'Float', new TypeSymbol {type: 'Float', _extends_: 'Int'}
   node.addTypeObject 'Boolean', new TypeSymbol {type: 'Boolean'}
   node.addTypeObject 'Object', new TypeSymbol {type: 'Object'}
   node.addTypeObject 'Array', new TypeSymbol {type: 'Array'}
@@ -104,8 +113,7 @@ class VarSymbol
 class TypeSymbol
   # type :: String or Object
   # instanceof :: (Any) -> Boolean
-  constructor: ({@type, @instanceof, @_templates_}) ->
-    @instanceof ?= (t) -> t instanceof @constructor
+  constructor: ({@type, @instanceof, @_templates_, @_extends_}) ->
 
 # Var and type scope as node
 class Scope
@@ -222,7 +230,7 @@ class Scope
   checkAcceptableObject: (left, right) ->
     l = @extendTypeLiteral(left)
     r = @extendTypeLiteral(right)
-    return checkAcceptableObject(l, r)
+    return checkAcceptableObject(l, r, @)
 
 class ClassScope extends Scope
 class FunctionScope extends Scope

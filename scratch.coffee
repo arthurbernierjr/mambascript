@@ -1,8 +1,7 @@
-class X
-  num :: Number
-  constructor :: Number * String -> ()
-  constructor: (num, fuga) ->
-    @num = num
+a :: Int = 3
+b :: Number = a
 
-x :: X = new X 3, ""
-# x.num = ""
+c :: Float = 3.4
+d :: Number = 6 
+
+e :: Int = 3.5

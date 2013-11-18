@@ -254,11 +254,23 @@ walk_primitives = (node, scope) ->
     # Bool
     when node.instanceof CS.Bool    then walk_bool node, scope
     # Number
+    when node.instanceof CS.Int then walk_int node, scope
+    when node.instanceof CS.Float then walk_float node, scope
     when node.instanceof CS.Numbers then walk_numbers node, scope
 
 walk_string = (node, scope) ->
   node.annotation ?=
     type: 'String'
+    primitive: true
+
+walk_int = (node, scope) ->
+  node.annotation ?=
+    type: 'Int'
+    primitive: true
+
+walk_float = (node, scope) ->
+  node.annotation ?=
+    type: 'Float'
     primitive: true
 
 walk_numbers = (node, scope) ->

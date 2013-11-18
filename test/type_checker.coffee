@@ -9,6 +9,28 @@ suite 'TypeChecker', ->
       x :: Number = 3
       eq x, 3
 
+    test 'int assign', ->
+      x :: Int = 3
+
+    test 'int assign', ->
+      throws -> parse """
+      x :: Int = 3.5
+      """
+
+    test 'primitive extended assign', ->
+      x :: Int = 3
+      y :: Number = x
+
+    test 'primitive extended assign', ->
+      x :: Int = 3
+      y :: Float = x
+
+    test 'throw primitive extended assign', ->
+      throws -> parse """
+      x :: Float = 3.3
+      y :: Int = x
+      """
+
     test 'basic assign', ->
       x :: Number = 3
       x = 5
