@@ -234,7 +234,7 @@ walk_assignOp = (node, scope) ->
     symbol = left.data
 
     if scope.getVarInScope(symbol) and pre_registered_annotation
-      return report.add_error node, 'double bind: '+ symbol
+      return reporter.add_error node, 'double bind: '+ symbol
 
     scope.addVar symbol, left.annotation.type
 
