@@ -547,7 +547,7 @@ leftHandSideExpression = callExpression / newExpression
         );
       }
   argumentListContents
-    = e:argument es:(_ ("," / TERMINATOR) _ argument)* ("," / TERMINATOR)? {
+    = !IMPLEMENTS e:argument es:(_ ("," / TERMINATOR) _ argument)* ("," / TERMINATOR)? {
         return [e].concat(es.map(function(e){ return e[3]; }));
       }
     / TERMINDENT a:argumentListContents DEDENT TERMINATOR? { return a; }
@@ -732,9 +732,12 @@ try
       return r({block: body ? body.block : null});
     }
 
+classImplements = _ IMPLEMENTS __ e:ObjectInitialiserKeys _ es:(_ "," _ ObjectInitialiserKeys)* _ {
+  return [e.data].concat(es.map(function(e){return e[3].data;}));
+}
 
 class
-  = CLASS name:(_ Assignable)? parent:(_ EXTENDS _ extendee)? body:classBody {
+  = CLASS name:(_ Assignable)? parent:(_ EXTENDS _ extendee)? impl:classImplements? body:classBody {
       var ctor = null;
       name = name ? name[1] : null;
       parent = parent ? parent[3] : null;
@@ -748,7 +751,9 @@ class
           boundMembers.push(m);
         }
       }
-      return rp(new CS.Class(name, parent, ctor, body, boundMembers));
+      var n = rp(new CS.Class(name, parent, ctor, body, boundMembers));
+      n.impl = impl;
+      return n;
     }
   extendee = secondaryExpressionNoImplicitObjectCall
   classBody
@@ -1276,6 +1281,7 @@ UNTIL = $("until" !identifierPart)
 WHEN = $("when" !identifierPart)
 WHILE = $("while" !identifierPart)
 YES = $("yes" !identifierPart)
+IMPLEMENTS = $("implements" !identifierPart)
 
 SharedKeywords
   = ("true" / "false" / "null" / "this" / "new" / "delete" / "typeof" /

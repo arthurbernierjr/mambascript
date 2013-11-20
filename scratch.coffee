@@ -2,7 +2,7 @@ class Point
   x :: Int
   y :: Int
 
-class Entity extends Point
+class Entity extends Point implements Z
   width  :: Int
   height :: Int
 
