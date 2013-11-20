@@ -347,6 +347,23 @@ walk_objectInitializer = (node, scope) ->
 
 walk_class = (node, scope) ->
   classScope = new ClassScope scope
+  this_scope = {}
+
+  # Add props to this_socpe by extends and implements
+  if node.nameAssignee?.data
+    # extends
+    if node.parent?.data
+      parent = scope.getTypeInScope node.parent.data
+      if parent
+        for key, val of parent.type
+          this_scope[key] = val
+    # implements
+    if node.impl?.length?
+      for name in node.impl
+        cls = scope.getTypeInScope name
+        if cls
+          for key, val of cls.type
+            this_scope[key] = val
 
   # collect @values first 
   if node.body?.statements?
@@ -380,24 +397,9 @@ walk_class = (node, scope) ->
     for statement in node.body.statements when statement.type isnt 'vardef'
       walk statement, classScope
 
-  if node.nameAssignee?.data
-    obj = {}
-    if node.parent?.data
-      parent = scope.getTypeInScope node.parent.data
-      if parent
-        for key, val of parent.type
-          obj[key] = val
-    console.log 'impl~~', node.impl
-    if node.impl?.length?
-      for name in node.impl
-        cls = scope.getTypeInScope name
-        if cls
-          for key, val of cls.type
-            obj[key] = val
-
     for fname, val of classScope._this
-      obj[fname] = val.type
-    scope.addType node.nameAssignee.data, obj
+      this_scope[fname] = val.type
+    scope.addType node.nameAssignee.data, this_scope
 
 # Node * Scope * Type
 # predef :: Type defined at assignee
