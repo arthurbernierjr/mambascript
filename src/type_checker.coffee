@@ -397,6 +397,7 @@ walk_class = (node, scope) ->
     for statement in node.body.statements when statement.type isnt 'vardef'
       walk statement, classScope
 
+  if node.nameAssignee?.data
     for fname, val of classScope._this
       this_scope[fname] = val.type
     scope.addType node.nameAssignee.data, this_scope

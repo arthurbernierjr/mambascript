@@ -514,7 +514,7 @@ suite 'TypeChecker', ->
           @bar = 2
       """
 
-    test 'throw access proto this in class', ->
+    test 'access proto this in class', ->
       class X
         num :: Number
         constructor :: Number -> ()
@@ -530,8 +530,7 @@ suite 'TypeChecker', ->
           @num = num
       """
 
-    test 'throw access proto this in class', ->
-
+    test 'access proto this in class', ->
       class X
         constructor :: Number * String -> ()
         constructor: (num, fuga) ->
@@ -545,4 +544,34 @@ suite 'TypeChecker', ->
         constructor: (num, fuga) ->
           @num = num
       x :: X = new X ""
+      """
+
+    test 'implements', ->
+      struct Size {
+        width  :: Int
+        height :: Int
+      }
+      class Entity implements Size
+      e :: {width :: Int, height :: Int} = new Entity
+
+    test 'multi class implements and extends', ->
+      class Point
+        x :: Int
+        y :: Int
+
+      struct Size {
+        width  :: Int
+        height :: Int
+      }
+      class Entity extends Object implements Point, Size
+      e :: {x :: Int, width :: Int} = new Entity
+
+    test 'throw implements', ->
+      throws -> parse """
+      struct Size {
+        width  :: Int
+        height :: Int
+      }
+      class Entity implements Size
+      e :: {z :: Int} = new Entity
       """
