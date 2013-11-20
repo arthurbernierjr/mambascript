@@ -387,6 +387,14 @@ walk_class = (node, scope) ->
       if parent
         for key, val of parent.type
           obj[key] = val
+    console.log 'impl~~', node.impl
+    if node.impl?.length?
+      for name in node.impl
+        cls = scope.getTypeInScope name
+        if cls
+          for key, val of cls.type
+            obj[key] = val
+
     for fname, val of classScope._this
       obj[fname] = val.type
     scope.addType node.nameAssignee.data, obj
