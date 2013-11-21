@@ -1,2 +1,4 @@
-a :: String
-[a, b, c] = [3, 5, 6]
+class X
+  x :: String
+  f :: Int -> Int
+  f: (@x) -> 3

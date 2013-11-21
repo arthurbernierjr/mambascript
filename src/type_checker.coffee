@@ -434,15 +434,34 @@ walk_function = (node, scope, predef = null) ->
     functionScope._this = scope._this
 
   # register arguments to function scope
+  # TODO: DRY
   if node.parameters?
-    # if exist pre-defined parameters, override inferred object
+    # example.
+    #   f :: Int -> Int
+    #   f: (n) -> n
     if predef
       node.annotation.type = predef
       for param, index in node.parameters
-        functionScope.addVar param.data, (predef._args_?[index] ? 'Any')
+        # This
+        if param.expression?.raw in ['@', 'this']
+          t = functionScope.getThis(param.memberName)
+          if err = scope.checkAcceptableObject predef._args_?[index], t?.type
+            reporter.add_error node, err
+          unless t?.type? then functionScope.addThis param.memberName, 'Any'
+        # Var
+        else
+          functionScope.addVar param.data, (predef._args_?[index] ? 'Any')
+    # example.
+    #   f: (n) -> n
     else
       for param, index in node.parameters
-        functionScope.addVar param.data, (param?.annotation?.type ? 'Any')
+        # This
+        if param.expression?.raw in ['@', 'this']
+          t = functionScope.getThis(param.memberName)
+          unless t?.type? then functionScope.addThis param.memberName, 'Any'
+        # Var
+        else
+          functionScope.addVar param.data, (param?.annotation?.type ? 'Any')
 
   walk node.body, functionScope
 
