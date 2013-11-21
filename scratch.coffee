@@ -1,4 +1,5 @@
 class X
-  x :: String
-  f :: Int -> Int
-  f: (@x) -> 3
+  x :: Int
+  y :: Int
+  f: ({@x, @y, @z}) ->
+    @z = ""

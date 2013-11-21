@@ -430,6 +430,7 @@ walk_function = (node, scope, predef = null) ->
   functionScope = new Scope scope
   functionScope._name_ = 'function'
 
+
   if scope instanceof ClassScope
     functionScope._this = scope._this
 
@@ -442,8 +443,19 @@ walk_function = (node, scope, predef = null) ->
     if predef
       node.annotation.type = predef
       for param, index in node.parameters
+        # Destructive
+        if param.members
+          for member in param.members
+            # This
+            if member.expression?.expression?.raw in ['@', 'this']
+              t = functionScope.getThis(member.key.data)
+              unless t?.type? then functionScope.addThis member.key.data, 'Any'
+            # Var
+            else
+              if member.key?.data
+                functionScope.addVar member.key.data, 'Any'
         # This
-        if param.expression?.raw in ['@', 'this']
+        else if param.expression?.raw in ['@', 'this']
           t = functionScope.getThis(param.memberName)
           if err = scope.checkAcceptableObject predef._args_?[index], t?.type
             reporter.add_error node, err
@@ -455,8 +467,19 @@ walk_function = (node, scope, predef = null) ->
     #   f: (n) -> n
     else
       for param, index in node.parameters
+        # Destructive
+        if param.members
+          for member in param.members
+            # This
+            if member.expression?.expression?.raw in ['@', 'this']
+              t = functionScope.getThis(member.key.data)
+              unless t?.type? then functionScope.addThis member.key.data, 'Any'
+            # Var
+            else
+              if member.key?.data
+                functionScope.addVar member.key.data, 'Any'
         # This
-        if param.expression?.raw in ['@', 'this']
+        else if param.expression?.raw in ['@', 'this']
           t = functionScope.getThis(param.memberName)
           unless t?.type? then functionScope.addThis param.memberName, 'Any'
         # Var

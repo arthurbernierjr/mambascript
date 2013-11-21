@@ -613,3 +613,7 @@ suite 'TypeChecker', ->
         f: (@x) -> 3 b:5, c:6}
       """
 
+    test 'receive this with destructive args', ->
+      class X
+        x :: Int
+        f: ({@x}) -> 3
