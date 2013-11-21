@@ -575,3 +575,13 @@ suite 'TypeChecker', ->
       class Entity implements Size
       e :: {z :: Int} = new Entity
       """
+
+    test 'destructive assignment', ->
+      a :: Int
+      {a, b, c} = {a: 3, b:5, c:6}
+
+    test 'throw destructive assignment', ->
+      throws -> parse """
+      a :: String
+      {a, b, c} = {a: 3, b:5, c:6}
+      """

@@ -197,6 +197,8 @@ walk_classProtoAssignOp = (node, scope) ->
     scope.addThis symbol, right.annotation.type
 
 walk_assignOp = (node, scope) ->
+  console.log 'walk_assignOp:: assignee', node.assignee.name
+  console.log render node.assignee
   pre_registered_annotation = node.assignee.annotation #TODO: dirty...
 
   left  = node.assignee
@@ -212,6 +214,16 @@ walk_assignOp = (node, scope) ->
   else
     walk right, scope
 
+  # Destructive
+  if left?.members?
+    for member in left.members when member.key?.data?
+      if scope.getVarInScope member.key.data
+        l_type = scope.getVarInScope(member.key.data).type
+        if err = scope.checkAcceptableObject l_type, right.annotation?.type?[member.key.data]
+          return reporter.add_error node, err
+      else
+        scope.addVar member.key.data, 'Any'
+    return
   
   # Member
   if left.instanceof CS.MemberAccessOp
