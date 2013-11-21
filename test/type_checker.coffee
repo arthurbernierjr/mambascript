@@ -593,3 +593,23 @@ suite 'TypeChecker', ->
       a :: String
       [a, b, c] = [3, 5, 6]
       """
+
+    test 'receive this', ->
+      class X
+        x :: Int
+        f: (@x) -> 3
+
+    test 'receive this with pre-defined function', ->
+      class X
+        x :: Int
+        f :: Int -> Int
+        f: (@x) -> 3
+
+    test 'throw destructive assignment', ->
+      throws -> parse """
+      class X
+        x :: String
+        f :: Int -> Int
+        f: (@x) -> 3 b:5, c:6}
+      """
+
