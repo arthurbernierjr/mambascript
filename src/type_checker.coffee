@@ -214,32 +214,39 @@ walk_assignOp = (node, scope) ->
   else
     walk right, scope
 
+  # Array initializer
+  if left.instanceof CS.ArrayInitialiser
+    for member, index in left.members when member.data?
+      l = left.annotation?.type?.array?[index];
+      r = right.annotation?.type?.array?[index];
+      if err = scope.checkAcceptableObject l, r
+        reporter.add_error node, err
+      else
+        scope.addVar member.data, (l or "Any")
+
   # Destructive
-  if left?.members?
+  else if left?.members?
     for member in left.members when member.key?.data?
       if scope.getVarInScope member.key.data
         l_type = scope.getVarInScope(member.key.data).type
         if err = scope.checkAcceptableObject l_type, right.annotation?.type?[member.key.data]
-          return reporter.add_error node, err
+          reporter.add_error node, err
       else
         scope.addVar member.key.data, 'Any'
-    return
   
   # Member
-  if left.instanceof CS.MemberAccessOp
+  else if left.instanceof CS.MemberAccessOp
     if left.expression.instanceof CS.This
       T = scope.getThis(left.memberName)
       left.annotation = T if T?
       if T?
         if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
-          return reporter.add_error node, err
-
-      return
+          reporter.add_error node, err
     # return if left.expression.raw is '@' # ignore @ yet
     else if left.annotation?.type? and right.annotation?.type?
       if left.annotation.type isnt 'Any'
         if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
-          return reporter.add_error node, err
+          reporter.add_error node, err
 
   # Identifier
   else if left.instanceof CS.Identifier
@@ -250,10 +257,9 @@ walk_assignOp = (node, scope) ->
 
     scope.addVar symbol, left.annotation.type
 
-    # 左辺に型宣言が存在する
+    # Left annotation exists
     if left.annotation.type?
-      # 明示的なAnyは全て受け入れる
-      # x :: Any = "any instance"
+      # explicit Any
       if left.annotation.type is 'Any'
         scope.addVar symbol, 'Any', true
       else 
@@ -477,7 +483,7 @@ walk_functionApplication = (node, scope) ->
 # Traverse all nodes
 # Node -> void
 walk = (node, scope) ->
-  console.log '---', node?.className, '---' #, node?.raw
+  console.log '---', node?.className, '---' ,node?.raw
   switch
     # undefined(mayby null body)
     when not node? then return

@@ -1,3 +1,2 @@
 a :: String
-{a, b, c} = {a: 3, b:5, c:6}
-console.log a
+[a, b, c] = [3, 5, 6]
