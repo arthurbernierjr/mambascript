@@ -3,7 +3,7 @@ TypedCoffeeScript
 
 Superset of CoffeeScript with types
 
-## Concept
+## Concepts
 
 * Allow to compile all coffee-script
 * Optional type and restrict member access under definition
@@ -11,84 +11,120 @@ Superset of CoffeeScript with types
 * Easy to replace coffee-script
 * Check type againt cscodegen AST, not in compiler
 
+
+## Getting started
+
+Install
+```
+$ npm install -g typed-coffee-script
+$ tcoffee foo.coffee
+```
+
+Compile
+```
+$ tcoffee --js  < scratch.coffee > scratch.js
+```
+
+
+or use it with grunt [mizchi/grunt-typed-coffee-script](https://github.com/mizchi/grunt-typed-coffee-script "mizchi/grunt-typed-coffee-script")
+
+
+or minimal project sample
+
+```
+$ git clone https://github.com/mizchi/sample-typed-coffee-project.git
+$ cd sample-typed-coffee-project
+$ npm install
+$ grunt typedcoffee
+```
+
 ## Examples
 
-```coffeescript
-# define struct
+### Assigment with type
+```coffee
+n :: Int = 3
+```
+
+### Pre-defined symbol
+```coffee
+x :: Number
+x = 3.14
+```
+
+### Struct
+```coffee
 struct Point {
   x :: Number
   y :: Number
 }
-
-# structure
 p :: Point = {x: 3, y: 3}
+```
+
+### Typed Array
+
+```coffee
 line :: Point[] = [{x: 3, y: 4}, {x: 8, y: 5}, p]
+```
 
-# typed function
-f1 :: Number -> Number = (n) ->  n * n
-f2 = (n :: Number) ->  n * n
+### Typed Function
 
-# pre-defined symbol
-f3 :: Number -> Number
-f3 = (n) ->  n * n
+```
+f :: Int -> Int
+f = (n) -> n
 
-# generics
+# left side type definition
+fl :: Number -> Point = (n) ->  {x: n, y: n * 2}
+# right side
+fr = (n :: Number) :: Number ->  n * n
+```
+
+### Generics
+
+```coffee
 struct Hash<K, V> {
   get :: K -> V
   set :: K * V -> ()
 }
+
 hash :: Hash<String, Number> = {
   get: (key) -> @[key]
   set: (key, val) -> @[key] = val
 }
 hash.set "a", 1
 num :: Number = hash.get "a"
+```
 
-# class property field
+### Class with this scope
+
+```coffee
 class X
+  # bound to this
   num :: Number
   f :: Number -> Number
   f: (n) ->
     @num = n
+
 x :: X = new X
 x.f 3
 ```
 
-When TypeError occur, AST type checker notifies you why.
-See test/type_checker.coffee in detail.
+### Class with implemtns
 
-## Install
+```coffee
+class Point
+  x :: Int
+  y :: Int
 
+struct Size {
+  width  :: Int
+  height :: Int
+}
+
+class Entity extends Object implements Point, Size
+e :: {x :: Int, width :: Int} = new Entity
 ```
-$ npm install typed-coffee-script
-```
 
-Now, this project aliased to `tcoffee`
-
-```
-$ tcoffee --js  < scratch.coffee > scratch.js
-```
-
-## Milestone to v1.0.0
-
-* ✅ Struct definition
-* ✅ Typed function definition
-* ✅ Function call with typecheck
-* ✅ Typed Array
-* ✅ Member access
-* ✅ If statement
-* ✅ ForIn statement
-* ✅ ForOf statement
-* ✅ Range
-* ✅ Function
-* ✅ BinaryOperator
-* ✅ Generics
-* ✅ Scope about this and class
-* Generate pure coffee
-* Share type context with some scripts
-
-
-CoffeeScript II: The Wrath of Khan
+Forked by CoffeeScript II: The Wrath of Khan
 ==================================
 
 ```
