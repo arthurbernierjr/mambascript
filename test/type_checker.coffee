@@ -585,3 +585,11 @@ suite 'TypeChecker', ->
       a :: String
       {a, b, c} = {a: 3, b:5, c:6}
       """
+    test 'destructive assignment', ->
+      [a, b, c] = [3, 5, 6]
+
+    test 'destructive assignment', ->
+      throws -> parse """
+      a :: String
+      [a, b, c] = [3, 5, 6]
+      """
