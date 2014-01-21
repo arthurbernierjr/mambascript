@@ -106,8 +106,7 @@ initializeGlobalTypes = (node) ->
 # Known vars in scope
 class VarSymbol
   # dataType :: String
-  # implicit :: Bolean
-  constructor: ({@dataType, @implicit}) ->
+  constructor: ({@dataType}) ->
 
 # Known types in scope
 class TypeSymbol
@@ -153,7 +152,7 @@ class Scope
   getTypeInScope: (symbol) ->
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
 
-  addThis: (symbol, dataType, implicit = true) ->
+  addThis: (symbol, dataType) ->
     # TODO: Refactor with addVar
     if dataType?._base_?
       T = @getType(dataType._base_)
@@ -167,14 +166,14 @@ class Scope
           replacer[t] = rewrite_to[n]
         rewrite obj, replacer
 
-      @_this[symbol] = new VarSymbol {dataType:obj, implicit}
+      @_this[symbol] = new VarSymbol {dataType:obj}
     else
-      @_this[symbol] = new VarSymbol {dataType, implicit}
+      @_this[symbol] = new VarSymbol {dataType}
 
   getThis: (symbol) ->
     @_this[symbol]
 
-  addVar: (symbol, dataType, implicit = true) ->
+  addVar: (symbol, dataType) ->
     # TODO: Refactor
     if dataType?._base_?
       T = @getType(dataType._base_)
@@ -188,17 +187,15 @@ class Scope
           replacer[t] = rewrite_to[n]
         rewrite obj, replacer
 
-      @_vars[symbol] = new VarSymbol {dataType:obj, implicit}
+      @_vars[symbol] = new VarSymbol {dataType:obj}
     else
-      @_vars[symbol] = new VarSymbol {dataType, implicit}
+      @_vars[symbol] = new VarSymbol {dataType}
 
   getVar: (symbol) ->
     @_vars[symbol]
 
   getVarInScope: (symbol) ->
     @getVar(symbol) or @parent?.getVarInScope(symbol) or undefined
-
-  isImplicitVar: (symbol) -> !! @_vars[symbol]?.implicit
 
   isImplicitVarInScope: (symbol) ->
     @isImplicitVar(symbol) or @parent?.isImplicitVarInScope(symbol) or undefined
