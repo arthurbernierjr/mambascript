@@ -106,7 +106,9 @@ initializeGlobalTypes = (node) ->
 # Known vars in scope
 class VarSymbol
   # dataType :: String
-  constructor: ({@dataType}) ->
+  # explicit :: Boolean
+  constructor: ({@dataType, @explicit}) ->
+    @explicit ?= false
 
 # Known types in scope
 class TypeSymbol
@@ -173,7 +175,7 @@ class Scope
   getThis: (symbol) ->
     @_this[symbol]
 
-  addVar: (symbol, dataType) ->
+  addVar: (symbol, dataType, explicit) ->
     # TODO: Refactor
     if dataType?._base_?
       T = @getType(dataType._base_)
@@ -187,9 +189,9 @@ class Scope
           replacer[t] = rewrite_to[n]
         rewrite obj, replacer
 
-      @_vars[symbol] = new VarSymbol {dataType:obj}
+      @_vars[symbol] = new VarSymbol {dataType:obj, explicit}
     else
-      @_vars[symbol] = new VarSymbol {dataType}
+      @_vars[symbol] = new VarSymbol {dataType, explicit}
 
   getVar: (symbol) ->
     @_vars[symbol]

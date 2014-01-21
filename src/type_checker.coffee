@@ -197,14 +197,13 @@ walk_classProtoAssignOp = (node, scope) ->
     scope.addThis symbol, right.annotation.dataType
 
 walk_assignOp = (node, scope) ->
-  console.log 'walk_assignOp:: assignee', node.assignee.name
-  console.log render node.assignee
+  # console.log 'walk_assignOp:: assignee', node
   pre_registered_annotation = node.assignee.annotation #TODO: dirty...
 
   left  = node.assignee
   right = node.expression
-  symbol = left.data
 
+  symbol = left.data
   walk left,  scope
 
   if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
@@ -217,12 +216,14 @@ walk_assignOp = (node, scope) ->
   # Array initializer
   if left.instanceof CS.ArrayInitialiser
     for member, index in left.members when member.data?
-      l = left.annotation?.dataType?.array?[index];
-      r = right.annotation?.dataType?.array?[index];
+      l = left.annotation?.dataType?.array?[index]
+      r = right.annotation?.dataType?.array?[index]
       if err = scope.checkAcceptableObject l, r
         reporter.add_error node, err
+      if l
+        scope.addVar member.data, l, true
       else
-        scope.addVar member.data, (l or "Any")
+        scope.addVar member.data, "Any", false
 
   # Destructive
   else if left?.members?
@@ -232,7 +233,7 @@ walk_assignOp = (node, scope) ->
         if err = scope.checkAcceptableObject l_type, right.annotation?.dataType?[member.key.data]
           reporter.add_error node, err
       else
-        scope.addVar member.key.data, 'Any'
+        scope.addVar member.key.data, 'Any', false
 
   # Member
   else if left.instanceof CS.MemberAccessOp
@@ -246,30 +247,29 @@ walk_assignOp = (node, scope) ->
     else if left.annotation?.dataType? and right.annotation?.dataType?
       if left.annotation.dataType isnt 'Any'
         if err = scope.checkAcceptableObject(left.annotation.dataType, right.annotation.dataType)
-          reporter.add_error node, err
+          return reporter.add_error node, err
 
   # Identifier
   else if left.instanceof CS.Identifier
-    symbol = left.data
-
     if scope.getVarInScope(symbol) and pre_registered_annotation
       return reporter.add_error node, 'double bind: '+ symbol
 
-    scope.addVar symbol, left.annotation.dataType
+    if left.annotation.dataType? and right.annotation?
+      if err = scope.checkAcceptableObject(left.annotation.dataType, right.annotation.dataType)
+        return reporter.add_error node, err
 
-    # Left annotation exists
-    if left.annotation.dataType?
-      # explicit Any
-      if left.annotation.dataType is 'Any'
-        scope.addVar symbol, 'Any', true
-      else
-        if right.annotation? and left.annotation?
-          if err = scope.checkAcceptableObject(left.annotation.dataType, right.annotation.dataType)
-            return reporter.add_error node, err
-        scope.addVar symbol, left.annotation.dataType
+    if (!pre_registered_annotation) and right.annotation?.explicit
+      scope.addVar symbol, right.annotation.dataType, true
+    else
+      scope.addVar symbol, left.annotation.dataType, true
+
   # Vanilla CS
   else
-    scope.addVar symbol, 'Any'
+    scope.addVar symbol, 'Any', false
+  console.log "left"
+  console.log render left
+  console.log "right"
+  console.log render right
 
 walk_primitives = (node, scope) ->
   switch
@@ -310,7 +310,7 @@ walk_bool = (node, scope) ->
 walk_identifier = (node, scope) ->
   if scope.getVarInScope(node.data)
     Var = scope.getVarInScope(node.data)
-    node.annotation = dataType: Var?.dataType
+    node.annotation = dataType: Var?.dataType, explicit: Var?.explicit
   else
     node.annotation ?=
       dataType: 'Any'
@@ -331,15 +331,15 @@ walk_memberAccess = (node, scope) ->
         dataType:
           possibilities:['Undefined', dataType[node.memberName]]
     else
-      node.annotation = dataType: 'Any'
+      node.annotation = dataType: 'Any', explicit: false
 
   else if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
     dataType = scope.extendTypeLiteral(node.expression.annotation?.dataType)
     if dataType?
-      node.annotation = dataType: dataType[node.memberName]
+      node.annotation = dataType: dataType[node.memberName], explicit: true
     else
-      node.annotation = dataType: 'Any'
+      node.annotation = dataType: 'Any', explicit: false
 
 walk_arrayInializer = (node, scope) ->
   walk node.members, scope
@@ -525,6 +525,7 @@ walk_functionApplication = (node, scope) ->
 # Traverse all nodes
 # Node -> void
 walk = (node, scope) ->
+  console.log '~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
   console.log '---', node?.className, '---' ,node?.raw
   switch
     # undefined(mayby null body)

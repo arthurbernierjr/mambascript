@@ -613,10 +613,33 @@ suite 'TypeChecker', ->
       class X
         x :: String
         f :: Int -> Int
-        f: (@x) -> 3 b:5, c:6}
+        f: (@x) -> {b:5, c:6}
       """
 
     test 'receive this with destructive args', ->
       class X
         x :: Int
-        f: ({@x}) -> 3
+
+  suite 'Explicit Rules', ->
+    test 'type propagation', ->
+      a :: Int = 3
+      b = a
+
+    test 'throw type propagation', ->
+      throws -> parse """
+      a :: Int = 3
+      b = a
+      b = "Hoge"
+      """
+
+    test 'type propagationw with member access', ->
+      a :: {x :: Int, y :: Int} = {x: 3, y: 5}
+      b = a.x
+
+    test 'throw explicit with member access', ->
+      throws -> parse """
+      a :: {x :: Int, y :: Int} = {x: 3, y: 5}
+      b = a.x
+      b = "hoge"
+      """
+
