@@ -9,6 +9,12 @@ suite 'Assignment', ->
 
   suite 'Regular Assignment', ->
 
+    test 'assign to the result of an assignment', ->
+      nonce = {}
+      a = b = nonce
+      eq nonce, a
+      eq nonce, b
+
     test "context property assignment (using @)", ->
       nonce = {}
       addMethod = ->
@@ -234,6 +240,12 @@ suite 'Assignment', ->
       eq c, obj.c
       eq d, obj.d
       eq e, obj.e
+
+    test 'destructuring with statement-like RHS', ->
+      c = false
+      {a, b} = if c then {a: 0, b: 1} else {a: 2, b: 3}
+      eq 2, a
+      eq 3, b
 
     #test "#1024", ->
     #  eq 2 * ([] = 3 + 5), 16
