@@ -17,6 +17,7 @@ fail_typecheck = ->
   reporter.errors = []
 
 suite 'Types', ->
+
   suite '.checkAcceptableObject', ->
 
     test 'string <> string', ->

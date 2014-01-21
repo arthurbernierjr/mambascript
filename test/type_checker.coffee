@@ -4,6 +4,9 @@ parse = (coffee) ->
   parse coffee
 
 suite 'TypeChecker', ->
+  setup ->
+    reporter.clean()
+
   suite 'Assignment', ->
     test 'basic assign', ->
       x :: Number = 3
@@ -332,7 +335,7 @@ suite 'TypeChecker', ->
 
     test 'new', ->
       class X
-        f: (n :: Number) :: Number -> 
+        f: (n :: Number) :: Number ->
           n * n
       x :: X = new X
       n :: Number = x.f 3
@@ -340,7 +343,7 @@ suite 'TypeChecker', ->
     test 'new', ->
       throws -> parse """
       class X
-        f: (n :: Number) :: Number -> 
+        f: (n :: Number) :: Number ->
           n * n
       x :: X = new X
       n :: String = x.f 3
@@ -483,7 +486,7 @@ suite 'TypeChecker', ->
         width  :: Int
         height :: Int
 
-      e :: {x :: Int, y :: Int} = new Entity     
+      e :: {x :: Int, y :: Int} = new Entity
 
     test 'throw extends properties', ->
       throws -> parse """
@@ -495,7 +498,7 @@ suite 'TypeChecker', ->
         width  :: Int
         height :: Int
 
-      e :: {x :: Int, y :: Int} = new Entity     
+      e :: {x :: Int, y :: Int} = new Entity
       """
 
     test 'throw access this in class', ->
