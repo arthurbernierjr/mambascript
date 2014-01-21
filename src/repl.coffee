@@ -5,6 +5,7 @@ nodeREPL = require 'repl'
 CoffeeScript = require './module'
 CS = require './nodes'
 {merge} = require './helpers'
+reporter = require './reporter'
 
 addMultilineHandler = (repl) ->
   {rli, inputStream, outputStream} = repl
@@ -126,6 +127,7 @@ module.exports =
         cb null, vm.runInContext js, context, filename
       catch err
         cb "\x1B[0;31m#{err.constructor.name}: #{err.message}\x1B[0m"
+        reporter.clean()
 
     repl = nodeREPL.start opts
     repl.on 'exit', -> repl.outputStream.write '\n'

@@ -27,6 +27,9 @@ class Reporter
   add_error: (node, text) =>
     @errors.push [node, text]
 
+  clean: =>
+    @errors = []
+
   add_warning: (node, ws...) =>
     @warnings.push [node, ws.join '']
 

@@ -1,2 +1,0 @@
-#!/usr/bin/env fish
-make clean ; git checkout redux/master lib ; make -j build
