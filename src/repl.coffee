@@ -105,7 +105,7 @@ addHistory = (repl, filename, maxSize) ->
 module.exports =
   start: (opts = {}) ->
     # REPL defaults
-    opts.prompt or= 'coffee> '
+    opts.prompt or= 'tcoffee> '
     opts.ignoreUndefined ?= yes
     opts.historyFile ?= path.join process.env.HOME, '.coffee_history'
     opts.historyMaxInputSize ?= 10 * 1024 # 10KiB

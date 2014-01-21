@@ -155,7 +155,7 @@ if options.help
   --nodejs OPTS           pass options through to the node binary
   --optimise              enable optimisations (default: on)
   --raw                   preserve source position and raw parse information
-  --repl                  run an interactive CoffeeScript REPL
+  --repl                  run an interactive TypedCoffeeScript REPL
   --source-map            generate source map
   --source-map-file FILE  file used as output for source map when using --js
 
@@ -170,7 +170,7 @@ if options.help
 
 else if options.version
   pkg = require './../package.json'
-  console.log "CoffeeScript version #{pkg.version}"
+  console.log "TypedCoffeeScript version #{pkg.version}"
 
 else if options.repl
   CoffeeScript.register()
