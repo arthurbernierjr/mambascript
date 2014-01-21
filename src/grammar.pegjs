@@ -374,7 +374,7 @@ secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressio
 // TODO: FIX CS.Int hack
 structdef = 'struct' !(_ "=") __ name:TypeNameSymbol _ expr: TypeExpr {
   var s = rp(new CS.Int(line()))
-  s.type = 'struct';
+  s.dataType = 'struct';
   s.name = name;
   s.expr = expr;
   return s;
@@ -383,7 +383,7 @@ structdef = 'struct' !(_ "=") __ name:TypeNameSymbol _ expr: TypeExpr {
 // TODO: FIX CS.Int hack
 vardef = name:TypeNameSymbol __ '::' _ expr: TypeExpr !(_ "=") {
   var s = rp(new CS.Int(line()))
-  s.type = 'vardef';
+  s.dataType = 'vardef';
   s.name = name;
   s.expr = expr;
   return s;
@@ -892,7 +892,7 @@ functionLiteral
       }
       var ret = rp(new constructor(params && params[2] || [], body || null));
       ret.annotation = {
-        type: {
+        dataType: {
           _return_: (_return_ ? _return_ : 'Any'),
         }
        };
@@ -1174,7 +1174,7 @@ TypeNameSymbol
   }
 
 TypeFunction = args:TypeArgs _ "->" _ _return_:TypeNameSymbol {
-  return {_args_: args, _return_: _return_, type: 'Function'};
+  return {_args_: args, _return_: _return_, dataType: 'Function'};
 }
 TypeArgs
   = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {
@@ -1187,7 +1187,7 @@ TypeExpr
   / TypeFunction
   / TypeNameSymbol
 
-TypeAnnotation = "::" _ type:TypeExpr {return {type:type};}
+TypeAnnotation = "::" _ type:TypeExpr {return {dataType:type};}
 
 unassignable = ("arguments" / "eval") !identifierPart
 CompoundAssignable

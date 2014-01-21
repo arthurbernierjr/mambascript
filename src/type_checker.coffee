@@ -52,7 +52,7 @@ walk_vardef = (node, scope) ->
 
 walk_program = (node, scope) ->
   walk node.body.statements, scope
-  node.annotation = type: 'Program'
+  node.annotation = dataType: 'Program'
 
 walk_block = (node, scope) ->
   walk node.statements, scope
@@ -61,31 +61,31 @@ walk_block = (node, scope) ->
 
 walk_return = (node, scope) ->
   walk node.expression, scope
-  if node.expression?.annotation?.type?
-    scope.addReturnable node.expression.annotation.type
+  if node.expression?.annotation?.dataType?
+    scope.addReturnable node.expression.annotation.dataType
     node.annotation = node.expression.annotation
 
 walk_binOp = (node, scope) ->
   walk node.left, scope
   walk node.right, scope
 
-  left_type = node.left?.annotation?.type
-  right_type = node.right?.annotation?.type
+  left_type = node.left?.annotation?.dataType
+  right_type = node.right?.annotation?.dataType
 
   if left_type and right_type
     # rough...
     if left_type is 'String' or right_type is 'String'
-      node.annotation = type: 'String'
+      node.annotation = dataType: 'String'
     else if left_type is 'Int' and right_type is 'Int'
-      node.annotation = type: 'Int'
+      node.annotation = dataType: 'Int'
     else if left_type in ['Int', 'Float'] and right_type in ['Int', 'Float']
-      node.annotation = type: 'Float'
+      node.annotation = dataType: 'Float'
     else if left_type in ['Int', 'Float', 'Number'] and right_type in ['Int', 'Float', 'Number']
-      node.annotation = type: 'Number'
+      node.annotation = dataType: 'Number'
     else if left_type is right_type
-      node.annotation = type: left_type
+      node.annotation = dataType: left_type
   else
-    node.annotation = type:'Any'
+    node.annotation = dataType:'Any'
 
 walk_conditional = (node, scope) ->
   # condition expr
@@ -99,17 +99,17 @@ walk_conditional = (node, scope) ->
     walk node.alternate, scope #=> Block
 
   # if node.alternate doesn't exist, then return type is Undefined
-  alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined')
+  alternate_annotation = (node.alternate?.annotation) ? (dataType: 'Undefined')
 
   possibilities = []
   for annotation in [node.consequent?.annotation, alternate_annotation] when annotation?
-    if annotation.type?.possibilities?
-      possibilities.push type for type in annotation.type.possibilities
-        
-    else if annotation.type?
-      possibilities.push annotation.type
+    if annotation.dataType?.possibilities?
+      possibilities.push dataType for dataType in annotation.dataType.possibilities
 
-  node.annotation = type: {possibilities}
+    else if annotation.dataType?
+      possibilities.push annotation.dataType
+
+  node.annotation = dataType: {possibilities}
 
 walk_switch = (node, scope) ->
   walk node.expression, scope
@@ -129,47 +129,47 @@ walk_switch = (node, scope) ->
     walk node.alternate, scope #=> Block
 
   # if node.alternate doesn't exist, then return type is Undefined
-  alternate_annotation = (node.alternate?.annotation) ? (type: 'Undefined')
+  alternate_annotation = (node.alternate?.annotation) ? (dataType: 'Undefined')
 
   possibilities = []
   for c in node.cases when c.annotation?
     possibilities.push c.consequent.annotation
 
-  possibilities.push alternate_annotation.type
-  node.annotation = type: {possibilities}
+  possibilities.push alternate_annotation.dataType
+  node.annotation = dataType: {possibilities}
 
 walk_newOp = (node, scope) ->
   for arg in node.arguments
     walk arg, scope
   Type = scope.getTypeInScope node.ctor.data
   if Type
-    _args_ = node.arguments?.map (arg) -> arg.annotation?.type
-    if err = scope.checkAcceptableObject Type.type._constructor_, {_args_: (_args_ ? []), _return_: 'Any'}
+    _args_ = node.arguments?.map (arg) -> arg.annotation?.dataType
+    if err = scope.checkAcceptableObject Type.dataType._constructor_, {_args_: (_args_ ? []), _return_: 'Any'}
       return reporter.add_error node, err
 
-  node.annotation = type: Type?.type
+  node.annotation = dataType: Type?.dataType
 
 walk_for = (node, scope) ->
   walk node.target, scope
 
   if node.valAssignee?
-    scope.addVar node.valAssignee.data, (node.valAssignee?.annotation?.type) ? 'Any'
+    scope.addVar node.valAssignee.data, (node.valAssignee?.annotation?.dataType) ? 'Any'
 
   if node.keyAssignee?
     # must be number or string
-    scope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.type) ? 'Any'
+    scope.addVar node.keyAssignee.data, (node.keyAssignee?.annotation?.dataType) ? 'Any'
 
   if node.valAssignee?
     # ForIn
-    if node.target.annotation?.type?.array?
-      if err = scope.checkAcceptableObject(node.valAssignee.annotation.type, node.target.annotation.type.array) 
+    if node.target.annotation?.dataType?.array?
+      if err = scope.checkAcceptableObject(node.valAssignee.annotation.dataType, node.target.annotation.dataType.array)
         return reporter.add_error node, err
 
     # ForOf
-    else if node.target?.annotation?.type instanceof Object
-      if node.target.annotation.type instanceof Object
-        for nop, type of node.target.annotation.type
-          if err = scope.checkAcceptableObject(node.valAssignee.annotation.type, type)
+    else if node.target?.annotation?.dataType instanceof Object
+      if node.target.annotation.dataType instanceof Object
+        for nop, dataType of node.target.annotation.dataType
+          if err = scope.checkAcceptableObject(node.valAssignee.annotation.dataType, dataType)
             return reporter.add_error node, err
 
   # check body
@@ -187,14 +187,14 @@ walk_classProtoAssignOp = (node, scope) ->
 
   walk left, scope
   if (right.instanceof CS.Function) and scope.getThis(symbol)
-    walk_function right, scope, scope.getThis(symbol).type
+    walk_function right, scope, scope.getThis(symbol).dataType
   else
     walk right, scope
 
   symbol = left.data
 
   if right.annotation?
-    scope.addThis symbol, right.annotation.type
+    scope.addThis symbol, right.annotation.dataType
 
 walk_assignOp = (node, scope) ->
   console.log 'walk_assignOp:: assignee', node.assignee.name
@@ -208,17 +208,17 @@ walk_assignOp = (node, scope) ->
   walk left,  scope
 
   if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
-    walk_function right, scope, scope.getVarInScope(symbol).type
+    walk_function right, scope, scope.getVarInScope(symbol).dataType
   else if right.instanceof?(CS.Function) and pre_registered_annotation
-    walk_function right, scope, left.annotation.type
+    walk_function right, scope, left.annotation.dataType
   else
     walk right, scope
 
   # Array initializer
   if left.instanceof CS.ArrayInitialiser
     for member, index in left.members when member.data?
-      l = left.annotation?.type?.array?[index];
-      r = right.annotation?.type?.array?[index];
+      l = left.annotation?.dataType?.array?[index];
+      r = right.annotation?.dataType?.array?[index];
       if err = scope.checkAcceptableObject l, r
         reporter.add_error node, err
       else
@@ -228,24 +228,24 @@ walk_assignOp = (node, scope) ->
   else if left?.members?
     for member in left.members when member.key?.data?
       if scope.getVarInScope member.key.data
-        l_type = scope.getVarInScope(member.key.data).type
-        if err = scope.checkAcceptableObject l_type, right.annotation?.type?[member.key.data]
+        l_type = scope.getVarInScope(member.key.data).dataType
+        if err = scope.checkAcceptableObject l_type, right.annotation?.dataType?[member.key.data]
           reporter.add_error node, err
       else
         scope.addVar member.key.data, 'Any'
-  
+
   # Member
   else if left.instanceof CS.MemberAccessOp
     if left.expression.instanceof CS.This
       T = scope.getThis(left.memberName)
       left.annotation = T if T?
       if T?
-        if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+        if err = scope.checkAcceptableObject(left.annotation.dataType, right.annotation.dataType)
           reporter.add_error node, err
     # return if left.expression.raw is '@' # ignore @ yet
-    else if left.annotation?.type? and right.annotation?.type?
-      if left.annotation.type isnt 'Any'
-        if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+    else if left.annotation?.dataType? and right.annotation?.dataType?
+      if left.annotation.dataType isnt 'Any'
+        if err = scope.checkAcceptableObject(left.annotation.dataType, right.annotation.dataType)
           reporter.add_error node, err
 
   # Identifier
@@ -255,18 +255,18 @@ walk_assignOp = (node, scope) ->
     if scope.getVarInScope(symbol) and pre_registered_annotation
       return reporter.add_error node, 'double bind: '+ symbol
 
-    scope.addVar symbol, left.annotation.type
+    scope.addVar symbol, left.annotation.dataType
 
     # Left annotation exists
-    if left.annotation.type?
+    if left.annotation.dataType?
       # explicit Any
-      if left.annotation.type is 'Any'
+      if left.annotation.dataType is 'Any'
         scope.addVar symbol, 'Any', true
-      else 
+      else
         if right.annotation? and left.annotation?
-          if err = scope.checkAcceptableObject(left.annotation.type, right.annotation.type)
+          if err = scope.checkAcceptableObject(left.annotation.dataType, right.annotation.dataType)
             return reporter.add_error node, err
-        scope.addVar symbol, left.annotation.type
+        scope.addVar symbol, left.annotation.dataType
   # Vanilla CS
   else
     scope.addVar symbol, 'Any'
@@ -284,71 +284,71 @@ walk_primitives = (node, scope) ->
 
 walk_string = (node, scope) ->
   node.annotation ?=
-    type: 'String'
+    dataType: 'String'
     primitive: true
 
 walk_int = (node, scope) ->
   node.annotation ?=
-    type: 'Int'
+    dataType: 'Int'
     primitive: true
 
 walk_float = (node, scope) ->
   node.annotation ?=
-    type: 'Float'
+    dataType: 'Float'
     primitive: true
 
 walk_numbers = (node, scope) ->
   node.annotation ?=
-    type: 'Number'
+    dataType: 'Number'
     primitive: true
 
 walk_bool = (node, scope) ->
   node.annotation ?=
-    type: 'Boolean'
+    dataType: 'Boolean'
     primitive: true
 
 walk_identifier = (node, scope) ->
   if scope.getVarInScope(node.data)
     Var = scope.getVarInScope(node.data)
-    node.annotation = type: Var?.type
+    node.annotation = dataType: Var?.dataType
   else
     node.annotation ?=
-      type: 'Any'
+      dataType: 'Any'
 
 walk_this = (node, scope) ->
-  type = {}
+  dataType = {}
   for key, val of scope._this
-    type[key] = val.type
-  node.annotation ?= {type}
+    dataType[key] = val.dataType
+  node.annotation ?= {dataType}
 
 walk_memberAccess = (node, scope) ->
   # hoge?.fuga
   if node.instanceof CS.SoakedMemberAccessOp
     walk node.expression, scope
-    type = scope.extendTypeLiteral(node.expression.annotation?.type)
-    if type?
+    dataType = scope.extendTypeLiteral(node.expression.annotation?.dataType)
+    if dataType?
       node.annotation =
-        type:
-          possibilities:['Undefined', type[node.memberName]]
+        dataType:
+          possibilities:['Undefined', dataType[node.memberName]]
     else
-      node.annotation = type: 'Any'
+      node.annotation = dataType: 'Any'
 
   else if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
-    type = scope.extendTypeLiteral(node.expression.annotation?.type)
-    if type?
-      node.annotation = type: type[node.memberName]
+    dataType = scope.extendTypeLiteral(node.expression.annotation?.dataType)
+    if dataType?
+      node.annotation = dataType: dataType[node.memberName]
     else
-      node.annotation = type: 'Any'
+      node.annotation = dataType: 'Any'
 
 walk_arrayInializer = (node, scope) ->
   walk node.members, scope
 
   node.annotation ?=
-    type: {array: (node.members?.map (m) -> m.annotation?.type)}
+    dataType: {array: (node.members?.map (m) -> m.annotation?.dataType)}
 
 walk_range = (node, scope) ->
-  node.annotation = type : {array: 'Number'}
+  node.annotation = dataType : {array: 'Number'}
 
 walk_objectInitializer = (node, scope) ->
 
@@ -358,10 +358,10 @@ walk_objectInitializer = (node, scope) ->
 
   for {expression, key} in node.members when key?
     walk expression, nextScope
-    obj[key.data] = expression.annotation?.type
+    obj[key.data] = expression.annotation?.dataType
 
   node.annotation ?=
-    type: obj
+    dataType: obj
 
 walk_class = (node, scope) ->
   classScope = new ClassScope scope
@@ -373,21 +373,21 @@ walk_class = (node, scope) ->
     if node.parent?.data
       parent = scope.getTypeInScope node.parent.data
       if parent
-        for key, val of parent.type
+        for key, val of parent.dataType
           this_scope[key] = val
     # implements
     if node.impl?.length?
       for name in node.impl
         cls = scope.getTypeInScope name
         if cls
-          for key, val of cls.type
+          for key, val of cls.dataType
             this_scope[key] = val
 
-  # collect @values first 
+  # collect @values first
   if node.body?.statements?
-    for statement in node.body.statements when statement.type is 'vardef'
+    for statement in node.body.statements when statement.dataType is 'vardef'
       walk_vardef statement, classScope
-  
+
   # constructor
   if node.ctor?
     constructorScope = new FunctionScope classScope
@@ -396,14 +396,14 @@ walk_class = (node, scope) ->
     if node.ctor.expression.parameters?
       # vardef exists: constructor :: X, Y, Z
       if constructorScope.getThis('_constructor_')
-        predef = constructorScope.getThis('_constructor_').type
+        predef = constructorScope.getThis('_constructor_').dataType
         for param, index in node.ctor.expression.parameters when param?
           walk param, constructorScope
           constructorScope.addVar param.data, (predef._args_?[index] ? 'Any')
       else
         for param, index in node.ctor.expression.parameters when param?
           walk param, constructorScope
-          constructorScope.addVar param.data, (param?.annotation?.type ? 'Any')
+          constructorScope.addVar param.data, (param?.annotation?.dataType ? 'Any')
 
     # constructor body
     if node.ctor.expression.body?.statements?
@@ -412,20 +412,20 @@ walk_class = (node, scope) ->
 
   # walk
   if node.body?.statements?
-    for statement in node.body.statements when statement.type isnt 'vardef'
+    for statement in node.body.statements when statement.dataType isnt 'vardef'
       walk statement, classScope
 
   if node.nameAssignee?.data
     for fname, val of classScope._this
-      this_scope[fname] = val.type
+      this_scope[fname] = val.dataType
     scope.addType node.nameAssignee.data, this_scope
 
 # Node * Scope * Type
 # predef :: Type defined at assignee
 walk_function = (node, scope, predef = null) ->
-  _args_ = node.parameters?.map (param) -> param.annotation?.type ? 'Any'
+  _args_ = node.parameters?.map (param) -> param.annotation?.dataType ? 'Any'
 
-  node.annotation.type._args_ = _args_
+  node.annotation.dataType._args_ = _args_
 
   functionScope = new Scope scope
   functionScope._name_ = 'function'
@@ -441,7 +441,7 @@ walk_function = (node, scope, predef = null) ->
     #   f :: Int -> Int
     #   f: (n) -> n
     if predef
-      node.annotation.type = predef
+      node.annotation.dataType = predef
       for param, index in node.parameters
         # Destructive
         if param.members
@@ -449,7 +449,7 @@ walk_function = (node, scope, predef = null) ->
             # This
             if member.expression?.expression?.raw in ['@', 'this']
               t = functionScope.getThis(member.key.data)
-              unless t?.type? then functionScope.addThis member.key.data, 'Any'
+              unless t?.dataType? then functionScope.addThis member.key.data, 'Any'
             # Var
             else
               if member.key?.data
@@ -457,9 +457,9 @@ walk_function = (node, scope, predef = null) ->
         # This
         else if param.expression?.raw in ['@', 'this']
           t = functionScope.getThis(param.memberName)
-          if err = scope.checkAcceptableObject predef._args_?[index], t?.type
+          if err = scope.checkAcceptableObject predef._args_?[index], t?.dataType
             reporter.add_error node, err
-          unless t?.type? then functionScope.addThis param.memberName, 'Any'
+          unless t?.dataType? then functionScope.addThis param.memberName, 'Any'
         # Var
         else
           functionScope.addVar param.data, (predef._args_?[index] ? 'Any')
@@ -473,7 +473,7 @@ walk_function = (node, scope, predef = null) ->
             # This
             if member.expression?.expression?.raw in ['@', 'this']
               t = functionScope.getThis(member.key.data)
-              unless t?.type? then functionScope.addThis member.key.data, 'Any'
+              unless t?.dataType? then functionScope.addThis member.key.data, 'Any'
             # Var
             else
               if member.key?.data
@@ -481,15 +481,15 @@ walk_function = (node, scope, predef = null) ->
         # This
         else if param.expression?.raw in ['@', 'this']
           t = functionScope.getThis(param.memberName)
-          unless t?.type? then functionScope.addThis param.memberName, 'Any'
+          unless t?.dataType? then functionScope.addThis param.memberName, 'Any'
         # Var
         else
-          functionScope.addVar param.data, (param?.annotation?.type ? 'Any')
+          functionScope.addVar param.data, (param?.annotation?.dataType ? 'Any')
 
   walk node.body, functionScope
 
   # () :: Number -> 3
-  if node.annotation?.type?._return_ isnt 'Any'
+  if node.annotation?.dataType?._return_ isnt 'Any'
     # last expr or single line expr
     last_expr =
       if node.body?.statements?.length # => Blcok
@@ -498,7 +498,7 @@ walk_function = (node, scope, predef = null) ->
         node.body
 
     # 明示的に宣言してある場合
-    if err = scope.checkAcceptableObject(node.annotation?.type._return_, last_expr?.annotation?.type)
+    if err = scope.checkAcceptableObject(node.annotation?.dataType._return_, last_expr?.annotation?.dataType)
       return reporter.add_error node, err
 
   else
@@ -509,17 +509,17 @@ walk_function = (node, scope, predef = null) ->
         node.body
 
     if node.annotation?
-      node.annotation.type._return_ = last_expr?.annotation?.type
+      node.annotation.dataType._return_ = last_expr?.annotation?.dataType
 
 walk_functionApplication = (node, scope) ->
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
-  node.annotation = type: (node.function.annotation?.type?._return_)
+  node.annotation = dataType: (node.function.annotation?.dataType?._return_)
 
   if node.function.annotation
-    _args_ = node.arguments?.map (arg) -> arg.annotation?.type
-    if err = scope.checkAcceptableObject node.function.annotation.type, {_args_: (_args_ ? []), _return_: 'Any'}
+    _args_ = node.arguments?.map (arg) -> arg.annotation?.dataType
+    if err = scope.checkAcceptableObject node.function.annotation.dataType, {_args_: (_args_ ? []), _return_: 'Any'}
       return reporter.add_error node, err
 
 # Traverse all nodes
@@ -533,8 +533,8 @@ walk = (node, scope) ->
     when node.length?                    then  walk s, scope for s in node
     # Struct
     # Dirty hack on Number
-    when node.type is 'struct'           then walk_struct node, scope
-    when node.type is 'vardef'           then walk_vardef node, scope
+    when node.dataType is 'struct'           then walk_struct node, scope
+    when node.dataType is 'vardef'           then walk_vardef node, scope
     # Program
     when node.instanceof CS.Program      then walk_program node, scope
     # Block
@@ -576,7 +576,7 @@ walk = (node, scope) ->
     when node.instanceof CS.Function          then walk_function node, scope
     # FunctionApplication
     when node.instanceof CS.FunctionApplication then walk_functionApplication node, scope
-    # left.annotation.type
+    # left.annotation.dataType
     when node.instanceof CS.AssignOp then walk_assignOp node, scope
 
 module.exports = {checkNodes}

@@ -12,12 +12,12 @@ class Type
 # ObjectType :: T -> Object
 class ObjectType extends Type
   # :: String -> ()
-  constructor:(@type) ->
+  constructor:(@dataType) ->
 
 # ArrayType :: {array :: T} = array: T
 class ArrayType extends Type
-  constructor:(type) ->
-    @array = type
+  constructor:(dataType) ->
+    @array = dataType
 
 # possibilities :: Type[] = []
 class Possibilites extends Array
@@ -44,8 +44,8 @@ checkAcceptableObject = (left, right, scope) =>
     results = (checkAcceptableObject(l_arg, right._args_[i], scope) for l_arg, i in left._args_)
     return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
 
-    # check return type
-    # TODO: Now I will not infer function return type
+    # check return dataType
+    # TODO: Now I will not infer function return dataType
     if right._return_ isnt 'Any'
       return checkAcceptableObject(left._return_, right._return_, scope)
     return false
@@ -93,29 +93,29 @@ checkAcceptableObject = (left, right, scope) =>
 # Number, Boolean, Object, Array, Any
 initializeGlobalTypes = (node) ->
   # Primitive
-  node.addTypeObject 'String', new TypeSymbol {type: 'String'}
-  node.addTypeObject 'Number', new TypeSymbol {type: 'Number', _extends_: 'Float'}
-  node.addTypeObject 'Int', new TypeSymbol {type: 'Int'}
-  node.addTypeObject 'Float', new TypeSymbol {type: 'Float', _extends_: 'Int'}
-  node.addTypeObject 'Boolean', new TypeSymbol {type: 'Boolean'}
-  node.addTypeObject 'Object', new TypeSymbol {type: 'Object'}
-  node.addTypeObject 'Array', new TypeSymbol {type: 'Array'}
-  node.addTypeObject 'Undefined', new TypeSymbol {type: 'Undefined'}
-  node.addTypeObject 'Any', new TypeSymbol {type: 'Any'}
+  node.addTypeObject 'String', new TypeSymbol {dataType: 'String'}
+  node.addTypeObject 'Number', new TypeSymbol {dataType: 'Number', _extends_: 'Float'}
+  node.addTypeObject 'Int', new TypeSymbol {dataType: 'Int'}
+  node.addTypeObject 'Float', new TypeSymbol {dataType: 'Float', _extends_: 'Int'}
+  node.addTypeObject 'Boolean', new TypeSymbol {dataType: 'Boolean'}
+  node.addTypeObject 'Object', new TypeSymbol {dataType: 'Object'}
+  node.addTypeObject 'Array', new TypeSymbol {dataType: 'Array'}
+  node.addTypeObject 'Undefined', new TypeSymbol {dataType: 'Undefined'}
+  node.addTypeObject 'Any', new TypeSymbol {dataType: 'Any'}
 
 # Known vars in scope
 class VarSymbol
-  # type :: String
+  # dataType :: String
   # implicit :: Bolean
-  constructor: ({@type, @implicit}) ->
+  constructor: ({@dataType, @implicit}) ->
 
 # Known types in scope
 class TypeSymbol
-  # type :: String or Object
+  # dataType :: String or Object
   # instanceof :: (Any) -> Boolean
-  constructor: ({@type, @instanceof, @_templates_, @_extends_}) ->
+  constructor: ({@dataType, @instanceof, @_templates_, @_extends_}) ->
 
-# Var and type scope as node
+# Var and dataType scope as node
 class Scope
   # constructor :: (Scope) -> Scope
   constructor: (@parent = null) ->
@@ -127,7 +127,7 @@ class Scope
     # Scope vars
     @_vars  = {} #=> String -> Type
 
-    # Scope types
+    # Scope dataTypes
     @_types = {} #=> String -> Type
 
     # This scope
@@ -135,14 +135,14 @@ class Scope
 
     @_returnables = [] #=> Type[]
 
-  addReturnable: (symbol, type) ->
-    @_returnables.push type
+  addReturnable: (symbol, dataType) ->
+    @_returnables.push dataType
 
   getReturnables: -> @_returnables
 
   # addType :: String * Object * Object -> Type
-  addType: (symbol, type, _templates_) ->
-    @_types[symbol] = new TypeSymbol {type, _templates_}
+  addType: (symbol, dataType, _templates_) ->
+    @_types[symbol] = new TypeSymbol {dataType, _templates_}
 
   addTypeObject: (symbol, type_object) ->
     @_types[symbol] = type_object
@@ -153,44 +153,44 @@ class Scope
   getTypeInScope: (symbol) ->
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
 
-  addThis: (symbol, type, implicit = true) ->
+  addThis: (symbol, dataType, implicit = true) ->
     # TODO: Refactor with addVar
-    if type?._base_?
-      T = @getType(type._base_)
+    if dataType?._base_?
+      T = @getType(dataType._base_)
       return undefined unless T
-      obj = clone T.type
+      obj = clone T.dataType
       if T._templates_
         # TODO: length match
-        rewrite_to = type._templates_
+        rewrite_to = dataType._templates_
         replacer = {}
         for t, n in T._templates_
           replacer[t] = rewrite_to[n]
         rewrite obj, replacer
 
-      @_this[symbol] = new VarSymbol {type:obj, implicit}
+      @_this[symbol] = new VarSymbol {dataType:obj, implicit}
     else
-      @_this[symbol] = new VarSymbol {type, implicit}
+      @_this[symbol] = new VarSymbol {dataType, implicit}
 
   getThis: (symbol) ->
     @_this[symbol]
 
-  addVar: (symbol, type, implicit = true) ->
+  addVar: (symbol, dataType, implicit = true) ->
     # TODO: Refactor
-    if type?._base_?
-      T = @getType(type._base_)
+    if dataType?._base_?
+      T = @getType(dataType._base_)
       return undefined unless T
-      obj = clone T.type
+      obj = clone T.dataType
       if T._templates_
         # TODO: length match
-        rewrite_to = type._templates_
+        rewrite_to = dataType._templates_
         replacer = {}
         for t, n in T._templates_
           replacer[t] = rewrite_to[n]
         rewrite obj, replacer
 
-      @_vars[symbol] = new VarSymbol {type:obj, implicit}
+      @_vars[symbol] = new VarSymbol {dataType:obj, implicit}
     else
-      @_vars[symbol] = new VarSymbol {type, implicit}
+      @_vars[symbol] = new VarSymbol {dataType, implicit}
 
   getVar: (symbol) ->
     @_vars[symbol]
@@ -203,7 +203,7 @@ class Scope
   isImplicitVarInScope: (symbol) ->
     @isImplicitVar(symbol) or @parent?.isImplicitVarInScope(symbol) or undefined
 
-  # Extend symbol to type object
+  # Extend symbol to dataType object
   # ex. {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
   extendTypeLiteral: (node) =>
     switch (typeof node)
@@ -219,13 +219,13 @@ class Scope
           return ret
       when 'string'
         Type = @getTypeInScope(node)
-        type = Type?.type
-        switch typeof type
+        dataType = Type?.dataType
+        switch typeof dataType
           when 'object'
-            return @extendTypeLiteral(type)
+            return @extendTypeLiteral(dataType)
           when 'string'
-            return type
-            
+            return dataType
+
   # check object literal with extended object
   checkAcceptableObject: (left, right) ->
     l = @extendTypeLiteral(left)
@@ -236,8 +236,8 @@ class ClassScope extends Scope
 class FunctionScope extends Scope
 
 module.exports = {
-  checkAcceptableObject, 
-  initializeGlobalTypes, 
+  checkAcceptableObject,
+  initializeGlobalTypes,
   VarSymbol, TypeSymbol, Scope, ClassScope, FunctionScope
   ArrayType, ObjectType, Type, Possibilites
 }
