@@ -1,4 +1,4 @@
-{any, concat, concatMap, difference, divMod, foldl1, intersect, map, nub, owns, partition, span, union} = require './functional-helpers'
+{find, any, concat, concatMap, difference, divMod, foldl1, intersect, map, nub, owns, partition, span, union} = require './functional-helpers'
 {beingDeclared, usedAsExpression, envEnrichments} = require './helpers'
 CS = require './nodes'
 JS = require './js-nodes'
@@ -380,6 +380,12 @@ inlineHelpers =
   exp: -> new JS.CallExpression (memberAccess (new JS.Identifier 'Math'), 'pow'), arguments
   undef: -> new JS.UnaryExpression 'void', new JS.Literal 0
   slice: -> new JS.CallExpression (memberAccess (memberAccess (new JS.ArrayExpression []), 'slice'), 'call'), arguments
+  super: (className, functionName, args) ->
+    applied = if args.length > 0 then new JS.ArrayExpression (map args, expr) else new JS.Identifier 'arguments'
+    new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'apply'), [
+      new JS.ThisExpression
+      applied
+    ]
 
 for own h, fn of inlineHelpers
   helpers[h] = fn
@@ -809,6 +815,14 @@ class exports.Compiler
         else lhs.right = new JS.AssignmentExpression '=', left, lhs.right
       new JS.LogicalExpression '&&', lhs, new JS.BinaryExpression expression.operator, left, expression.right
     ]
+
+    [CS.Super, ({arguments: args, compile, inScope, ancestry}) ->
+      classNode = find ancestry, (node) => node.hasOwnProperty('ctor')
+      functionName = ancestry[ancestry.indexOf(classNode)-1].assignee.data # node before classNode is memberAccessOp
+      className = classNode.name.data
+      helpers.super className, functionName, args
+    ]
+
     [CS.FunctionApplication, ({function: fn, arguments: args, compile}) ->
       if any args, (m) -> m.spread
         lhs = @function
