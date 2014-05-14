@@ -7,14 +7,14 @@ CoffeeScript = require './module'
 
 module.exports = not require.extensions['.coffee']?
 
-require.extensions['.coffee'] ?= (module, filename) ->
+require.extensions['.coffee'] = (module, filename) ->
   input = fs.readFileSync filename, 'utf8'
   csAst = CoffeeScript.parse input, raw: yes
   jsAst = CoffeeScript.compile csAst
   js = CoffeeScript.js jsAst
   runModule module, js, jsAst, filename
 
-require.extensions['.litcoffee'] ?= (module, filename) ->
+require.extensions['.litcoffee'] = (module, filename) ->
   input = fs.readFileSync filename, 'utf8'
   csAst = CoffeeScript.parse input, raw: yes, literate: yes
   jsAst = CoffeeScript.compile csAst
@@ -33,3 +33,5 @@ unless fork.coffeePatched
       options.execPath or= coffeeBinary
     fork file, args, options
   child_process.fork.coffeePatched = yes
+
+delete require.cache[__filename]

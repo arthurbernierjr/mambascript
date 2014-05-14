@@ -47,14 +47,12 @@ dist:
 
 dist/coffee-script-redux.js: lib/browser.js dist
 	$(CJSIFY) src/browser.coffee -vx CoffeeScript \
-		-a fs: -a child_process: \
 		-a /src/register.coffee: \
 		-a /src/parser.coffee:/lib/parser.js \
 		--source-map "$@.map" > "$@"
 
 dist/coffee-script-redux.min.js: lib/browser.js dist
 	$(CJSIFY) src/browser.coffee -vmx CoffeeScript \
-		-a fs: -a child_process: \
 		-a /src/register.coffee: \
 		-a /src/parser.coffee:/lib/parser.js \
 		--source-map "$@.map" > "$@"
@@ -64,7 +62,7 @@ lib/%.min.js: lib/%.js lib/coffee-script
 	$(MINIFIER) <"$<" >"$@"
 
 
-.PHONY: test coverage install loc clean
+.PHONY: default all build parser browser min minify test coverage install loc clean
 
 test:
 	$(MOCHA) -R dot test/*.coffee

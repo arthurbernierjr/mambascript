@@ -445,17 +445,25 @@ class exports.Compiler
       block = forceBlock body
       block.body.push stmt helpers.undef() unless block.body.length
 
+      increment =
+        if @step? and not ((@step.instanceof CS.Int) and @step.data is 1)
+          (x) -> new JS.AssignmentExpression '+=', x, step
+        else
+          (x) -> new JS.UpdateExpression '++', yes, x
+
       # optimise loops over static, integral ranges
       if (@target.instanceof CS.Range) and
       # TODO: extract this test to some "static, integral range" helper
       ((@target.left.instanceof CS.Int) or ((@target.left.instanceof CS.UnaryNegateOp) and @target.left.expression.instanceof CS.Int)) and
       ((@target.right.instanceof CS.Int) or ((@target.right.instanceof CS.UnaryNegateOp) and @target.right.expression.instanceof CS.Int))
-        varDeclaration = new JS.AssignmentExpression '=', i, compile @target.left
-        update = new JS.UpdateExpression '++', yes, i
+        varDeclaration = new JS.VariableDeclaration 'var', [new JS.VariableDeclarator i, compile @target.left]
+        update = increment i
+        if @filter?
+          block.body.unshift stmt new JS.IfStatement (new JS.UnaryExpression '!', filter), new JS.ContinueStatement
         if keyAssignee?
           k = genSym 'k'
-          varDeclaration = new JS.SequenceExpression [(new JS.AssignmentExpression '=', k, new JS.Literal 0), varDeclaration]
-          update = new JS.SequenceExpression [(new JS.UpdateExpression '++', yes, k), update]
+          varDeclaration.declarations.unshift new JS.VariableDeclarator k, new JS.Literal 0
+          update = new JS.SequenceExpression [(increment k), update]
           block.body.unshift stmt new JS.AssignmentExpression '=', keyAssignee, k
         if valAssignee?
           block.body.unshift stmt new JS.AssignmentExpression '=', valAssignee, i
@@ -476,7 +484,7 @@ class exports.Compiler
         block.body.unshift stmt assignment keyAssignee, i
       if valAssignee?
         block.body.unshift stmt assignment valAssignee, new JS.MemberExpression yes, e, i
-      new JS.ForStatement varDeclaration, (new JS.BinaryExpression '<', i, length), (new JS.UpdateExpression '++', yes, i), block
+      new JS.ForStatement varDeclaration, (new JS.BinaryExpression '<', i, length), (increment i), block
     ]
     [CS.ForOf, ({keyAssignee, valAssignee, target, filter, body}) ->
       block = forceBlock body
@@ -630,11 +638,13 @@ class exports.Compiler
 
         if parameters.length > 0
           if parameters[-1..][0].rest
+            paramName = parameters.pop().expression
             numParams = parameters.length
-            paramName = parameters[numParams - 1] = parameters[numParams - 1].expression
-            test = new JS.BinaryExpression '<=', (new JS.Literal numParams), memberAccess (new JS.Identifier 'arguments'), 'length'
-            consequent = helpers.slice (new JS.Identifier 'arguments'), new JS.Literal (numParams - 1)
+            test = new JS.BinaryExpression '>', (memberAccess (new JS.Identifier 'arguments'), 'length'), new JS.Literal numParams
+            consequent = helpers.slice (new JS.Identifier 'arguments'), new JS.Literal numParams
             alternate = new JS.ArrayExpression []
+            if (paramName.instanceof JS.Identifier) and paramName.name in inScope
+              block.body.unshift makeVarDeclaration [paramName]
             block.body.unshift stmt new JS.AssignmentExpression '=', paramName, new JS.ConditionalExpression test, consequent, alternate
           else if any parameters, (p) -> p.rest
             paramName = index = null
@@ -650,7 +660,9 @@ class exports.Compiler
             ]), new JS.BlockStatement [stmt new JS.AssignmentExpression '=', paramName, new JS.ArrayExpression []]
             for p, i in parameters[index...]
               reassignments.consequent.body.push stmt new JS.AssignmentExpression '=', p, new JS.MemberExpression yes, (new JS.Identifier 'arguments'), new JS.BinaryExpression '-', numArgs, new JS.Literal numParams - index - i
-            block.body.unshift (makeVarDeclaration [paramName]), reassignments
+            if (paramName.instanceof JS.Identifier) and paramName.name in inScope
+              block.body.unshift makeVarDeclaration [paramName]
+            block.body.unshift reassignments
           if any parameters, (p) -> p.rest
             throw new Error 'Parameter lists may not have more than one rest operator'
 
@@ -847,7 +859,18 @@ class exports.Compiler
     ]
     [CS.MemberAccessOp, CS.SoakedMemberAccessOp, ({expression, compile}) ->
       if hasSoak this then expr compile generateSoak this
-      else memberAccess expression, @memberName
+      else
+        access = memberAccess expression, @memberName
+        # manually calculate raw/position info for member name
+        if @raw
+          access.property.raw = @memberName
+          access.property.line = @line
+          offset = @raw.length - @memberName.length
+          access.property.column = @column + offset - 1
+          access.property.offset = @offset + offset - 1
+          @column += @expression.raw.length
+          @offset += @expression.raw.length
+        access
     ]
     [CS.ProtoMemberAccessOp, CS.SoakedProtoMemberAccessOp, ({expression, compile}) ->
       if hasSoak this then expr compile generateSoak this
