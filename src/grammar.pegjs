@@ -389,10 +389,15 @@ vardef = name:TypeNameSymbol __ '::' _ expr: TypeExpr !(_ "=") {
   return s;
 }
 
+super = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList? {
+  return rp(new CS.Super(secondaryArgs || []));
+}
+
 // TODO: rename?
 expressionworthy
   = structdef
   / functionLiteral
+  / super
   / conditional
   / while
   / loop
@@ -1317,6 +1322,8 @@ WHEN = $("when" !identifierPart)
 WHILE = $("while" !identifierPart)
 YES = $("yes" !identifierPart)
 IMPLEMENTS = $("implements" !identifierPart)
+SUPER = $("super" !identifierPart)
+
 
 SharedKeywords
   = ("true" / "false" / "null" / "this" / "new" / "delete" / "typeof" /
