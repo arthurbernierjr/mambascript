@@ -661,6 +661,23 @@ suite 'Classes', ->
       ok a instanceof A
       eq nonce, a.nonce
 
+    test 'super function', ->
+      class Super
+        func: (@a = 1) -> @a
+
+      class Sub extends Super
+        func: ->
+          super
+          eq @a, 1
+          super 3
+          eq @a, 3
+          a = super
+          v = 2 * super 3
+          eq v, 6
+
+      a = new Sub
+      a.func()
+
     test '#199: implicit object as static class member', ->
       nonceA = {}
       nonceB = {}

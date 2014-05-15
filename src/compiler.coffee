@@ -381,11 +381,14 @@ inlineHelpers =
   undef: -> new JS.UnaryExpression 'void', new JS.Literal 0
   slice: -> new JS.CallExpression (memberAccess (memberAccess (new JS.ArrayExpression []), 'slice'), 'call'), arguments
   super: (className, functionName, args) ->
-    applied = if args.length > 0 then new JS.ArrayExpression (map args, expr) else new JS.Identifier 'arguments'
-    new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'apply'), [
-      new JS.ThisExpression
-      applied
-    ]
+    if args.length is 0
+      new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'apply'), [
+        new JS.ThisExpression
+        new JS.Identifier 'arguments'
+      ]
+    else
+      calledExprs = [new JS.ThisExpression].concat (map args, expr)
+      new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'call'), calledExprs
 
 for own h, fn of inlineHelpers
   helpers[h] = fn
@@ -818,8 +821,15 @@ class exports.Compiler
 
     [CS.Super, ({arguments: args, compile, inScope, ancestry}) ->
       classNode = find ancestry, (node) => node.hasOwnProperty('ctor')
-      functionName = ancestry[ancestry.indexOf(classNode)-1].assignee.data # node before classNode is memberAccessOp
-      className = classNode.name.data
+      classPositionInAncestry = ancestry.indexOf(classNode)
+      searchableNodes = []
+      for i, n in ancestry
+        break if n is classPositionInAncestry
+        searchableNodes.unshift i
+      classAssignNode = find searchableNodes, (node) => node.assignee?
+
+      className    = classNode.name.data
+      functionName = classAssignNode.assignee.data
       helpers.super className, functionName, args
     ]
 

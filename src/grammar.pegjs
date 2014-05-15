@@ -399,6 +399,7 @@ expressionworthy
   / functionLiteral
   / super
   / conditional
+  / super
   / while
   / loop
   / try
@@ -1033,6 +1034,10 @@ decimal
         : rp(new CS.Int(+integral));
     }
 
+super = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList? {
+  return rp(new CS.Super(secondaryArgs || []));
+}
+
 integer
   = "0"
   / $([1-9] decimalDigit*)
@@ -1323,7 +1328,6 @@ WHILE = $("while" !identifierPart)
 YES = $("yes" !identifierPart)
 IMPLEMENTS = $("implements" !identifierPart)
 SUPER = $("super" !identifierPart)
-
 
 SharedKeywords
   = ("true" / "false" / "null" / "this" / "new" / "delete" / "typeof" /
