@@ -663,7 +663,7 @@ suite 'Classes', ->
 
     test 'super function', ->
       class Super
-        func: (@a = 1) ->
+        func: (@a = 1) -> @a
 
       class Sub extends Super
         func: ->
@@ -671,7 +671,9 @@ suite 'Classes', ->
           eq @a, 1
           super 3
           eq @a, 3
-          # a = super # TODO: must fix
+          a = super
+          v = 2 * super 3
+          eq v, 6
 
       a = new Sub
       a.func()
