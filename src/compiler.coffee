@@ -381,11 +381,14 @@ inlineHelpers =
   undef: -> new JS.UnaryExpression 'void', new JS.Literal 0
   slice: -> new JS.CallExpression (memberAccess (memberAccess (new JS.ArrayExpression []), 'slice'), 'call'), arguments
   super: (className, functionName, args) ->
-    applied = if args.length > 0 then new JS.ArrayExpression (map args, expr) else new JS.Identifier 'arguments'
-    new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'apply'), [
-      new JS.ThisExpression
-      applied
-    ]
+    if args.length is 0
+      new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'apply'), [
+        new JS.ThisExpression
+        new JS.Identifier 'arguments'
+      ]
+    else
+      calledExprs = [new JS.ThisExpression].concat (map args, expr)
+      new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'call'), calledExprs
 
 for own h, fn of inlineHelpers
   helpers[h] = fn
