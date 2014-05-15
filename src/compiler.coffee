@@ -817,10 +817,17 @@ class exports.Compiler
     ]
 
     [CS.Super, ({arguments: args, compile, inScope, ancestry}) ->
-      # TODO: fix me dirty way to catch assignee
       classNode = find ancestry, (node) => node.hasOwnProperty('ctor')
-      functionName = (find ancestry, (node) -> node.assignee).assignee.data
-      className = classNode.name.data
+
+      classPositionInAncestry = ancestry.indexOf(classNode)
+      searchableNodes = []
+      for i, n in ancestry
+        break if n is classPositionInAncestry
+        searchableNodes.unshift i
+      classAssignNode = find searchableNodes, (node) => node.assignee?
+
+      className    = classNode.name.data
+      functionName = classAssignNode.assignee.data
       helpers.super className, functionName, args
     ]
 
