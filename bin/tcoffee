@@ -1,0 +1,122 @@
+#!/usr/bin/env coffee
+
+fs = require 'fs'
+path = require 'path'
+CoffeeScript = require '../lib/module'
+{exec, spawn} = require 'child_process'
+
+cscodegen = require 'cscodegen'
+escodegen = require 'escodegen'
+repl = require '../lib/repl'
+
+{argv} = require('optimist')
+  .boolean('compile')
+  .boolean('bare')
+  .alias('c', 'compile')
+  .alias('e', 'execute')
+  .alias('b', 'bare')
+  .alias('o', 'out')
+  .alias('j', 'join')
+
+compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
+  cs_ast = CoffeeScript.parse source, parseOption ? {
+    optimise: no
+    raw: false
+    inputSource: source
+    literate
+  }
+  js_ast = CoffeeScript.compile cs_ast, compileOption ? bare: !!argv.bare
+  escodegen.generate js_ast
+
+mode = switch
+  when argv.c or argv.compile then 'compile'
+  when argv.e or argv.execute then 'execute'
+  when argv._.length > 0      then 'execute'
+  else 'repl'
+
+class Code
+  @join: (codes, to) ->
+    c = new Code
+      from: (c.from for c in codes)
+      to: to
+      code: (c.code for c in codes).join('\n')
+    c
+
+  constructor: ({@from, @to, @code}) ->
+
+  writeSync: ->
+    err = fs.writeFileSync @to, @code
+    throw err if err
+    console.log 'compile:', @from, '->', @to
+
+  write: (callback) ->
+    fs.writeFile @to, @code, (err) =>
+      throw err if err
+      console.log 'compile:', @from, '->', @to
+      callback?()
+
+switch mode
+  when 'compile'
+    {Preprocessor} = require '../lib/preprocessor'
+
+    literate = argv.literate
+    filepaths = argv._
+
+    result = ""
+
+    codes = []
+    for fpath in filepaths
+      # TODO: check existence
+      source = fs.readFileSync(fpath).toString()
+      # preprocessed = Preprocessor.process source, {literate}
+      cs_ast = CoffeeScript.parse source, {
+        optimise: no
+        raw: false
+        inputSource: source
+        literate
+      }
+
+      if argv.csast
+        console.log cs_ast
+        return
+
+      if argv.cscodegen
+        console.log cscodegen.generate cs_ast
+        return
+
+      js_ast = CoffeeScript.compile cs_ast, bare: !!argv.bare
+      code = escodegen.generate js_ast
+
+      outpath = path.join(argv.out or '', fpath.replace '.coffee', '.js')
+      codes.push new Code
+        from: fpath
+        to: outpath
+        code: code
+
+    # if argv.join and argv.browserify # TODO
+    if argv.join
+      console.log codes
+      console.log 'join:', argv.join
+      outpath = path.join(argv.out or '', argv.join)
+      joined = Code.join(codes, outpath)
+      joined.write()
+    else
+      for code in codes
+        code.write()
+
+  when 'execute'
+    fpath = argv.execute ?  argv._[0]
+    source = fs.readFileSync(fpath).toString()
+    js = compileFromSourceToJS(source)
+    # console.log js
+
+    exec "node -e \"#{js}\"", {
+      cwd: process.cwd()
+      env: process.env
+    },  (err, stdout, stderr) =>
+      throw err if err
+      throw stderr if stderr
+      console.log stdout
+
+  when 'repl'
+    repl.start()
