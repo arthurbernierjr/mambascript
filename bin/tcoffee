@@ -87,7 +87,11 @@ switch mode
       js_ast = CoffeeScript.compile cs_ast, bare: !!argv.bare
       code = escodegen.generate js_ast
 
-      outpath = path.join(argv.out or '', fpath.replace '.coffee', '.js')
+      outpath =
+        if argv.out
+          path.join(argv.out or '', (path.basename fpath).replace '.coffee', '.js')
+        else
+          path.join(fpath.replace '.coffee', '.js')
       codes.push new Code
         from: fpath
         to: outpath

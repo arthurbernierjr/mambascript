@@ -25,10 +25,12 @@
     "test": "make -j test"
   },
   "devDependencies": {
+    "cluster": "~0.7.7",
+    "commonjs-everywhere": "~0.9.0",
+    "grunt": "^0.4.5",
+    "grunt-contrib-coffee": "^0.10.1",
     "mocha": "~1.12.0",
     "pegjs": "git+https://github.com/dmajda/pegjs.git#bea6b1fde74c8aebf802f9bcc3380c65b241e1b7",
-    "commonjs-everywhere": "~0.9.0",
-    "cluster": "~0.7.7",
     "semver": "~2.1.0"
   },
   "dependencies": {
