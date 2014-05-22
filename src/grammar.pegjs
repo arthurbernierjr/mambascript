@@ -389,17 +389,11 @@ vardef = name:TypeNameSymbol __ '::' _ expr: TypeExpr !(_ "=") {
   return s;
 }
 
-super = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList? {
-  return rp(new CS.Super(secondaryArgs || []));
-}
-
 // TODO: rename?
 expressionworthy
   = structdef
   / functionLiteral
-  / super
   / conditional
-  / super
   / while
   / loop
   / try
@@ -615,7 +609,12 @@ leftHandSideExpressionNoImplicitObjectCall = callExpressionNoImplicitObjectCall 
     / secondaryExpressionNoImplicitObjectCall
 
 callExpression
-  = fn:memberExpression accesses:callExpressionAccesses? secondaryArgs:("?"? secondaryArgumentList)? {
+  = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList?{
+      if(accesses)
+        return rp(new CS.Super(accesses[0].operands[0]));
+      return rp(new CS.Super(secondaryArgs || [] ));
+    }
+  / fn:memberExpression accesses:callExpressionAccesses? secondaryArgs:("?"? secondaryArgumentList)? {
       if(accesses) fn = createMemberExpression(fn, accesses);
       var soaked, secondaryCtor;
       if(secondaryArgs) {
@@ -629,7 +628,12 @@ callExpression
     = TERMINDENT as:callExpressionAccesses DEDENT { return as; }
     / as:(argumentList / MemberAccessOps)+ bs:callExpressionAccesses? { return as.concat(bs || []); }
 callExpressionNoImplicitObjectCall
-  = fn:memberExpressionNoImplicitObjectCall accesses:(argumentList / MemberAccessOps)* secondaryArgs:("?"? secondaryArgumentListNoImplicitObjectCall)? {
+  = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList?{
+      if(accesses)
+        return rp(new CS.Super(accesses[0].operands[0]));
+      return rp(new CS.Super(secondaryArgs || [] ));
+    }
+  / fn:memberExpressionNoImplicitObjectCall accesses:(argumentList / MemberAccessOps)* secondaryArgs:("?"? secondaryArgumentListNoImplicitObjectCall)? {
       if(accesses) fn = createMemberExpression(fn, accesses);
       var soaked, secondaryCtor;
       if(secondaryArgs) {
@@ -1033,10 +1037,6 @@ decimal
         ? rp(new CS.Float(parseFloat(integral + fractional, 10)))
         : rp(new CS.Int(+integral));
     }
-
-super = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList? {
-  return rp(new CS.Super(secondaryArgs || []));
-}
 
 integer
   = "0"
