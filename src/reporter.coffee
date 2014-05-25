@@ -1,6 +1,8 @@
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 {TypeError} = require './type-helpers'
+{debug} = require './helpers'
+require('colors')
 
 class Reporter
   constructor: ->
@@ -14,13 +16,9 @@ class Reporter
   # () -> String
   report: ->
     errors = @errors.map ([node, text])->
-      """
-      #{text}
-        at | #{node.raw}
-      """
+      "L#{node.line} #{node.raw.inverse} #{text.red}"
 
     """
-    [Error]
     #{errors.join '\n'}
     """
 

@@ -1,7 +1,6 @@
 {concat, concatMap, difference, foldl, map, nub} = require './functional-helpers'
 CS = require './nodes'
 
-
 COLOURS =
   red: '\x1B[31m'
   green: '\x1B[32m'
@@ -145,3 +144,8 @@ envEnrichments_ = (inScope = []) ->
 
 @envEnrichments = envEnrichments = (node, args...) ->
   if node? then envEnrichments_.apply node, args else []
+
+@debug = (args...) ->
+  util = require 'util'
+  for i in args
+    console.error util.inspect i, true, null, true

@@ -21,7 +21,7 @@ repl = require '../lib/repl'
 compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
   cs_ast = CoffeeScript.parse source, parseOption ? {
     optimise: no
-    raw: false
+    raw: true
     inputSource: source
     literate
   }
@@ -69,12 +69,17 @@ switch mode
       # TODO: check existence
       source = fs.readFileSync(fpath).toString()
       # preprocessed = Preprocessor.process source, {literate}
-      cs_ast = CoffeeScript.parse source, {
-        optimise: no
-        raw: false
-        inputSource: source
-        literate
-      }
+      try
+        cs_ast = CoffeeScript.parse source, {
+          optimise: no
+          raw: true
+          inputSource: source
+          literate
+        }
+      catch e
+        console.error 'Error at', fpath
+        throw e
+        process.exit(1)
 
       if argv.csast
         console.log cs_ast

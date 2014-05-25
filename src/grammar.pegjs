@@ -901,7 +901,7 @@ functionLiteral
           _return_: (_return_ ? _return_ : 'Any'),
         }
        };
-      return ret;
+      return rp(ret);
     }
   functionBody
     = _ TERMINDENT b:block DEDENT { return b; }
@@ -1192,7 +1192,7 @@ TypeExpr
   / TypeFunction
   / TypeNameSymbol
 
-TypeAnnotation = "::" _ type:TypeExpr {return {dataType:type};}
+TypeAnnotation = "::" _ type:TypeExpr {return rp({dataType:type});}
 
 unassignable = ("arguments" / "eval") !identifierPart
 CompoundAssignable
@@ -1201,7 +1201,7 @@ CompoundAssignable
 ExistsAssignable = CompoundAssignable
 Assignable
   = memberAccess
-  / !unassignable i:identifier _ annotation:TypeAnnotation? { i.annotation = annotation; return i; }
+  / !unassignable i:identifier _ annotation:TypeAnnotation? { i.annotation = annotation; return rp(i); }
   / positionalDestructuring
   / namedDestructuring
 

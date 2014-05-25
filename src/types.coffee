@@ -4,6 +4,9 @@ render = (obj) -> pj?.render obj
 {clone, rewrite} = require './type-helpers'
 reporter = require './reporter'
 
+typeErrorText = (left, right) ->
+  "TypeError: #{JSON.stringify left} expect to #{JSON.stringify right}"
+
 class Type
   constructor: ->
 
@@ -58,7 +61,7 @@ checkAcceptableObject = (left, right, scope) =>
     if left is 'Array' or left is 'Any' or left is undefined
       return false
     else
-      return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
+      return typeErrorText left, right
 
   else if ((typeof left) is 'string') and ((typeof right) is 'string')
     cur = scope.getTypeInScope(left)
@@ -71,7 +74,7 @@ checkAcceptableObject = (left, right, scope) =>
     if (left is 'Any') or (right is 'Any') or right in extended_list
       return false
     else
-      return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
+      return typeErrorText left, right
 
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
     results =
@@ -84,7 +87,7 @@ checkAcceptableObject = (left, right, scope) =>
   else if (left is undefined) or (right is undefined)
     return false
   else
-    return "object deep equal mismatch #{JSON.stringify left}, #{JSON.stringify right}"
+    return typeErrorText left, right
 
 # Initialize primitive types
 # Number, Boolean, Object, Array, Any
