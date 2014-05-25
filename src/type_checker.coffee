@@ -195,13 +195,23 @@ walk_classProtoAssignOp = (node, scope) ->
     scope.addThis symbol, right.annotation.dataType
 
 walk_assignOp = (node, scope) ->
-  pre_registered_annotation = node.assignee.annotation #TODO: dirty...
-
   left  = node.assignee
   right = node.expression
 
+  pre_registered_annotation = left.annotation #TODO: dirty...
+
   symbol = left.data
   walk left,  scope
+
+  # TODO: refactor as functionTypeCheck
+  if pre_registered_annotation and (right.annotation?.dataType?.dataType is left.annotation?.dataType?.dataType is 'Function')
+    if scope.checkAcceptableObject(left.annotation.dataType.returnType, right.annotation.dataType.returnType)
+      err = typeErrorText left.annotation.dataType.returnType, right.annotation.dataType.returnType
+      return reporter.add_error node, err
+    for arg, n in left.annotation.dataType._args_
+      if scope.checkAcceptableObject(left.annotation.dataType._args_[n]?.dataType, right.annotation.dataType._args_[n]?.dataType)
+        err = typeErrorText left.annotation.dataType, right.annotation.dataType
+        return reporter.add_error node, err
 
   if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
     walk_function right, scope, scope.getVarInScope(symbol).dataType

@@ -898,10 +898,12 @@ functionLiteral
       var ret = rp(new constructor(params && params[2] || [], body || null));
       ret.annotation = {
         dataType: {
+          dataType: 'Function',
           returnType: (returnType ? returnType : 'Any'),
+          _args_: (params && params[2] || []).map(function(i){return i.annotation})
         }
        };
-      return rp(ret);
+      return ret;
     }
   functionBody
     = _ TERMINDENT b:block DEDENT { return b; }
