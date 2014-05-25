@@ -4,7 +4,7 @@
     return obj
 
   if obj instanceof Date
-    return new Date(obj.getTime()) 
+    return new Date(obj.getTime())
 
   if obj instanceof RegExp
     flags = ''
@@ -12,7 +12,7 @@
     flags += 'i' if obj.ignoreCase?
     flags += 'm' if obj.multiline?
     flags += 'y' if obj.sticky?
-    return new RegExp(obj.source, flags) 
+    return new RegExp(obj.source, flags)
 
   newInstance = new obj.constructor()
 
@@ -33,40 +33,40 @@
 
 class @TypeError
   constructor: (@message) ->
-    
+
 NumberInterface =
   toString:
     name: 'function'
     _args_: []
-    _return_: 'String'
+    returnType: 'String'
 
 ArrayInterface =
   length: 'Number'
   push:
     name: 'function'
     _args_: ['T']
-    _return_: 'void'
+    returnType: 'void'
   unshift:
     name: 'function'
     _args_: ['T']
-    _return_: 'void'
+    returnType: 'void'
   shift:
     name: 'function'
     _args_: []
-    _return_: 'T'
+    returnType: 'T'
   toString:
     name: 'function'
     _args_: []
-    _return_: 'String'
+    returnType: 'String'
 
 ObjectInterface = ->
   toString:
     name: 'function'
     _args_: []
-    _return_: 'String'
+    returnType: 'String'
   keys:
     name: 'function'
     _args_: ['Any']
-    _return_:
+    returnType:
       array: 'String'
 

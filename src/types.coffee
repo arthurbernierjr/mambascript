@@ -46,8 +46,8 @@ checkAcceptableObject = (left, right, scope) =>
 
     # check return dataType
     # TODO: Now I will not infer function return dataType
-    if right._return_ isnt 'Any'
-      return checkAcceptableObject(left._return_, right._return_, scope)
+    if right.returnType isnt 'Any'
+      return checkAcceptableObject(left.returnType, right.returnType, scope)
     return false
 
   if left?.array?
@@ -79,7 +79,7 @@ checkAcceptableObject = (left, right, scope) =>
   else if ((typeof left) is 'object') and ((typeof right) is 'object')
     results =
       for key, lval of left
-        if right[key] is undefined and lval? and not (key in ['_return_', 'type', 'possibilities']) # TODO avoid system values
+        if right[key] is undefined and lval? and not (key in ['returnType', 'type', 'possibilities']) # TODO avoid system values
           "'#{key}' is not defined on right"
         else
           checkAcceptableObject(lval, right[key], scope)

@@ -888,7 +888,7 @@ ReturnTypeExpr
   / TypeNameSymbol
 returnTypeLiteral = _ "::" _ type:ReturnTypeExpr? _ {return type;}
 functionLiteral
-  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? _return_:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
+  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? returnType:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
       var constructor;
       switch(arrow) {
         case '->': constructor = CS.Function; break;
@@ -898,7 +898,7 @@ functionLiteral
       var ret = rp(new constructor(params && params[2] || [], body || null));
       ret.annotation = {
         dataType: {
-          _return_: (_return_ ? _return_ : 'Any'),
+          returnType: (returnType ? returnType : 'Any'),
         }
        };
       return rp(ret);
@@ -1178,8 +1178,8 @@ TypeNameSymbol
     else return {array: key.data}
   }
 
-TypeFunction = args:TypeArgs _ "->" _ _return_:TypeNameSymbol {
-  return {_args_: args, _return_: _return_, dataType: 'Function'};
+TypeFunction = args:TypeArgs _ "->" _ returnType:TypeNameSymbol {
+  return {_args_: args, returnType: returnType, dataType: 'Function'};
 }
 TypeArgs
   = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {

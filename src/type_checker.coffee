@@ -139,8 +139,8 @@ walk_newOp = (node, scope) ->
   Type = scope.getTypeInScope node.ctor.data
   if Type
     _args_ = node.arguments?.map (arg) -> arg.annotation?.dataType
-    if err = scope.checkAcceptableObject Type.dataType._constructor_, {_args_: (_args_ ? []), _return_: 'Any'}
-      err = typeErrorText Type.dataType._constructor_, {_args_: (_args_ ? []), _return_: 'Any'}
+    if err = scope.checkAcceptableObject Type.dataType._constructor_, {_args_: (_args_ ? []), returnType: 'Any'}
+      err = typeErrorText Type.dataType._constructor_, {_args_: (_args_ ? []), returnType: 'Any'}
       return reporter.add_error node, err
 
   node.annotation = dataType: Type?.dataType
@@ -488,7 +488,7 @@ walk_function = (node, scope, predef = null) ->
   walk node.body, functionScope
 
   # () :: Number -> 3
-  if node.annotation?.dataType?._return_ isnt 'Any'
+  if node.annotation?.dataType?.returnType isnt 'Any'
     # last expr or single line expr
     last_expr =
       if node.body?.statements?.length # => Blcok
@@ -497,8 +497,8 @@ walk_function = (node, scope, predef = null) ->
         node.body
 
     # 明示的に宣言してある場合
-    if err = scope.checkAcceptableObject(node.annotation?.dataType._return_, last_expr?.annotation?.dataType)
-      err = typeErrorText node.annotation?.dataType._return_, last_expr?.annotation?.dataType
+    if err = scope.checkAcceptableObject(node.annotation?.dataType.returnType, last_expr?.annotation?.dataType)
+      err = typeErrorText node.annotation?.dataType.returnType, last_expr?.annotation?.dataType
       return reporter.add_error node, err
 
   else
@@ -509,18 +509,18 @@ walk_function = (node, scope, predef = null) ->
         node.body
 
     if node.annotation?
-      node.annotation.dataType._return_ = last_expr?.annotation?.dataType
+      node.annotation.dataType.returnType = last_expr?.annotation?.dataType
 
 walk_functionApplication = (node, scope) ->
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
-  node.annotation = dataType: (node.function.annotation?.dataType?._return_)
+  node.annotation = dataType: (node.function.annotation?.dataType?.returnType)
 
   if node.function.annotation
     _args_ = node.arguments?.map (arg) -> arg.annotation?.dataType
-    if err = scope.checkAcceptableObject node.function.annotation.dataType, {_args_: (_args_ ? []), _return_: 'Any'}
-      err = typeErrorText node.function.annotation.dataType, {_args_: (_args_ ? []), _return_: 'Any'}
+    if err = scope.checkAcceptableObject node.function.annotation.dataType, {_args_: (_args_ ? []), returnType: 'Any'}
+      err = typeErrorText node.function.annotation.dataType, {_args_: (_args_ ? []), returnType: 'Any'}
       return reporter.add_error node, err
 
 # Traverse all nodes
