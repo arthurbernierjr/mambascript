@@ -1,5 +1,3 @@
-console = log: ->
-
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 
@@ -27,7 +25,6 @@ class Possibilites extends Array
 checkAcceptableObject = (left, right, scope) =>
   # TODO: fix
   if left?._base_? and left._templates_? then left = left._base_
-  console.log 'checkAcceptableObject /', left, right
 
   # possibilites :: Type[]
   if right?.possibilities?

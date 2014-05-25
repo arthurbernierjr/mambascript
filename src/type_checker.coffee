@@ -1,4 +1,3 @@
-console = {log: ->}
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
 
@@ -16,10 +15,6 @@ CS = require './nodes'
 g = window ? global
 checkNodes = (cs_ast) ->
   return unless cs_ast.body?.statements?
-  # console.log "AST =================="
-  # console.log render cs_ast
-  # console.log '================== AST'
-
   if g._root_
     root = g._root_
   else
@@ -31,9 +26,6 @@ checkNodes = (cs_ast) ->
     initializeGlobalTypes(root)
 
   walk cs_ast, root
-  # console.log 'scope ====================='
-  # reporter.dump root
-  # console.log root.nodes[0]
   return root
 
 walk_struct = (node, scope) ->
@@ -197,7 +189,6 @@ walk_classProtoAssignOp = (node, scope) ->
     scope.addThis symbol, right.annotation.dataType
 
 walk_assignOp = (node, scope) ->
-  # console.log 'walk_assignOp:: assignee', node
   pre_registered_annotation = node.assignee.annotation #TODO: dirty...
 
   left  = node.assignee
@@ -266,10 +257,6 @@ walk_assignOp = (node, scope) ->
   # Vanilla CS
   else
     scope.addVar symbol, 'Any', false
-  console.log "left"
-  console.log render left
-  console.log "right"
-  console.log render right
 
 walk_primitives = (node, scope) ->
   switch
@@ -525,8 +512,6 @@ walk_functionApplication = (node, scope) ->
 # Traverse all nodes
 # Node -> void
 walk = (node, scope) ->
-  console.log '~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-  console.log '---', node?.className, '---' ,node?.raw
   switch
     # undefined(mayby null body)
     when not node? then return
