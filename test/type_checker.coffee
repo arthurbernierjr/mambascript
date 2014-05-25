@@ -1,7 +1,15 @@
 reporter = require '../lib/reporter'
 parse = (coffee) ->
-  reporter.errors = []
+  reporter.clean()
   parse coffee
+
+shouldBeTypeError = (input) ->
+  try
+    CoffeeScript.parse input
+  catch e
+    ok /TypeError/.test e
+    return
+  throw 'must be type error but parsed'
 
 suite 'TypeChecker', ->
   setup ->
@@ -16,7 +24,7 @@ suite 'TypeChecker', ->
       x :: Int = 3
 
     test 'int assign', ->
-      throws -> parse """
+      shouldBeTypeError """
       x :: Int = 3.5
       """
 
@@ -29,7 +37,7 @@ suite 'TypeChecker', ->
       y :: Float = x
 
     test 'throw primitive extended assign', ->
-      throws -> parse """
+      shouldBeTypeError """
       x :: Float = 3.3
       y :: Int = x
       """
@@ -44,32 +52,28 @@ suite 'TypeChecker', ->
       g :: Number -> Number = f
 
     test 'throw type mismatch', ->
-      throws ->
-        parse """
-          x :: Number = "3"
-        """
+      shouldBeTypeError """
+        x :: Number = "3"
+      """
 
     test 'object assign', ->
       obj :: { x :: Number} = { x : 2}
 
     test 'throw object literal mitmatching', ->
-      throws ->
-        parse """
-          obj :: { x :: Number } = { x : '' }
-        """
+      shouldBeTypeError """
+        obj :: { x :: Number } = { x : '' }
+      """
 
     test 'throw at lacking of object member', ->
-      throws ->
-        parse """
-          obj :: { x :: Number, y :: Number } = { x : 3 }
-        """
+      shouldBeTypeError """
+        obj :: { x :: Number, y :: Number } = { x : 3 }
+      """
 
     test 'throw member access error', ->
-      throws ->
-        parse """
-          obj :: { x :: Number } = { x : 3 }
-          obj.x = ""
-        """
+      shouldBeTypeError """
+        obj :: { x :: Number } = { x : 3 }
+        obj.x = ""
+      """
 
     test 'object literal with newline', ->
       p :: {
@@ -92,20 +96,18 @@ suite 'TypeChecker', ->
       f :: Number * Number * Number -> Number = (n :: Number, m :: Number, r :: Number) :: Number ->  n * m * r
 
     test 'typed function type mismatch', ->
-      throws ->
-        CoffeeScript.compile """
-          f :: Number -> Number = (n :: Number) :: String ->  n * n
-        """
+      shouldBeTypeError """
+        f :: Number -> Number = (n :: Number) :: String ->  n * n
+      """
 
     test 'typed function and binding', ->
       f :: Number -> Number = (n :: Number) ->  n * n
       n :: Number  = f 4
 
     test 'typed function mismatching application', ->
-      throws ->
-        parse """
-          f :: Number -> Number = 3
-        """
+      shouldBeTypeError """
+        f :: Number -> Number = 3
+      """
 
     test 'typed function with return type', ->
       f :: Number -> Number = (n :: Number) :: Number ->  n * n
@@ -152,15 +154,14 @@ suite 'TypeChecker', ->
       p :: Point = {x: 3, y: {a : 1 , b : 'foo'}}
 
     test 'throw struct member access with mismatch type', ->
-      throws ->
-        parse """
-          struct Point {
-            x :: Number
-            y :: Number
-          }
-          p :: Point = {x:3, y:3}
-          p.x = "hoge"
-        """
+      shouldBeTypeError """
+        struct Point {
+          x :: Number
+          y :: Number
+        }
+        p :: Point = {x:3, y:3}
+        p.x = "hoge"
+      """
 
     test 'void', ->
       nf :: () -> () = -> setTimeout (->), 100
@@ -171,22 +172,20 @@ suite 'TypeChecker', ->
       nf()
 
     test 'throw function arguments mismatch', ->
-      throws ->
-        parse """
-          f :: Number -> Number = (n :: Number) :: Number ->  n * n
-          (f "hello")
-        """
+      shouldBeTypeError """
+        f :: Number -> Number = (n :: Number) :: Number ->  n * n
+        (f "hello")
+      """
 
     test 'void keyword', ->
       f :: Number -> Number = (n :: Number) :: Number ->  n * n
       x :: Number = (f 3)
 
     test 'throw function arguments mismatch', ->
-      throws ->
-        parse """
-          f :: Number -> Number = (n :: Number) :: Number ->  n * n
-          y :: String = (f 3)
-        """
+      shouldBeTypeError """
+        f :: Number -> Number = (n :: Number) :: Number ->  n * n
+        y :: String = (f 3)
+      """
 
     test 'typed array', ->
       struct Point {
@@ -213,10 +212,9 @@ suite 'TypeChecker', ->
           8
 
     test 'throw if return type mismatch', ->
-      throws ->
-        parse """
-          a :: Number = if true then 3 else ""
-        """
+      shouldBeTypeError """
+        a :: Number = if true then 3 else ""
+      """
 
     test 'for in' , ->
       list :: Number[] =
@@ -233,16 +231,14 @@ suite 'TypeChecker', ->
           n
 
     test 'throw return type mismatch', ->
-      throws ->
-        parse """
-          arr :: Number[] = ("" for i in [1,2,3])
-        """
+      shouldBeTypeError """
+        arr :: Number[] = ("" for i in [1,2,3])
+      """
 
     test 'throw target mismatch', ->
-      throws ->
-        parse """
-          arr :: Number[] = (i for i :: Number in [1,2,""])
-        """
+      shouldBeTypeError """
+        arr :: Number[] = (i for i :: Number in [1,2,""])
+      """
 
     test 'for of', ->
       list :: Number[] =
@@ -250,10 +246,10 @@ suite 'TypeChecker', ->
           val
 
     test 'throw target mismatch', ->
-      throws -> parse """
-      list :: Number[] =
-        for key :: String, val :: Number of {x: "hoge", y: 6}
-          val
+      shouldBeTypeError """
+        list :: Number[] =
+          for key :: String, val :: Number of {x: "hoge", y: 6}
+            val
       """
 
     test 'function return type', ->
@@ -265,12 +261,12 @@ suite 'TypeChecker', ->
         3
 
     test 'throw function return type mismatch', ->
-      throws -> parse """
+      shouldBeTypeError """
       f0 :: () -> Number = () :: Number -> ''
       """
 
     test 'throw function return type mismatch', ->
-      throws -> parse """
+      shouldBeTypeError """
       f2 :: () -> Number = ->
         return ""
       """
