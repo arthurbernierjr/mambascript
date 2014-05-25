@@ -1,6 +1,7 @@
 TypedCoffeeScript
 ==================================
 
+[![Build Status](https://drone.io/github.com/mizchi/TypedCoffeeScript/status.png)](https://drone.io/github.com/mizchi/TypedCoffeeScript/latest)
 Superset of CoffeeScript with types
 
 ## Concepts
@@ -11,31 +12,20 @@ Superset of CoffeeScript with types
 * Easy to replace coffee-script
 * Check type againt cscodegen AST, not in compiler
 
+## Problems
+
+This repository is heavily under development and dirty codes.
+
+- Take over all coffee-script-redux problems 
+	- imperfect super
+	- object literal parsing
 
 ## Getting started
 
 Install
 ```
 $ npm install -g typed-coffee-script
-$ tcoffee foo.coffee
-```
-
-Compile
-```
-$ tcoffee --js  < scratch.coffee > scratch.js
-```
-
-
-or use it with grunt [mizchi/grunt-typed-coffee-script](https://github.com/mizchi/grunt-typed-coffee-script "mizchi/grunt-typed-coffee-script")
-
-
-or minimal project sample
-
-```
-$ git clone https://github.com/mizchi/sample-typed-coffee-project.git
-$ cd sample-typed-coffee-project
-$ npm install
-$ grunt typedcoffee
+$ tcoffee -c foo.coffee
 ```
 
 ## Examples
@@ -52,6 +42,7 @@ x = 3.14
 ```
 
 ### Struct
+
 ```coffee
 struct Point {
   x :: Number
@@ -124,7 +115,7 @@ class Entity extends Object implements Point, Size
 e :: {x :: Int, width :: Int} = new Entity
 ```
 
-Forked by CoffeeScript II: The Wrath of Khan
+Forked from CoffeeScript II: The Wrath of Khan
 ==================================
 
 ```

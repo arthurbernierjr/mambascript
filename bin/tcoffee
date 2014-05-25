@@ -117,7 +117,7 @@ switch mode
     fpath = argv.execute ?  argv._[0]
     source = fs.readFileSync(fpath).toString()
     js = compileFromSourceToJS(source)
-    # console.log js
+    console.log js
 
     exec "node -e \"#{js}\"", {
       cwd: process.cwd()
