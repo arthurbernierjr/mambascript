@@ -38,10 +38,10 @@ checkAcceptableObject = (left, right, scope) =>
   if left is 'Any'
     return false
 
-  if left?._args_
+  if left?.arguments
     return if left is undefined or left is 'Any'
-    left._args_ ?= []
-    results = (checkAcceptableObject(l_arg, right._args_[i], scope) for l_arg, i in left._args_)
+    left.arguments ?= []
+    results = (checkAcceptableObject(l_arg, right.arguments[i], scope) for l_arg, i in left.arguments)
     return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
 
     # check return dataType

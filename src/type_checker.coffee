@@ -138,9 +138,9 @@ walk_newOp = (node, scope) ->
     walk arg, scope
   Type = scope.getTypeInScope node.ctor.data
   if Type
-    _args_ = node.arguments?.map (arg) -> arg.annotation?.dataType
-    if err = scope.checkAcceptableObject Type.dataType._constructor_, {_args_: (_args_ ? []), returnType: 'Any'}
-      err = typeErrorText Type.dataType._constructor_, {_args_: (_args_ ? []), returnType: 'Any'}
+    args = node.arguments?.map (arg) -> arg.annotation?.dataType
+    if err = scope.checkAcceptableObject Type.dataType._constructor_, {arguments: (args ? []), returnType: 'Any'}
+      err = typeErrorText Type.dataType._constructor_, {arguments: (args ? []), returnType: 'Any'}
       return reporter.add_error node, err
 
   node.annotation = dataType: Type?.dataType
@@ -208,8 +208,8 @@ walk_assignOp = (node, scope) ->
     if scope.checkAcceptableObject(left.annotation.dataType.returnType, right.annotation.dataType.returnType)
       err = typeErrorText left.annotation.dataType.returnType, right.annotation.dataType.returnType
       return reporter.add_error node, err
-    for arg, n in left.annotation.dataType._args_
-      if scope.checkAcceptableObject(left.annotation.dataType._args_[n]?.dataType, right.annotation.dataType._args_[n]?.dataType)
+    for arg, n in left.annotation.dataType.arguments
+      if scope.checkAcceptableObject(left.annotation.dataType.arguments[n]?.dataType, right.annotation.dataType.arguments[n]?.dataType)
         err = typeErrorText left.annotation.dataType, right.annotation.dataType
         return reporter.add_error node, err
 
@@ -407,7 +407,7 @@ walk_class = (node, scope) ->
         predef = constructorScope.getThis('_constructor_').dataType
         for param, index in node.ctor.expression.parameters when param?
           walk param, constructorScope
-          constructorScope.addVar param.data, (predef._args_?[index] ? 'Any')
+          constructorScope.addVar param.data, (predef.arguments?[index] ? 'Any')
       else
         for param, index in node.ctor.expression.parameters when param?
           walk param, constructorScope
@@ -431,9 +431,9 @@ walk_class = (node, scope) ->
 # Node * Scope * Type
 # predef :: Type defined at assignee
 walk_function = (node, scope, predef = null) ->
-  _args_ = node.parameters?.map (param) -> param.annotation?.dataType ? 'Any'
+  args = node.parameters?.map (param) -> param.annotation?.dataType ? 'Any'
 
-  node.annotation.dataType._args_ = _args_
+  node.annotation.dataType.arguments = args
 
   functionScope = new Scope scope
   functionScope._name_ = 'function'
@@ -465,13 +465,13 @@ walk_function = (node, scope, predef = null) ->
         # This
         else if param.expression?.raw in ['@', 'this']
           t = functionScope.getThis(param.memberName)
-          if err = scope.checkAcceptableObject predef._args_?[index], t?.dataType
-            err = typeErrorText predef._args_?[index], t?.dataType
+          if err = scope.checkAcceptableObject predef.arguments?[index], t?.dataType
+            err = typeErrorText predef.arguments?[index], t?.dataType
             reporter.add_error node, err
           unless t?.dataType? then functionScope.addThis param.memberName, 'Any'
         # Var
         else
-          functionScope.addVar param.data, (predef._args_?[index] ? 'Any')
+          functionScope.addVar param.data, (predef.arguments?[index] ? 'Any')
     # example.
     #   f: (n) -> n
     else
@@ -528,9 +528,9 @@ walk_functionApplication = (node, scope) ->
   node.annotation = dataType: (node.function.annotation?.dataType?.returnType)
 
   if node.function.annotation
-    _args_ = node.arguments?.map (arg) -> arg.annotation?.dataType
-    if err = scope.checkAcceptableObject node.function.annotation.dataType, {_args_: (_args_ ? []), returnType: 'Any'}
-      err = typeErrorText node.function.annotation.dataType, {_args_: (_args_ ? []), returnType: 'Any'}
+    args = node.arguments?.map (arg) -> arg.annotation?.dataType
+    if err = scope.checkAcceptableObject node.function.annotation.dataType, {arguments: (args ? []), returnType: 'Any'}
+      err = typeErrorText node.function.annotation.dataType, {arguments: (args ? []), returnType: 'Any'}
       return reporter.add_error node, err
 
 # Traverse all nodes

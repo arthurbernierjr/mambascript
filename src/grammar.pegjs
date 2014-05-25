@@ -900,7 +900,7 @@ functionLiteral
         dataType: {
           dataType: 'Function',
           returnType: (returnType ? returnType : 'Any'),
-          _args_: (params && params[2] || []).map(function(i){return i.annotation})
+          arguments: (params && params[2] || []).map(function(i){return i.annotation})
         }
        };
       return ret;
@@ -1181,7 +1181,7 @@ TypeNameSymbol
   }
 
 TypeFunction = args:TypeArgs _ "->" _ returnType:TypeNameSymbol {
-  return {_args_: args, returnType: returnType, dataType: 'Function'};
+  return {arguments: args, returnType: returnType, dataType: 'Function'};
 }
 TypeArgs
   = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {

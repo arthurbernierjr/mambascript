@@ -37,36 +37,36 @@ class @TypeError
 NumberInterface =
   toString:
     name: 'function'
-    _args_: []
+    arguments: []
     returnType: 'String'
 
 ArrayInterface =
   length: 'Number'
   push:
     name: 'function'
-    _args_: ['T']
+    arguments: ['T']
     returnType: 'void'
   unshift:
     name: 'function'
-    _args_: ['T']
+    arguments: ['T']
     returnType: 'void'
   shift:
     name: 'function'
-    _args_: []
+    arguments: []
     returnType: 'T'
   toString:
     name: 'function'
-    _args_: []
+    arguments: []
     returnType: 'String'
 
 ObjectInterface = ->
   toString:
     name: 'function'
-    _args_: []
+    arguments: []
     returnType: 'String'
   keys:
     name: 'function'
-    _args_: ['Any']
+    arguments: ['Any']
     returnType:
       array: 'String'
 
