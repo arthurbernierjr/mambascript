@@ -2,7 +2,7 @@
 Nodes = require './nodes'
 {Preprocessor} = require './preprocessor'
 Parser = require './parser'
-Type = require './type_checker'
+TypeChecker = require './type_checker'
 {Optimiser} = require './optimiser'
 {Compiler} = require './compiler'
 reporter = require './reporter'
@@ -41,14 +41,12 @@ CoffeeScript =
         inputSource: options.inputSource
 
       # type check
-      Type.checkNodes(parsed)
-
+      TypeChecker.checkNodes(parsed)
       if reporter.has_errors()
         throw new TypeError reporter.report()
-
       if options.optimise then Optimiser.optimise parsed else parsed
     catch e
-      throw e if e instanceof TypeError
+      throw e.message if e instanceof TypeError
       throw e unless e instanceof Parser.SyntaxError
       throw new Error formatParserError preprocessed, e
 
