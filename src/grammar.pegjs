@@ -1139,7 +1139,13 @@ typeLiteral
       obj[member[0]] = member[1];
     });
     return obj;
-    // return rp(new CS.ObjectInitialiser(members));
+  }
+  / !TypeNameSymbol !"(" members:typeLiteralBody {
+    var obj = {};
+    members.forEach(function(member){
+      obj[member[0]] = member[1];
+    });
+    return obj;
   }
   typeLiteralBody
     = TERMINDENT members:typeLiteralMemberList DEDENT { return members; }

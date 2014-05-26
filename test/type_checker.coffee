@@ -129,6 +129,12 @@ suite 'TypeChecker', ->
       }
       p :: Point = {x: 3, y: 3}
 
+    test 'struct definition without blace', ->
+      struct Point
+        x :: Number
+        y :: Number
+      p :: Point = {x: 3, y: 3}
+
     test 'struct definition with symbol', ->
       struct A {
         num :: Number
