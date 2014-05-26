@@ -32,8 +32,11 @@ checkNodes = (cs_ast) ->
   return root
 
 walk_struct = (node, scope) ->
-  if node.name instanceof Object
+  # TODO: Integrate template and left
+  if node.name?._base_?
     scope.addType node.name._base_, node.expr, node.name._templates_
+  else if node.name?.left?
+    scope.addType node.name, node.expr
   else
     scope.addType node.name, node.expr
 

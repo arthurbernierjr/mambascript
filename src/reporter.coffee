@@ -34,8 +34,14 @@ class Reporter
   # for debug
   dump: (node, prefix = '') ->
     console.error prefix + "[#{node.name}]"
+    console.error prefix, 'vars::'
     for key, val of node._vars
       console.error prefix, ' +', key, '::', JSON.stringify(val)
+
+    console.error prefix, 'types::'
+    for key, val of node._types
+      console.error prefix, ' +', key, '::', JSON.stringify(val)
+
     for next in node.nodes
       @dump next, prefix + '  '
 

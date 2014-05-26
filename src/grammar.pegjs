@@ -1165,7 +1165,7 @@ TemplateKeys = e:TypeSymbol _ es:("," _ TypeSymbol)* {
 
 TypeSymbol
   = e: identifierName es:('.' identifierName)+ {
-    var list = [e].concat(es); //.reverse();
+    var list = [e].concat(es.map(function(e){return e[1]}));
     return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
   }
   / identifierName

@@ -1,6 +1,7 @@
 pj = try require 'prettyjson'
 render = (obj) -> pj?.render obj
-
+{debug} = require './helpers'
+reporter = require './reporter'
 {clone, rewrite} = require './type-helpers'
 reporter = require './reporter'
 
@@ -134,6 +135,9 @@ class Scope
     # This scope
     @_this  = {}
 
+    # Module scope
+    @_modules  = {}
+
     @_returnables = [] #=> Type[]
 
   addReturnable: (symbol, dataType) ->
@@ -141,15 +145,79 @@ class Scope
 
   getReturnables: -> @_returnables
 
-  # addType :: String * Object * Object -> Type
+  getRoot: ->
+    return @ unless @parent
+    root = @parent
+    while true
+      if root.parent
+        root = root.parent
+      else break
+    root
+
+  # addType :: Any * Object * Object -> Type
+  addModule: (name) ->
+    scope = new Scope this
+    scope.name = name
+    return @_modules[name] = scope
+
+  getModule: (name) -> @_modules[name]
+
+  getModuleInScope: (name) ->
+    @getModule(name) or @parent?.getModuleInScope(name) or undefined
+
+  # addType :: Any * Object * Object -> Type
   addType: (symbol, dataType, _templates_) ->
-    @_types[symbol] = new TypeSymbol {dataType, _templates_}
+    if symbol?.left?
+      # get namescopes
+      ns = []
+      name = symbol.right
+      cur = symbol.left
+      while true
+        if (typeof cur) is 'string'
+          ns.unshift cur
+          break
+        else
+          ns.unshift cur.right
+          cur = cur.left
+
+      # find or initialize module
+      cur = @
+      for moduleName in ns
+        mod = cur.getModuleInScope(moduleName)
+        unless mod
+          mod = cur.addModule(moduleName)
+        cur = mod
+      cur.addType name, dataType, _templates_
+    else
+      @_types[symbol] = new TypeSymbol {dataType, _templates_}
 
   addTypeObject: (symbol, type_object) ->
     @_types[symbol] = type_object
 
   getType: (symbol) ->
-    @_types[symbol]
+    if symbol?.left?
+      # get namescopes
+      ns = []
+      name = symbol.right
+      cur = symbol.left
+      while true
+        if (typeof cur) is 'string'
+          ns.unshift cur
+          break
+        else
+          ns.unshift cur.right
+          cur = cur.left
+
+      # find or initialize module
+      cur = @
+      for moduleName in ns
+        mod = cur.getModuleInScope(moduleName)
+        unless mod
+          return null
+        cur = mod
+      cur.getType name
+    else
+      @_types[symbol]
 
   getTypeInScope: (symbol) ->
     @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
@@ -205,25 +273,25 @@ class Scope
   # Extend symbol to dataType object
   # ex. {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
   extendTypeLiteral: (node) =>
-    switch (typeof node)
-      when 'object'
-        # array
-        if node instanceof Array
-          return (@extendTypeLiteral(i) for i in node)
-        # object
-        else
-          ret = {}
-          for key, val of node
-            ret[key] = @extendTypeLiteral(val)
-          return ret
-      when 'string'
-        Type = @getTypeInScope(node)
-        dataType = Type?.dataType
-        switch typeof dataType
-          when 'object'
-            return @extendTypeLiteral(dataType)
-          when 'string'
-            return dataType
+    if (typeof node) is 'string' or node?.nodeType is 'MemberAccess'
+      Type = @getTypeInScope(node)
+      dataType = Type?.dataType
+      switch typeof dataType
+        when 'object'
+          return @extendTypeLiteral(dataType)
+        when 'string'
+          return dataType
+
+    else if (typeof node) is 'object'
+      # array
+      if node instanceof Array
+        return (@extendTypeLiteral(i) for i in node)
+      # object
+      else
+        ret = {}
+        for key, val of node
+          ret[key] = @extendTypeLiteral(val)
+        return ret
 
   # check object literal with extended object
   checkAcceptableObject: (left, right) ->

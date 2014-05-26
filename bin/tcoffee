@@ -7,11 +7,15 @@ CoffeeScript = require '../lib/module'
 
 cscodegen = require 'cscodegen'
 escodegen = require 'escodegen'
+
 repl = require '../lib/repl'
+reporter = require '../lib/reporter'
+{debug} = require '../lib/helpers'
 
 {argv} = require('optimist')
   .boolean('compile')
   .boolean('bare')
+  .boolean('scope')
   .alias('c', 'compile')
   .alias('e', 'execute')
   .alias('b', 'bare')
@@ -101,6 +105,8 @@ switch mode
         from: fpath
         to: outpath
         code: code
+
+    reporter.dump global._root_
 
     # if argv.join and argv.browserify # TODO
     if argv.join
