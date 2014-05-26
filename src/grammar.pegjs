@@ -1159,31 +1159,38 @@ typeLiteral
         return [key, val];
       }
 
-TemplateKeys = e:ObjectInitialiserKeys _ es:("," _ ObjectInitialiserKeys)* {
-  return [e.data].concat(es.map(function(e){ return e[2].data; }));
+TemplateKeys = e:TypeSymbol _ es:("," _ TypeSymbol)* {
+  return [e].concat(es.map(function(e){ return e[2]; }));
 }
+
+TypeSymbol
+  = e: identifierName es:('.' identifierName)+ {
+    var list = [e].concat(es); //.reverse();
+    return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
+  }
+  / identifierName
 
 TypeNameSymbol
   = "(" _ ")" {return 'void';}
-  / "(" _ key:ObjectInitialiserKeys isArray:"[]"? _ ")" {
-    if(!isArray) return key.data;
-    else return {array: key.data}
+  / "(" _ key:TypeSymbol isArray:"[]"? _ ")" {
+    if(!isArray) return key;
+    else return {array: key}
   }
-  / "(" _ base:ObjectInitialiserKeys _ "<" _ templates:TemplateKeys  _ ">" _ ")" {
+  / "(" _ base:TypeSymbol _ "<" _ templates:TemplateKeys  _ ">" _ ")" {
     return {
-      _base_: base.data,
+      _base_: base,
       _templates_: templates
     };
   }
-  / base:ObjectInitialiserKeys _ "<" _ templates:TemplateKeys _ ">" {
+  / base:TypeSymbol _ "<" _ templates:TemplateKeys _ ">" {
     return {
-      _base_: base.data,
+      _base_: base,
       _templates_: templates
     };
   }
-  / key:ObjectInitialiserKeys isArray:"[]"? {
-    if(!isArray) return key.data;
-    else return {array: key.data}
+  / key:TypeSymbol isArray:"[]"? {
+    if(!isArray) return key;
+    else return {array: key}
   }
 
 TypeFunction = args:TypeArgs _ "->" _ returnType:TypeNameSymbol {
