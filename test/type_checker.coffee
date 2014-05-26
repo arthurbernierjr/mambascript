@@ -123,10 +123,10 @@ suite 'TypeChecker', ->
       eq X.prototype.x, 3
 
     test 'struct definition', ->
-      struct Point {
+      struct Point
         x :: Number
         y :: Number
-      }
+
       p :: Point = {x: 3, y: 3}
 
     test 'struct definition without blace', ->
@@ -136,27 +136,24 @@ suite 'TypeChecker', ->
       p :: Point = {x: 3, y: 3}
 
     test 'struct definition with symbol', ->
-      struct A {
+      struct A
         num :: Number
-      }
 
-      struct Point {
+      struct Point
         x :: Number
-        y :: {
+        y ::
           a :: A
           b :: String
-        }
-      }
+
       p :: Point = {x: 3, y: {a : {num: 4} , b : 'foo'}}
 
     test 'nested struct definition', ->
-      struct Point {
+      struct Point
         x :: Number
-        y :: {
+        y ::
           a :: Number
           b :: String
-        }
-      }
+
       p :: Point = {x: 3, y: {a : 1 , b : 'foo'}}
 
     test 'throw struct member access with mismatch type', ->
@@ -194,11 +191,10 @@ suite 'TypeChecker', ->
       """
 
     test 'typed array', ->
-      struct Point {
+      struct Point
         x :: Number
         y :: Number
-      }
-      p :: Point = {x: 3, y: 2}
+      p :: Point = x: 3, y: 2
       tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
 
 
