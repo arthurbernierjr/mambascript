@@ -1167,7 +1167,7 @@ typeSymbol
   / _typeSymbol
 
   _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? isArray:isArray? {
-    return {isArray: isArray, typeName: symbol, typeArguments: args }
+    return {isArray: !!isArray, typeName: symbol, typeArguments: args || []}
   }
   isArray = "[" _ "]" {return true}
   VoidAlias = "(" _ ")" {return {isArray: false, typeName: 'Void', typeArguments: []} }
@@ -1205,7 +1205,7 @@ CompoundAssignable
 ExistsAssignable = CompoundAssignable
 Assignable
   = memberAccess
-  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation; return rp(i); }
+  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation || null; return rp(i); }
   / positionalDestructuring
   / namedDestructuring
 
