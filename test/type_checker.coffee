@@ -618,6 +618,14 @@ suite 'TypeChecker', ->
       class X
         x :: Int
 
+    test 'struct with namespace', ->
+      struct A.B.Point
+        x :: Int
+        y :: Int
+
+      p :: A.B.Point = {x: 1, y: 3}
+
+
   suite 'Explicit Rules', ->
     test 'type propagation', ->
       a :: Int = 3
