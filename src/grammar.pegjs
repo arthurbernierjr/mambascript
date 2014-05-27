@@ -1159,10 +1159,6 @@ typeLiteral
         return [key, val];
       }
 
-TemplateKeys = e:TypeSymbol _ es:("," _ TypeSymbol)* {
-  return [e].concat(es.map(function(e){ return e[2]; }));
-}
-
 TypeSymbol
   = e: identifierName es:('.' identifierName)+ {
     var list = [e].concat(es.map(function(e){return e[1]}));
@@ -1171,33 +1167,31 @@ TypeSymbol
   / identifierName
 
 TypeNameSymbol
-  = "(" _ ")" {return 'void';}
-  / "(" _ key:TypeSymbol isArray:"[]"? _ ")" {
-    if(!isArray) return key;
-    else return {array: key}
-  }
-  / "(" _ base:TypeSymbol _ "<" _ templates:TemplateKeys  _ ">" _ ")" {
-    return {
-      _base_: base,
-      _templates_: templates
-    };
-  }
-  / base:TypeSymbol _ "<" _ templates:TemplateKeys _ ">" {
-    return {
-      _base_: base,
-      _templates_: templates
-    };
-  }
-  / key:TypeSymbol isArray:"[]"? {
-    if(!isArray) return key;
-    else return {array: key}
+  = VoidAlias
+  / "(" _ ret: _TypeNameSymbol _ ")" { return ret;}
+  / _TypeNameSymbol
+
+  _TypeNameSymbol = symbol:TypeSymbol args: TypeArgumentLiteral? isArray:isArray? {
+    return {isArray: isArray, typeName: symbol, arguments: args }
   }
 
-TypeFunction = args:TypeArgs _ "->" _ returnType:TypeNameSymbol {
+  isArray = "[" _ "]" {return true}
+  VoidAlias = "(" _ ")" {return {isArray: false, typeName: 'Void', arguments: []} }
+  TypeArgumentLiteral = "<" _ args:TypeArguments  _ ">" {
+    return args;
+  }
+  TypeArguments = e:TypeSymbol _ es:("," _ TypeSymbol)* {
+    return [e].concat(es.map(function(e){ return e[2]; }));
+  }
+
+TypeFunction = args:TypeFunctionArguments _ "->" _ returnType:TypeNameSymbol {
   return {arguments: args, returnType: returnType, dataType: 'Function'};
 }
-TypeArgs
+TypeFunctionArguments
   = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {
+    return [e].concat(es.map(function(e){return e[2]}));
+  }
+  / "(" _ e:TypeNameSymbol _ es:("," _ TypeNameSymbol _)* _ ")" {
     return [e].concat(es.map(function(e){return e[2]}));
   }
   / e:TypeNameSymbol {return [e];}
