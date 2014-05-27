@@ -40,7 +40,7 @@ CoffeeScript =
         inputSource: options.inputSource
 
       # type check
-      TypeChecker.checkNodes(parsed)
+      # TypeChecker.checkNodes(parsed)
       if reporter.has_errors()
         throw new TypeError reporter.report()
       if options.optimise then Optimiser.optimise parsed else parsed
