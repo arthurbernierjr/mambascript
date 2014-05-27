@@ -1,0 +1,4 @@
+#!/bin/sh
+
+node_modules/.bin/pegjs --cache --export-var 'module.exports' <"src/grammar.pegjs" >"lib/parser.js.tmp" ;  mv "lib/parser.js.tmp" "lib/parser.js" 
+node_modules/.bin/mocha --compilers coffee:./register -u tdd -R dot test/_setup.coffee test/type_checker.coffee
