@@ -370,24 +370,6 @@ secondaryStatement
 secondaryExpression = expressionworthy / vardef / assignmentExpression
 secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressionNoImplicitObjectCall
 
-// TODO: FIX CS.Int hack
-structdef = STRUCT !(_ "=") __ name:typeSymbol _ expr: typeExpr {
-  var s = rp(new CS.Int(line()))
-  s.nodeType = 'struct';
-  s.name = name;
-  s.expr = expr;
-  return s;
-}
-
-// TODO: FIX CS.Int hack
-vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
-  var s = rp(new CS.Int(line()))
-  s.nodeType = 'vardef';
-  s.name = name;
-  s.expr = expr;
-  return s;
-}
-
 // TODO: rename?
 expressionworthy
   = functionLiteral
@@ -879,11 +861,6 @@ switch
   caseBody = conditionalBody
 
 
-returntypeExpr
-  = typeLiteral
-  / "(" _ tf:typeFunction _ ")" {return tf;}
-  / typeSymbol
-returnTypeLiteral = _ "::" _ type:returntypeExpr? _ {return type;}
 functionLiteral
   = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? returnType:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
       var constructor;
@@ -1127,77 +1104,6 @@ debugger = DEBUGGER { return rp(new CS.Debugger); }
 undefined = UNDEFINED { return rp(new CS.Undefined); }
 null = NULL { return rp(new CS.Null); }
 
-typeLiteral
-  = "{" members:typeLiteralBody TERMINATOR? _ "}" {
-    var obj = {};
-    members.forEach(function(member){
-      obj[member[0]] = member[1];
-    });
-    return obj;
-  }
-  / !typeSymbol !"(" members:typeLiteralBody {
-    var obj = {};
-    members.forEach(function(member){
-      obj[member[0]] = member[1];
-    });
-    return obj;
-  }
-  typeLiteralBody
-    = TERMINDENT members:typeLiteralMemberList DEDENT { return members; }
-    / _ members:typeLiteralMemberList? { return members || []; }
-  typeLiteralMemberList
-    = e:typeLiteralMember _ es:(arrayLiteralMemberSeparator _ typeLiteralMember _)* ","? {
-        return [e].concat(es.map(function(e){ return e[2]; }));
-      }
-  typeLiteralMember
-    = key:typeSymbol _ "::" _ val: typeExpr {
-        return [key, val];
-      }
-
-typeIdentifier
-  = e: identifierName es:('.' identifierName)+ {
-    var list = [e].concat(es.map(function(e){return e[1]}));
-    return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
-  }
-  / identifierName
-
-typeSymbol
-  = VoidAlias
-  / "(" _ ret: _typeSymbol _ ")" { return ret;}
-  / _typeSymbol
-
-  _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? isArray:isArray? {
-    return {isArray: !!isArray, typeName: symbol, typeArguments: args || []}
-  }
-  isArray = "[" _ "]" {return true}
-  VoidAlias = "(" _ ")" {return {isArray: false, typeName: 'Void', typeArguments: []} }
-  typeArgumentLiteral = "<" _ args:typeArguments  _ ">" {
-    return args;
-  }
-  typeArguments = e:typeIdentifier _ es:("," _ typeIdentifier)* {
-    return [e].concat(es.map(function(e){ return e[2]; }));
-  }
-
-typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeSymbol {
-  return {arguments: args, returnType: returnType, nodeType: 'Function'};
-}
-
-typeFunctionArguments
-  = e:typeSymbol _ es:("*" _ typeSymbol _)* {
-    return [e].concat(es.map(function(e){return e[2]}));
-  }
-  / "(" _ e:typeSymbol _ es:("," _ typeSymbol _)* _ ")" {
-    return [e].concat(es.map(function(e){return e[2]}));
-  }
-  / e:typeSymbol {return [e];}
-
-typeExpr
-  = typeLiteral
-  / typeFunction
-  / typeSymbol
-
-typeAnnotation = "::" _ type:typeExpr {return rp(type);}
-
 unassignable = ("arguments" / "eval") !identifierPart
 CompoundAssignable
   = memberAccess
@@ -1205,7 +1111,7 @@ CompoundAssignable
 ExistsAssignable = CompoundAssignable
 Assignable
   = memberAccess
-  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation || null; return rp(i); }
+  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation; return rp(i); }
   / positionalDestructuring
   / namedDestructuring
 
@@ -1364,3 +1270,100 @@ UnicodeDigit = [\u0030-\u0039\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096
 UnicodeConnectorPunctuation = [\u005F\u203F\u2040\u2054\uFE33\uFE34\uFE4D-\uFE4F\uFF3F]
 ZWNJ = "\u200C"
 ZWJ = "\u200D"
+
+
+// TODO: FIX CS.Int hack
+structdef = STRUCT !(_ "=") __ name:typeSymbol _ props: typeExpr {
+  var s = rp(new CS.Int(line()))
+  s.nodeType = 'struct';
+  s.identifier = name;
+  s.typeAnnotation = props;
+  return s;
+}
+
+// TODO: FIX CS.Int hack
+vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
+  var s = rp(new CS.Int(line()))
+  s.nodeType = 'vardef';
+  s.name = name;
+  s.expr = expr;
+  return s;
+}
+
+typeExpr
+  = typeLiteral
+  / typeFunction
+  / typeSymbol
+
+typeLiteral
+  = "{" members:typeLiteralBody TERMINATOR? _ "}" {
+    return {properties:members, nodeType: 'members'};
+  }
+  / !typeSymbol !"(" members:typeLiteralBody {
+    return {properties:members, nodeType: 'members'};
+  }
+  typeLiteralBody
+    = TERMINDENT members:typeLiteralMemberList DEDENT { return members; }
+    / _ members:typeLiteralMemberList? { return members || []; }
+  typeLiteralMemberList
+    = e:typeLiteralMember _ es:(arrayLiteralMemberSeparator _ typeLiteralMember _)* ","? {
+        return [e].concat(es.map(function(e){ return e[2]; }));
+      }
+  typeLiteralMember
+    = symbol:typeSymbol _ "::" _ expr:typeExpr {
+        symbol.typeAnnotation = expr;
+        return symbol
+        // return {identifier:symbol, typeAnnotation: expr, nodeType: 'identifier'};
+      }
+
+returnTypeExpr
+  = typeLiteral
+  / "(" _ tf:typeFunction _ ")" {return tf;}
+  / typeSymbol
+
+assignableTypeIdentifier = identifierName
+
+typeIdentifier
+  = e: identifierName es:('.' identifierName)+ {
+    var list = [e].concat(es.map(function(e){return e[1]}));
+    return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
+  }
+  / identifierName
+
+typeSymbol
+  = v:VoidAlias {return {identifier:v, nodeType: 'identifier'}}
+  / "(" _ ret: _typeSymbol _ ")" { return {identifier: ret, nodeType: 'identifier'};}
+  / t:_typeSymbol { return {identifier: t, nodeType: 'identifier'};}
+
+  _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? isArray:isArray? {
+    var obj = {typeRef: symbol};
+    if(isArray) obj.isArray = true;
+    if(args) obj.typeArguments = (args || []);
+    return obj;
+  }
+  isArray = "[" _ "]" {return true}
+  VoidAlias = "(" _ ")" {return {isArray: false, typeRef: 'Void', typeArguments: []} }
+  typeArgumentLiteral = "<" _ args:typeArguments  _ ">" {
+    return args;
+  }
+  typeArguments = e:typeIdentifier _ es:("," _ typeIdentifier)* {
+    return [e].concat(es.map(function(e){ return e[2]; }));
+  }
+
+typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeSymbol {
+  return {arguments: args, returnType: returnType, nodeType: 'Function'};
+}
+
+typeFunctionArguments
+  = e:typeSymbol _ es:("*" _ typeSymbol _)* {
+    return [e].concat(es.map(function(e){return e[2]}));
+  }
+  / "(" _ e:typeSymbol _ es:("," _ typeSymbol _)* _ ")" {
+    return [e].concat(es.map(function(e){return e[2]}));
+  }
+  / e:typeSymbol {return [e];}
+
+returnTypeLiteral = _ "::" _ type:returnTypeExpr? _ {return type;}
+
+typeAnnotation = "::" _ type:typeExpr {return rp(type);}
+

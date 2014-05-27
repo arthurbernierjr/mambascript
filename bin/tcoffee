@@ -21,6 +21,7 @@ reporter = require '../lib/reporter'
   .alias('b', 'bare')
   .alias('o', 'out')
   .alias('j', 'join')
+  .alias('d', 'debug')
 
 compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
   cs_ast = CoffeeScript.parse source, parseOption ? {
