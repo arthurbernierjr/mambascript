@@ -349,16 +349,15 @@ block
       return rp(new CS.Block([s].concat(ss.map(function(s){ return s[3]; }))));
     }
 
-
 statement
-  = expression
+  = structdef
+  / expression
   / return
   / continue
   / break
   / throw
   / debugger
 expression = expressionworthy / seqExpression
-
 
 secondaryStatement
   = secondaryExpression
@@ -368,11 +367,11 @@ secondaryStatement
   / throw
   / debugger
 // secondaryExpression forbids anything lower precedence than assignmentExpression
-secondaryExpression = expressionworthy / vardef / structdef / assignmentExpression
+secondaryExpression = expressionworthy / vardef / assignmentExpression
 secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressionNoImplicitObjectCall
 
 // TODO: FIX CS.Int hack
-structdef = 'struct' !(_ "=") __ name:typeSymbol _ expr: typeExpr {
+structdef = STRUCT !(_ "=") __ name:typeSymbol _ expr: typeExpr {
   var s = rp(new CS.Int(line()))
   s.dataType = 'struct';
   s.name = name;
@@ -381,7 +380,7 @@ structdef = 'struct' !(_ "=") __ name:typeSymbol _ expr: typeExpr {
 }
 
 // TODO: FIX CS.Int hack
-vardef = name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
+vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
   var s = rp(new CS.Int(line()))
   s.dataType = 'vardef';
   s.name = name;
@@ -1335,6 +1334,7 @@ WHILE = $("while" !identifierPart)
 YES = $("yes" !identifierPart)
 IMPLEMENTS = $("implements" !identifierPart)
 SUPER = $("super" !identifierPart)
+STRUCT = $("struct" !identifierPart)
 
 SharedKeywords
   = ("true" / "false" / "null" / "this" / "new" / "delete" / "typeof" /
@@ -1349,7 +1349,7 @@ JSKeywords
 
 CSKeywords
   = ("undefined" / "then" / "unless" / "until" / "loop" / "off" / "by" / "when" /
-  "and" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of") !identifierPart
+  "and" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of" / "struct") !identifierPart
 
 reserved
   = $(macro)
