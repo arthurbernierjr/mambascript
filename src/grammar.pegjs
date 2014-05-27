@@ -373,7 +373,7 @@ secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressio
 // TODO: FIX CS.Int hack
 structdef = STRUCT !(_ "=") __ name:typeSymbol _ expr: typeExpr {
   var s = rp(new CS.Int(line()))
-  s.dataType = 'struct';
+  s.nodeType = 'struct';
   s.name = name;
   s.expr = expr;
   return s;
@@ -382,7 +382,7 @@ structdef = STRUCT !(_ "=") __ name:typeSymbol _ expr: typeExpr {
 // TODO: FIX CS.Int hack
 vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
   var s = rp(new CS.Int(line()))
-  s.dataType = 'vardef';
+  s.nodeType = 'vardef';
   s.name = name;
   s.expr = expr;
   return s;
@@ -400,7 +400,6 @@ expressionworthy
   / switch
   / implicitObjectLiteral
   / class
-
 
 seqExpression
   = left:postfixControlFlowExpression right:(_ ";" TERMINATOR? _ expression)? {
@@ -894,13 +893,11 @@ functionLiteral
         default: throw new Error('parsed function arrow ("' + arrow + '") not associated with a constructor');
       }
       var ret = rp(new constructor(params && params[2] || [], body || null));
-      ret.annotation = {
-        dataType: {
-          dataType: 'Function',
-          returnType: (returnType ? returnType : 'Any'),
-          arguments: (params && params[2] || []).map(function(i){return i.annotation})
-        }
-       };
+      ret.typeAnnotation = {
+        nodeType: 'Function',
+        returnType: (returnType ? returnType : 'Any'),
+        arguments: (params && params[2] || []).map(function(i){return i.typeAnnotation})
+      };
       return ret;
     }
   functionBody
@@ -1170,10 +1167,10 @@ typeSymbol
   / _typeSymbol
 
   _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? isArray:isArray? {
-    return {isArray: isArray, typeName: symbol, arguments: args }
+    return {isArray: isArray, typeName: symbol, typeArguments: args }
   }
   isArray = "[" _ "]" {return true}
-  VoidAlias = "(" _ ")" {return {isArray: false, typeName: 'Void', arguments: []} }
+  VoidAlias = "(" _ ")" {return {isArray: false, typeName: 'Void', typeArguments: []} }
   typeArgumentLiteral = "<" _ args:typeArguments  _ ">" {
     return args;
   }
@@ -1182,8 +1179,9 @@ typeSymbol
   }
 
 typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeSymbol {
-  return {arguments: args, returnType: returnType, dataType: 'Function'};
+  return {arguments: args, returnType: returnType, nodeType: 'Function'};
 }
+
 typeFunctionArguments
   = e:typeSymbol _ es:("*" _ typeSymbol _)* {
     return [e].concat(es.map(function(e){return e[2]}));
@@ -1198,7 +1196,7 @@ typeExpr
   / typeFunction
   / typeSymbol
 
-typeAnnotation = "::" _ type:typeExpr {return rp({dataType:type});}
+typeAnnotation = "::" _ type:typeExpr {return rp(type);}
 
 unassignable = ("arguments" / "eval") !identifierPart
 CompoundAssignable
@@ -1207,7 +1205,7 @@ CompoundAssignable
 ExistsAssignable = CompoundAssignable
 Assignable
   = memberAccess
-  / !unassignable i:identifier _ annotation:typeAnnotation? { i.annotation = annotation; return rp(i); }
+  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation; return rp(i); }
   / positionalDestructuring
   / namedDestructuring
 

@@ -546,8 +546,8 @@ walk = (node, scope) ->
     when node.length?                    then  walk s, scope for s in node
     # Struct
     # Dirty hack on Number
-    when node.dataType is 'struct'           then walk_struct node, scope
-    when node.dataType is 'vardef'           then walk_vardef node, scope
+    when node.nodeType is 'struct'       then walk_struct node, scope
+    when node.nodeType is 'vardef'       then walk_vardef node, scope
     # Program
     when node.instanceof CS.Program      then walk_program node, scope
     # Block
