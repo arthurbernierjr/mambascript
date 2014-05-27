@@ -368,7 +368,7 @@ secondaryStatement
   / throw
   / debugger
 // secondaryExpression forbids anything lower precedence than assignmentExpression
-secondaryExpression = expressionworthy / vardef / assignmentExpression
+secondaryExpression = expressionworthy / vardef / structdef / assignmentExpression
 secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressionNoImplicitObjectCall
 
 // TODO: FIX CS.Int hack
@@ -391,8 +391,7 @@ vardef = name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
 
 // TODO: rename?
 expressionworthy
-  = structdef
-  / functionLiteral
+  = functionLiteral
   / conditional
   / while
   / loop
