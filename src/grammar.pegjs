@@ -372,7 +372,7 @@ secondaryExpression = expressionworthy / vardef / assignmentExpression
 secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressionNoImplicitObjectCall
 
 // TODO: FIX CS.Int hack
-structdef = 'struct' !(_ "=") __ name:TypeNameSymbol _ expr: TypeExpr {
+structdef = 'struct' !(_ "=") __ name:typeSymbol _ expr: typeExpr {
   var s = rp(new CS.Int(line()))
   s.dataType = 'struct';
   s.name = name;
@@ -381,7 +381,7 @@ structdef = 'struct' !(_ "=") __ name:TypeNameSymbol _ expr: TypeExpr {
 }
 
 // TODO: FIX CS.Int hack
-vardef = name:TypeNameSymbol __ '::' _ expr: TypeExpr !(_ "=") {
+vardef = name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
   var s = rp(new CS.Int(line()))
   s.dataType = 'vardef';
   s.name = name;
@@ -882,11 +882,11 @@ switch
   caseBody = conditionalBody
 
 
-ReturnTypeExpr
+returntypeExpr
   = typeLiteral
-  / "(" _ tf:TypeFunction _ ")" {return tf;}
-  / TypeNameSymbol
-returnTypeLiteral = _ "::" _ type:ReturnTypeExpr? _ {return type;}
+  / "(" _ tf:typeFunction _ ")" {return tf;}
+  / typeSymbol
+returnTypeLiteral = _ "::" _ type:returntypeExpr? _ {return type;}
 functionLiteral
   = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? returnType:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
       var constructor;
@@ -1140,7 +1140,7 @@ typeLiteral
     });
     return obj;
   }
-  / !TypeNameSymbol !"(" members:typeLiteralBody {
+  / !typeSymbol !"(" members:typeLiteralBody {
     var obj = {};
     members.forEach(function(member){
       obj[member[0]] = member[1];
@@ -1155,53 +1155,52 @@ typeLiteral
         return [e].concat(es.map(function(e){ return e[2]; }));
       }
   typeLiteralMember
-    = key:TypeNameSymbol _ "::" _ val: TypeExpr {
+    = key:typeSymbol _ "::" _ val: typeExpr {
         return [key, val];
       }
 
-TypeSymbol
+typeIdentifier
   = e: identifierName es:('.' identifierName)+ {
     var list = [e].concat(es.map(function(e){return e[1]}));
     return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
   }
   / identifierName
 
-TypeNameSymbol
+typeSymbol
   = VoidAlias
-  / "(" _ ret: _TypeNameSymbol _ ")" { return ret;}
-  / _TypeNameSymbol
+  / "(" _ ret: _typeSymbol _ ")" { return ret;}
+  / _typeSymbol
 
-  _TypeNameSymbol = symbol:TypeSymbol args: TypeArgumentLiteral? isArray:isArray? {
+  _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? isArray:isArray? {
     return {isArray: isArray, typeName: symbol, arguments: args }
   }
-
   isArray = "[" _ "]" {return true}
   VoidAlias = "(" _ ")" {return {isArray: false, typeName: 'Void', arguments: []} }
-  TypeArgumentLiteral = "<" _ args:TypeArguments  _ ">" {
+  typeArgumentLiteral = "<" _ args:typeArguments  _ ">" {
     return args;
   }
-  TypeArguments = e:TypeSymbol _ es:("," _ TypeSymbol)* {
+  typeArguments = e:typeIdentifier _ es:("," _ typeIdentifier)* {
     return [e].concat(es.map(function(e){ return e[2]; }));
   }
 
-TypeFunction = args:TypeFunctionArguments _ "->" _ returnType:TypeNameSymbol {
+typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeSymbol {
   return {arguments: args, returnType: returnType, dataType: 'Function'};
 }
-TypeFunctionArguments
-  = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {
+typeFunctionArguments
+  = e:typeSymbol _ es:("*" _ typeSymbol _)* {
     return [e].concat(es.map(function(e){return e[2]}));
   }
-  / "(" _ e:TypeNameSymbol _ es:("," _ TypeNameSymbol _)* _ ")" {
+  / "(" _ e:typeSymbol _ es:("," _ typeSymbol _)* _ ")" {
     return [e].concat(es.map(function(e){return e[2]}));
   }
-  / e:TypeNameSymbol {return [e];}
+  / e:typeSymbol {return [e];}
 
-TypeExpr
+typeExpr
   = typeLiteral
-  / TypeFunction
-  / TypeNameSymbol
+  / typeFunction
+  / typeSymbol
 
-TypeAnnotation = "::" _ type:TypeExpr {return rp({dataType:type});}
+typeAnnotation = "::" _ type:typeExpr {return rp({dataType:type});}
 
 unassignable = ("arguments" / "eval") !identifierPart
 CompoundAssignable
@@ -1210,7 +1209,7 @@ CompoundAssignable
 ExistsAssignable = CompoundAssignable
 Assignable
   = memberAccess
-  / !unassignable i:identifier _ annotation:TypeAnnotation? { i.annotation = annotation; return rp(i); }
+  / !unassignable i:identifier _ annotation:typeAnnotation? { i.annotation = annotation; return rp(i); }
   / positionalDestructuring
   / namedDestructuring
 
