@@ -862,7 +862,8 @@ switch
 
 
 functionLiteral
-  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? returnType:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
+  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)?
+    returnType:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
       var constructor;
       switch(arrow) {
         case '->': constructor = CS.Function; break;
@@ -871,9 +872,9 @@ functionLiteral
       }
       var ret = rp(new constructor(params && params[2] || [], body || null));
       ret.typeAnnotation = {
-        nodeType: 'Function',
-        returnType: (returnType ? returnType : 'Any'),
-        arguments: (params && params[2] || []).map(function(i){return i.typeAnnotation})
+        nodeType: 'functionType',
+        returnType: (returnType || null),
+        arguments: (params && params[2] || []).map(function(i){return i.typeAnnotation || null})
       };
       return ret;
     }
@@ -1111,7 +1112,7 @@ CompoundAssignable
 ExistsAssignable = CompoundAssignable
 Assignable
   = memberAccess
-  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation; return rp(i); }
+  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation || null; return rp(i); }
   / positionalDestructuring
   / namedDestructuring
 
@@ -1351,7 +1352,7 @@ typeSymbol
   }
 
 typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeSymbol {
-  return {arguments: args, returnType: returnType, nodeType: 'Function'};
+  return {arguments: args, returnType: returnType, nodeType: 'functionType'};
 }
 
 typeFunctionArguments

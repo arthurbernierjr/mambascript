@@ -83,7 +83,7 @@ isAcceptableStruct = (scope, left, right) ->
   _.all left.properties.map (lprop, n) =>
     rprop = _.find right.properties, (rp) ->
       rp.identifier?.typeRef is lprop.identifier?.typeRef
-    debug 'left', lprop.typeAnnotation
+    # debug 'left', lprop.typeAnnotation
     debug 'right', rprop.typeAnnotation
 
     # return true
@@ -91,10 +91,25 @@ isAcceptableStruct = (scope, left, right) ->
 
     return isAcceptable scope, lprop.typeAnnotation, rprop.typeAnnotation
 
+# isAcceptableFunction :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
+isAcceptableFunctionType = (scope, left, right) ->
+  # debug 'isAcceptableFunction left', left
+  # debug 'isAcceptableFunction right', right
+  left.returnType ?= ImplicitAnyAnnotation
+  right.returnType ?= ImplicitAnyAnnotation
+  unless isAcceptable(scope, left.returnType, right.returnType)
+    return false
+
+  return _.all (for leftArg, n in left.arguments
+    leftArg = leftArg ? ImplicitAnyAnnotation
+    rightArg = right.arguments[n] ? ImplicitAnyAnnotation
+    isAcceptable scope, leftArg, rightArg
+  )
+
 # isAcceptable :: Types.Scope * TypeAnnotation * TypeAnnotaion -> Boolean
 isAcceptable = (scope, left, right) ->
-  # debug 'left', left
-  # debug 'right', right
+  debug 'left', left
+  debug 'right', right
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
     if node.nodeType is 'identifier'
       scope.getTypeByIdentifier(node)
@@ -102,19 +117,45 @@ isAcceptable = (scope, left, right) ->
       node
     else if node.nodeType is 'members'
       node
+    else if node.nodeType is 'functionType'
+      node
+    else
+      throw node?.nodeType + " is not registered nodeType"
 
-  debug 'leftAnnotation', leftAnnotation
-  debug 'rightAnnotation', rightAnnotation
+  # debug 'leftAnnotation', leftAnnotation
+  # debug 'rightAnnotation', rightAnnotation
+
+  # Grasp if left is any
+  if leftAnnotation.nodeType is 'primitiveIdentifier'
+    if leftAnnotation.identifier.typeRef is 'Any'
+      return true
 
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
     return isAcceptableStruct scope, leftAnnotation, rightAnnotation
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'primitiveIdentifier'
     return isAcceptablePrimitiveSymbol leftAnnotation, rightAnnotation
+  if leftAnnotation.nodeType is rightAnnotation.nodeType is 'functionType'
+    return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
+
+# isAcceptable :: Types.Scope * Type * Type -> ()
+checkType = (scope, left, right) ->
+  ret = isAcceptable scope, left.typeAnnotation, right.typeAnnotation
+  if ret
+    return true
+  else
+    err = typeErrorText left.typeAnnotation, right.typeAnnotation
+    if left.implicit and right.implicit
+      reporter.add_warning node, err
+    else
+      reporter.add_error node, err
+    return false
 
 # CS_AST -> Scope
-g = window ? global
 checkNodes = (cs_ast) ->
+  # dirty hack
+  g = window ? global
   return unless cs_ast.body?.statements?
+
   if g._root_
     root = g._root_
   else
@@ -381,6 +422,8 @@ walk_assignOp = (node, scope) ->
     if (!preRegisteredTypeAnnotation) and right.typeAnnotation?.explicit
       scope.addVar symbol, right.typeAnnotation.identifier, true
     else
+      debug '---dfa-fdsa-f-', left
+      left.typeAnnotation ?= ImplicitAnyAnnotation
       scope.addVar symbol, left.typeAnnotation.identifier, true
 
   # Vanilla CS
@@ -584,97 +627,95 @@ walk_class = (node, scope) ->
 
 # Node * Scope * Type
 # predef :: Type defined at assignee
+# walk_function :: Node * Scope * TypeAnnotation -> ()
 walk_function = (node, scope, predef = null) ->
-  return # TODO
+  # return # TODO
   args = node.parameters?.map (param) -> param.typeAnnotation?.identifier ? 'Any'
-
-  node.typeAnnotation.identifier.arguments = args
-
+  debug 'func', node
+  # node.typeAnnotation.identifier.arguments = args
   functionScope = new Scope scope
-  functionScope._name_ = 'function'
-
 
   if scope instanceof ClassScope
     functionScope._this = scope._this
 
   # register arguments to function scope
   # TODO: DRY
-  if node.parameters?
-    # example.
-    #   f :: Int -> Int
-    #   f: (n) -> n
-    if predef
-      node.typeAnnotation.identifier = predef
-      for param, index in node.parameters
-        # Destructive
-        if param.members
-          for member in param.members
-            # This
-            if member.expression?.expression?.raw in ['@', 'this']
-              t = functionScope.getThis(member.key.data)
-              unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
-            # Var
-            else
-              if member.key?.data
-                functionScope.addVar member.key.data, 'Any'
-        # This
-        else if param.expression?.raw in ['@', 'this']
-          t = functionScope.getThis(param.memberName)
-          if err = scope.checkAcceptableObject predef.arguments?[index], t?.identifier
-            err = typeErrorText predef.arguments?[index], t?.identifier
-            reporter.add_error node, err
-          unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
-        # Var
-        else
-          functionScope.addVar param.data, (predef.arguments?[index] ? 'Any')
-    # example.
-    #   f: (n) -> n
-    else
-      for param, index in node.parameters
-        # Destructive
-        if param.members
-          for member in param.members
-            # This
-            if member.expression?.expression?.raw in ['@', 'this']
-              t = functionScope.getThis(member.key.data)
-              unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
-            # Var
-            else
-              if member.key?.data
-                functionScope.addVar member.key.data, 'Any'
-        # This
-        else if param.expression?.raw in ['@', 'this']
-          t = functionScope.getThis(param.memberName)
-          unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
-        # Var
-        else
-          functionScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
+  # if node.parameters?
+  #   # example.
+  #   #   f :: Int -> Int
+  #   #   f: (n) -> n
+  #   if predef
+  #     node.typeAnnotation.identifier = predef
+  #     for param, index in node.parameters
+  #       # Destructive
+  #       if param.members
+  #         for member in param.members
+  #           # This
+  #           if member.expression?.expression?.raw in ['@', 'this']
+  #             t = functionScope.getThis(member.key.data)
+  #             unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
+  #           # Var
+  #           else
+  #             if member.key?.data
+  #               functionScope.addVar member.key.data, 'Any'
+  #       # This
+  #       else if param.expression?.raw in ['@', 'this']
+  #         t = functionScope.getThis(param.memberName)
+  #         if err = scope.checkAcceptableObject predef.arguments?[index], t?.identifier
+  #           err = typeErrorText predef.arguments?[index], t?.identifier
+  #           reporter.add_error node, err
+  #         unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
+  #       # Var
+  #       else
+  #         functionScope.addVar param.data, (predef.arguments?[index] ? 'Any')
+  #   # example.
+  #   #   f: (n) -> n
+  #   else
+  #     for param, index in node.parameters
+  #       # Destructive
+  #       if param.members
+  #         for member in param.members
+  #           # This
+  #           if member.expression?.expression?.raw in ['@', 'this']
+  #             t = functionScope.getThis(member.key.data)
+  #             unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
+  #           # Var
+  #           else
+  #             if member.key?.data
+  #               functionScope.addVar member.key.data, 'Any'
+  #       # This
+  #       else if param.expression?.raw in ['@', 'this']
+  #         t = functionScope.getThis(param.memberName)
+  #         unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
+  #       # Var
+  #       else
+  #         functionScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
 
   walk node.body, functionScope
 
   # () :: Number -> 3
-  if node.typeAnnotation?.identifier?.returnType isnt 'Any'
-    # last expr or single line expr
-    last_expr =
-      if node.body?.statements?.length # => Blcok
-        node.body.statements?[node.body?.statements?.length-1]
-      else # => Expr
-        node.body
+  # if node.typeAnnotation?.identifier?.returnType isnt 'Any'
+  #   # last expr or single line expr
+  #   last_expr =
+  #     if node.body?.statements?.length # => Blcok
+  #       node.body.statements?[node.body?.statements?.length-1]
+  #     else # => Expr
+  #       node.body
 
-    # 明示的に宣言してある場合
-    if err = scope.checkAcceptableObject(node.typeAnnotation?.identifier.returnType, last_expr?.typeAnnotation?.identifier)
-      err = typeErrorText node.typeAnnotation?.identifier.returnType, last_expr?.typeAnnotation?.identifier
-      return reporter.add_error node, err
+  #   # 明示的に宣言してある場合
+  #   if err = scope.checkAcceptableObject(node.typeAnnotation?.identifier.returnType, last_expr?.typeAnnotation?.identifier)
+  #     err = typeErrorText node.typeAnnotation?.identifier.returnType, last_expr?.typeAnnotation?.identifier
+  #     return reporter.add_error node, err
 
-  else
-    last_expr =
-      if node.body?.statements?.length # => Blcok
-        node.body.statements?[node.body?.statements?.length-1]
-      else # => Expr
-        node.body
+  # else
+  #   last_expr =
+  #     if node.body?.statements?.length # => Blcok
+  #       node.body.statements?[node.body?.statements?.length-1]
+  #     else # => Expr
+  #       node.body
 
-    if node.typeAnnotation?
-      node.typeAnnotation.identifier.returnType = last_expr?.typeAnnotation?.identifier
+  #   if node.typeAnnotation?
+  #     node.typeAnnotation.identifier.returnType = last_expr?.typeAnnotation?.identifier
 
 walk_functionApplication = (node, scope) ->
   return # TODO
