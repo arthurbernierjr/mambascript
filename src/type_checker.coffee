@@ -162,8 +162,8 @@ checkNodes = (cs_ast) ->
     g._root_ = root = new Scope
     root.name = 'root'
 
-    for i in ['global', 'exports', 'module']
-      root.addVar i, 'Any', true
+    # for i in ['global', 'exports', 'module']
+    #   root.addVar i, 'Any', true
     initializeGlobalTypes(root)
 
   # debug 'root', cs_ast
@@ -332,6 +332,7 @@ walkNewOp = (node, scope) ->
   node.typeAnnotation = identifier: Type?.identifier
 
 walkFor = (node, scope) ->
+  return # TODO
   walk node.target, scope
 
   if node.valAssignee?
@@ -361,8 +362,8 @@ walkFor = (node, scope) ->
   node.typeAnnotation = node.target?.typeAnnotation
 
   # remove after iter
-  delete scope._vars[node.valAssignee?.data]
-  delete scope._vars[node.keyAssignee?.data]
+  delete scope._vars[node.valAssignee?.data] # WILL FIX
+  delete scope._vars[node.keyAssignee?.data] # WILL FIX
 
 walkClassProtoAssignOp = (node, scope) ->
   return # TODO
@@ -409,43 +410,48 @@ walkAssignOp = (node, scope) ->
 
   # Array initializer
   if left.instanceof CS.ArrayInitialiser
-    for member, index in left.members when member.data?
-      l = left.typeAnnotation?.identifier?.array?[index]
-      r = right.typeAnnotation?.identifier?.array?[index]
-      if err = scope.checkAcceptableObject l, r
-        err = typeErrorText l, r
-        reporter.add_error node, err
-      if l
-        scope.addVar member.data, l, true
-      else
-        scope.addVar member.data, "Any", false
+    return # TODO
+    # if left.expression.instanceof CS.This
+    # for member, index in left.members when member.data?
+    #   l = left.typeAnnotation?.identifier?.array?[index]
+    #   r = right.typeAnnotation?.identifier?.array?[index]
+    #   if err = scope.checkAcceptableObject l, r
+    #     err = typeErrorText l, r
+    #     reporter.add_error node, err
+    #   if l
+    #     scope.addVar member.data, l, true
+    #   else
+    #     scope.addVar member.data, "Any", false
 
   # Destructive
   else if left?.members?
-    for member in left.members when member.key?.data?
-      if scope.getVarInScope member.key.data
-        l_type = scope.getVarInScope(member.key.data).identifier
-        if err = scope.checkAcceptableObject l_type, right.typeAnnotation?.identifier?[member.key.data]
-          err = typeErrorText l_type, right.typeAnnotation?.identifier?[member.key.data]
-          reporter.add_error node, err
-      else
-        scope.addVar member.key.data, 'Any', false
+    return # TODO
+    # if left.expression.instanceof CS.This
+    # for member in left.members when member.key?.data?
+    #   if scope.getVarInScope member.key.data
+    #     l_type = scope.getVarInScope(member.key.data).identifier
+    #     if err = scope.checkAcceptableObject l_type, right.typeAnnotation?.identifier?[member.key.data]
+    #       err = typeErrorText l_type, right.typeAnnotation?.identifier?[member.key.data]
+    #       reporter.add_error node, err
+    #   else
+    #     scope.addVar member.key.data, 'Any', false
 
   # Member
   else if left.instanceof CS.MemberAccessOp
-    if left.expression.instanceof CS.This
-      T = scope.getThis(left.memberName)
-      left.typeAnnotation = T if T?
-      if T?
-        if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
-          err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
-          reporter.add_error node, err
-    # return if left.expression.raw is '@' # ignore @ yet
-    else if left.typeAnnotation?.identifier? and right.typeAnnotation?.identifier?
-      if left.typeAnnotation.identifier isnt 'Any'
-        if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
-          err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
-          return reporter.add_error node, err
+    return # TODO
+    # if left.expression.instanceof CS.This
+    #   T = scope.getThis(left.memberName)
+    #   left.typeAnnotation = T if T?
+    #   if T?
+    #     if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
+    #       err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
+    #       reporter.add_error node, err
+    # # return if left.expression.raw is '@' # ignore @ yet
+    # else if left.typeAnnotation?.identifier? and right.typeAnnotation?.identifier?
+    #   if left.typeAnnotation.identifier isnt 'Any'
+    #     if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
+    #       err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
+    #       return reporter.add_error node, err
 
   # Identifier
   else if left.instanceof CS.Identifier
@@ -462,14 +468,23 @@ walkAssignOp = (node, scope) ->
           err = typeErrorText left.typeAnnotation, right.typeAnnotation
           return reporter.add_error node, err
 
-    if (!preRegisteredTypeAnnotation) and right.typeAnnotation?.explicit
-      scope.addVar symbol, right.typeAnnotation.identifier, true
+    if preRegisteredTypeAnnotation?
+      console.error '--------- preRegisteredTypeAnnotation'
+      debug 'a', preRegisteredTypeAnnotation
+
+      v =
+        value: true
+        nodeType: 'identifier'
+        identifier:
+          typeRef: symbol
+        typeAnnotation: preRegisteredTypeAnnotation
+      scope.addVar v
     else
       left.typeAnnotation ?= ImplicitAnyAnnotation
-      scope.addVar symbol, left.typeAnnotation.identifier, true
 
   # Vanilla CS
   else
+    throw 'stop by vanialla'
     scope.addVar symbol, 'Any', false
 
 walkPrimitives = (node, scope) ->
