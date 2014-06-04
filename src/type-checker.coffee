@@ -24,6 +24,7 @@
 #
 # struct PropertyTypeAnnotation implements TypeAnnotation
 #   properties :: TypeIdentifier[]
+
 {debug} = require './helpers'
 reporter = require './reporter'
 CS = require './nodes'
@@ -35,16 +36,6 @@ ImplicitAnyAnnotation =
   nodeType: 'primitiveIdentifier'
   identifier:
     typeRef: 'Any'
-
-# same :: Any... -> Boolean
-same = (args...) ->
-  len = args.length
-  list = i for i, n in args when n isnt len-1
-  _.all list, _.last args
-
-typeErrorText = (left, right) ->
-  util = require 'util'
-  "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
 
 {
   initializeGlobalTypes,
@@ -79,8 +70,6 @@ isAcceptableStruct = (scope, left, right) ->
       rp.identifier?.typeRef is lprop.identifier?.typeRef
     # debug 'left', lprop.typeAnnotation
     # debug 'right', rprop.typeAnnotation
-
-    # return true
     unless rprop? then return false
 
     return isAcceptable scope, lprop.typeAnnotation, rprop.typeAnnotation
@@ -128,6 +117,10 @@ isAcceptable = (scope, left, right) ->
 
 # isAcceptable :: Types.Scope * Type * Type -> ()
 checkType = (scope, left, right) ->
+  typeErrorText = (left, right) ->
+    util = require 'util'
+    "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
+
   ret = isAcceptable scope, left.typeAnnotation, right.typeAnnotation
   if ret
     return true
