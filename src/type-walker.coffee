@@ -270,21 +270,22 @@ walkAssignOp = (node, scope) ->
   walk left, scope
 
   # TODO: refactor as functionTypeCheck
-  if preRegisteredTypeAnnotation and (right.typeAnnotation?.identifier?.identifier is left.typeAnnotation?.identifier?.identifier is 'Function')
-    if scope.checkAcceptableObject(left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType)
-      err = typeErrorText left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType
-      return reporter.add_error node, err
-    for arg, n in left.typeAnnotation.identifier.arguments
-      if scope.checkAcceptableObject(left.typeAnnotation.identifier.arguments[n]?.identifier, right.typeAnnotation.identifier.arguments[n]?.identifier)
-        err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
-        return reporter.add_error node, err
+  # if preRegisteredTypeAnnotation and (right.typeAnnotation?.identifier?.identifier is left.typeAnnotation?.identifier?.identifier is 'Function')
+  #   if scope.checkAcceptableObject(left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType)
+  #     err = typeErrorText left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType
+  #     return reporter.add_error node, err
+  #   for arg, n in left.typeAnnotation.identifier.arguments
+  #     if scope.checkAcceptableObject(left.typeAnnotation.identifier.arguments[n]?.identifier, right.typeAnnotation.identifier.arguments[n]?.identifier)
+  #       err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
+  #       return reporter.add_error node, err
 
-  if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
-    walkFunction right, scope, scope.getVarInScope(symbol).identifier
-  else if right.instanceof?(CS.Function) and preRegisteredTypeAnnotation
-    walkFunction right, scope, left.typeAnnotation.identifier
-  else
-    walk right, scope
+  # if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
+  #   walkFunction right, scope, scope.getVarInScope(symbol).identifier
+  # else if right.instanceof?(CS.Function) and preRegisteredTypeAnnotation
+  #   walkFunction right, scope, left.typeAnnotation.identifier
+  # else
+  walk right, scope
+  debug 'walk right', right
 
   # Array initializer
   if left.instanceof CS.ArrayInitialiser
@@ -338,17 +339,15 @@ walkAssignOp = (node, scope) ->
 
     if left.typeAnnotation? and right.typeAnnotation?
       if left.typeAnnotation?.properties?
-        return unless checkType scope, left, right
+        return unless checkType scope, node, left, right
       else
-        return unless checkType scope, left, right
+        return unless checkType scope, node, left, right
 
     if preRegisteredTypeAnnotation?
       console.error '--------- preRegisteredTypeAnnotation'
-      debug 'a', preRegisteredTypeAnnotation
-
+      # debug 'a', preRegisteredTypeAnnotation
       v =
-        value: true
-        nodeType: 'identifier'
+        nodeType: 'variable'
         identifier:
           typeRef: symbol
         typeAnnotation: preRegisteredTypeAnnotation
@@ -421,17 +420,10 @@ walkNumbers = (node, scope) ->
           typeRef: 'Float'
 
 walkIdentifier = (node, scope) ->
-  symbolName = node.data
-  if scope.getVarInScope(symbolName)
-    val = scope.getVarInScope(symbolName)
-    # debug 'walkIdentifier getVar', val
-    console.error '---', node.data
-    debug 'walkIdentifier getVar', val
-    node.typeAnnotation =
-      implicit: true # FIXME
-      nodeType: 'identifier'
-      identifier:
-        typeRef: val?.identifier?.typeRef ? 'Any' # FIXME
+  typeName = node.data
+  if scope.getVarInScope(typeName)
+    typeAnnotation = scope.getVarInScope(typeName)?.typeAnnotation
+    node.typeAnnotation = typeAnnotation ? ImplicitAnyAnnotation
   else
     node.typeAnnotation ?= ImplicitAnyAnnotation
 
@@ -498,7 +490,6 @@ walk_objectInitializer = (node, scope) ->
     implicit: true
     heritages: # TODO: check scheme later
       extend: identifier('Object')
-
   # debug 'ObjectInitialiser', node.typeAnnotation
 
 
@@ -682,7 +673,6 @@ walkFunctionApplication = (node, scope) ->
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
-  debug 'FunctionApplication', node
   # throw 'stop'
 
   node.typeAnnotation = identifier: (node.function.typeAnnotation?.identifier?.returnType)

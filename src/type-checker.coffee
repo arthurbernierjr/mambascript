@@ -71,7 +71,6 @@ isAcceptableStruct = (scope, left, right) ->
     # debug 'left', lprop.typeAnnotation
     # debug 'right', rprop.typeAnnotation
     unless rprop? then return false
-
     return isAcceptable scope, lprop.typeAnnotation, rprop.typeAnnotation
 
 # isAcceptableFunction :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
@@ -91,6 +90,7 @@ isAcceptableFunctionType = (scope, left, right) ->
 
 # isAcceptable :: Types.Scope * TypeAnnotation * TypeAnnotaion -> Boolean
 isAcceptable = (scope, left, right) ->
+  # debug 'isAcceptable right', right
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
     if node.nodeType is 'identifier'
       scope.getTypeByIdentifier(node)
@@ -102,6 +102,9 @@ isAcceptable = (scope, left, right) ->
       node
     else
       throw node?.nodeType + " is not registered nodeType"
+
+  debug 'isAcceptable, left', leftAnnotation
+  debug 'isAcceptable, rightAnnotation', rightAnnotation
 
   # Grasp if left is any
   if leftAnnotation.nodeType is 'primitiveIdentifier'
@@ -116,7 +119,7 @@ isAcceptable = (scope, left, right) ->
     return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
 
 # isAcceptable :: Types.Scope * Type * Type -> ()
-checkType = (scope, left, right) ->
+checkType = (scope, node, left, right) ->
   typeErrorText = (left, right) ->
     util = require 'util'
     "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"

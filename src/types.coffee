@@ -111,6 +111,10 @@ class Scope
   # getTypeByString :: String -> Type
   getTypeByString: (typeName) ->
     ret = _.find @types, (i) -> i.identifier.typeRef is typeName
+    # debug 'getTypeByString', @types
+    # console.error 'checkPoint!4', ret, typeName
+
+    return null unless ret?
     return (if ret.nodeType is 'struct' then ret.members else ret)
 
   # getTypeByMemberAccess :: TypeRef -> Type
@@ -125,7 +129,7 @@ class Scope
 
   # getType :: TypeRef -> Type
   getType: (typeRef) ->
-    # debug 'typeRef', typeRef
+    # console.error 'checkPoint!3', typeRef
     if _.isString(typeRef)
       @getTypeByString(typeRef)
     else if typeRef?.nodeType is 'MemberAccess'
@@ -133,16 +137,20 @@ class Scope
 
   # getTypeInScope :: TypeRef -> Type
   getTypeInScope: (typeRef) ->
+    # console.error 'checkPoint!2'
     @getType(typeRef) or @parent?.getTypeInScope(typeRef) or null
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByIdentifier: (node) ->
+    # debug 'getTypeByIdentifier', node
+    # debug 'getTypeByIdentifier', @vars
     if node.nodeType isnt 'identifier'
       throw 'node is not identifier node'
     switch node.nodeType
       when 'members'
         return node
       when 'identifier'
+        # console.error 'checkPoint!'
         @getTypeInScope(node.identifier.typeRef)
 
   addThis: (symbol, typeRef) ->
@@ -170,7 +178,7 @@ class Scope
   addVar: (type, args = []) ->
     # TODO: Apply typeArgument
     @vars.push type
-    debug 'addVar', type
+    # debug 'addVar', type
 
   # getVar :: String -> ()
   getVar: (typeName) ->
@@ -178,6 +186,13 @@ class Scope
 
   getVarInScope: (typeName) ->
     @getVar(typeName) or @parent?.getVarInScope(typeName) or undefined
+
+  getTypeByVarNode: (node) ->
+    typeName = node.identifier.typeRef
+    @getVarInScope(typeName)?.typeAnnotation
+
+  getTypeByVarName: (varName) ->
+    @getVarInScope(varName)?.typeAnnotation
 
   checkAcceptableObject: (left, right) -> false
 

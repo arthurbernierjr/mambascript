@@ -28,6 +28,7 @@ compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
     optimise: no
     raw: true
     inputSource: source
+    sourceMap: true
     literate
   }
   js_ast = CoffeeScript.compile cs_ast, compileOption ? bare: !!argv.bare
@@ -78,6 +79,7 @@ switch mode
         cs_ast = CoffeeScript.parse source, {
           optimise: no
           raw: true
+          sourceMap: true
           inputSource: source
           literate
         }
