@@ -84,7 +84,7 @@ isAcceptableStruct = (scope, left, right) ->
     rprop = _.find right.properties, (rp) ->
       rp.identifier?.typeRef is lprop.identifier?.typeRef
     # debug 'left', lprop.typeAnnotation
-    debug 'right', rprop.typeAnnotation
+    # debug 'right', rprop.typeAnnotation
 
     # return true
     unless rprop? then return false
@@ -108,8 +108,8 @@ isAcceptableFunctionType = (scope, left, right) ->
 
 # isAcceptable :: Types.Scope * TypeAnnotation * TypeAnnotaion -> Boolean
 isAcceptable = (scope, left, right) ->
-  debug 'left', left
-  debug 'right', right
+  # debug 'left', left
+  # debug 'right', right
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
     if node.nodeType is 'identifier'
       scope.getTypeByIdentifier(node)
@@ -170,11 +170,11 @@ checkNodes = (cs_ast) ->
   walk cs_ast, root
   return root
 
-walk_struct = (node, scope) ->
+walkStruct = (node, scope) ->
   # debug node
   scope.addStructType node
 
-walk_vardef = (node, scope) ->
+walkVardef = (node, scope) ->
   return # TODO
   # avoid 'constructor' because it's property has special action on EcmaScript
   symbol = if node.name is 'constructor' then '_constructor_' else node.name
@@ -183,46 +183,89 @@ walk_vardef = (node, scope) ->
   else
     scope.addVar symbol, node.expr
 
-walk_program = (node, scope) ->
+walkProgram = (node, scope) ->
   walk node.body.statements, scope
   node.typeAnnotation = identifier: 'Program'
 
-walk_block = (node, scope) ->
+walkBlock = (node, scope) ->
   walk node.statements, scope
   last_typeAnnotation = (node.statements[node.statements.length-1])?.typeAnnotation
   node.typeAnnotation = last_typeAnnotation
 
-walk_return = (node, scope) ->
+walkReturn = (node, scope) ->
   return # TODO
   walk node.expression, scope
   if node.expression?.typeAnnotation?.identifier?
     scope.addReturnable node.expression.typeAnnotation.identifier
     node.typeAnnotation = node.expression.typeAnnotation
 
-walk_binOp = (node, scope) ->
-  return # TODO
+walkBinOp = (node, scope) ->
   walk node.left, scope
   walk node.right, scope
 
-  left_type = node.left?.typeAnnotation?.identifier
-  right_type = node.right?.typeAnnotation?.identifier
+  [leftAnnotation, rightAnnotation] = [node.left.typeAnnotation, node.right.typeAnnotation].map (node) =>
+    if node.nodeType is 'identifier'
+      scope.getTypeByIdentifier(node)
+    else if node.nodeType is 'primitiveIdentifier'
+      node
+    else if node.nodeType is 'members'
+      node
+    else if node.nodeType is 'functionType'
+      node
+    else
+      throw node?.nodeType + " is not registered nodeType"
 
-  if left_type and right_type
-    # rough...
-    if left_type is 'String' or right_type is 'String'
-      node.typeAnnotation = identifier: 'String'
-    else if left_type is 'Int' and right_type is 'Int'
-      node.typeAnnotation = identifier: 'Int'
-    else if left_type in ['Int', 'Float'] and right_type in ['Int', 'Float']
-      node.typeAnnotation = identifier: 'Float'
-    else if left_type in ['Int', 'Float', 'Number'] and right_type in ['Int', 'Float', 'Number']
-      node.typeAnnotation = identifier: 'Number'
-    else if left_type is right_type
-      node.typeAnnotation = identifier: left_type
+  leftRef = leftAnnotation?.identifier.typeRef
+  rightRef = rightAnnotation?.identifier.typeRef
+
+  # TODO: implicit
+  if leftRef and rightRef
+    if leftRef is 'String' or rightRef is 'String'
+      node.typeAnnotation =
+        implicit: true
+        nodeType: 'primitiveIdentifier'
+        identifier:
+          typeRef: 'String'
+
+    else if leftRef is 'Int' and rightRef is 'Int'
+      node.typeAnnotation =
+        implicit: true
+        nodeType: 'primitiveIdentifier'
+        identifier:
+          typeRef: 'Int'
+
+    else if leftRef in ['Int', 'Float'] and rightRef in ['Int', 'Float']
+      node.typeAnnotation =
+        implicit: true
+        nodeType: 'primitiveIdentifier'
+        identifier:
+          typeRef: 'Float'
+    else if leftRef in ['Int', 'Float', 'Number'] and rightRef in ['Int', 'Float', 'Number']
+      node.typeAnnotation =
+        implicit: true
+        nodeType: 'primitiveIdentifier'
+        identifier:
+          typeRef: 'Number'
+    else if leftRef is rightRef is 'Any'
+      # TODO: Number or String
+      console.error 'aafdafda', node.className
+      if node instanceof CS.PlusOp
+        node.typeAnnotation =
+          implicit: true
+          nodeType: 'primitiveIdentifier'
+          identifier:
+            typeRef: 'Any'
+      else
+        node.typeAnnotation =
+          implicit: true
+          nodeType: 'primitiveIdentifier'
+          identifier:
+            typeRef: 'Number'
   else
-    node.typeAnnotation = identifier:'Any'
+    node.typeAnnotation = ImplicitAnyAnnotation
+  # debug 'binOp', node
 
-walk_conditional = (node, scope) ->
+walkConditional = (node, scope) ->
   return # TODO
   # condition expr
   walk node.condition, scope #=> Expr
@@ -247,7 +290,7 @@ walk_conditional = (node, scope) ->
 
   node.typeAnnotation = identifier: {possibilities}
 
-walk_switch = (node, scope) ->
+walkSwitch = (node, scope) ->
   return # TODO
   walk node.expression, scope
 
@@ -275,7 +318,7 @@ walk_switch = (node, scope) ->
   possibilities.push alternate_typeAnnotation.identifier
   node.typeAnnotation = identifier: {possibilities}
 
-walk_newOp = (node, scope) ->
+walkNewOp = (node, scope) ->
   return # TODO
   for arg in node.arguments
     walk arg, scope
@@ -288,7 +331,7 @@ walk_newOp = (node, scope) ->
 
   node.typeAnnotation = identifier: Type?.identifier
 
-walk_for = (node, scope) ->
+walkFor = (node, scope) ->
   walk node.target, scope
 
   if node.valAssignee?
@@ -321,7 +364,7 @@ walk_for = (node, scope) ->
   delete scope._vars[node.valAssignee?.data]
   delete scope._vars[node.keyAssignee?.data]
 
-walk_classProtoAssignOp = (node, scope) ->
+walkClassProtoAssignOp = (node, scope) ->
   return # TODO
   left  = node.assignee
   right = node.expression
@@ -329,7 +372,7 @@ walk_classProtoAssignOp = (node, scope) ->
 
   walk left, scope
   if (right.instanceof CS.Function) and scope.getThis(symbol)
-    walk_function right, scope, scope.getThis(symbol).identifier
+    walkFunction right, scope, scope.getThis(symbol).identifier
   else
     walk right, scope
 
@@ -338,7 +381,7 @@ walk_classProtoAssignOp = (node, scope) ->
   if right.typeAnnotation?
     scope.addThis symbol, right.typeAnnotation.identifier
 
-walk_assignOp = (node, scope) ->
+walkAssignOp = (node, scope) ->
   left  = node.assignee
   right = node.expression
   symbol = left.data
@@ -358,9 +401,9 @@ walk_assignOp = (node, scope) ->
         return reporter.add_error node, err
 
   if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
-    walk_function right, scope, scope.getVarInScope(symbol).identifier
+    walkFunction right, scope, scope.getVarInScope(symbol).identifier
   else if right.instanceof?(CS.Function) and preRegisteredTypeAnnotation
-    walk_function right, scope, left.typeAnnotation.identifier
+    walkFunction right, scope, left.typeAnnotation.identifier
   else
     walk right, scope
 
@@ -422,7 +465,6 @@ walk_assignOp = (node, scope) ->
     if (!preRegisteredTypeAnnotation) and right.typeAnnotation?.explicit
       scope.addVar symbol, right.typeAnnotation.identifier, true
     else
-      debug '---dfa-fdsa-f-', left
       left.typeAnnotation ?= ImplicitAnyAnnotation
       scope.addVar symbol, left.typeAnnotation.identifier, true
 
@@ -430,18 +472,18 @@ walk_assignOp = (node, scope) ->
   else
     scope.addVar symbol, 'Any', false
 
-walk_primitives = (node, scope) ->
+walkPrimitives = (node, scope) ->
   switch
     # String
-    when node.instanceof CS.String  then walk_string node, scope
+    when node.instanceof CS.String  then walkString node, scope
     # Bool
-    when node.instanceof CS.Bool    then walk_bool node, scope
+    when node.instanceof CS.Bool    then walkBool node, scope
     # Number
-    when node.instanceof CS.Int then walk_int node, scope
-    when node.instanceof CS.Float then walk_float node, scope
-    when node.instanceof CS.Numbers then walk_numbers node, scope
+    when node.instanceof CS.Int then walkInt node, scope
+    when node.instanceof CS.Float then walkFloat node, scope
+    when node.instanceof CS.Numbers then walkNumbers node, scope
 
-walk_string = (node, scope) ->
+walkString = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
     nodeType: 'primitiveIdentifier'
@@ -449,7 +491,7 @@ walk_string = (node, scope) ->
     identifier:
       typeRef: 'String'
 
-walk_int = (node, scope) ->
+walkInt = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
     nodeType: 'primitiveIdentifier'
@@ -457,7 +499,7 @@ walk_int = (node, scope) ->
     identifier:
       typeRef: 'Int'
 
-walk_bool = (node, scope) ->
+walkBool = (node, scope) ->
   return # TODO
   node.typeAnnotation ?=
     nodeType: 'primitiveIdentifier'
@@ -465,7 +507,7 @@ walk_bool = (node, scope) ->
     identifier:
       typeRef: 'Boolean'
 
-walk_float = (node, scope) ->
+walkFloat = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
     nodeType: 'primitiveIdentifier'
@@ -478,8 +520,7 @@ walk_float = (node, scope) ->
           typeRef: 'Int'
           isArray: false
 
-walk_numbers = (node, scope) ->
-  return # TODO
+walkNumbers = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'primitiveIdentifier'
     isPrimitive: true
@@ -490,24 +531,29 @@ walk_numbers = (node, scope) ->
         identifier:
           typeRef: 'Float'
 
-walk_identifier = (node, scope) ->
-  # debug 'Identifier', node
+walkIdentifier = (node, scope) ->
   symbolName = node.data
   if scope.getVarInScope(symbolName)
-    return # TODO
-    Var = scope.getVarInScope(symbolName)
-    node.typeAnnotation = identifier: Var?.identifier, explicit: Var?.explicit
+    val = scope.getVarInScope(symbolName)
+    # debug 'walkIdentifier getVar', val
+    console.error '---', node.data
+    debug 'walkIdentifier getVar', val
+    node.typeAnnotation =
+      implicit: true # FIXME
+      nodeType: 'identifier'
+      identifier:
+        typeRef: val?.identifier?.typeRef ? 'Any' # FIXME
   else
     node.typeAnnotation ?= ImplicitAnyAnnotation
 
-walk_this = (node, scope) ->
+walkThis = (node, scope) ->
   return # TODO
   identifier = {}
   for key, val of scope._this
     identifier[key] = val.identifier
   node.typeAnnotation ?= {identifier}
 
-walk_memberAccess = (node, scope) ->
+walkMemberAccess = (node, scope) ->
   return # TODO
   # hoge?.fuga
   if node.instanceof CS.SoakedMemberAccessOp
@@ -528,14 +574,14 @@ walk_memberAccess = (node, scope) ->
     else
       node.typeAnnotation = identifier: 'Any', explicit: false
 
-walk_arrayInializer = (node, scope) ->
+walkArrayInializer = (node, scope) ->
   return # TODO
   walk node.members, scope
 
   node.typeAnnotation ?=
     identifier: {array: (node.members?.map (m) -> m.typeAnnotation?.identifier)}
 
-walk_range = (node, scope) ->
+walkRange = (node, scope) ->
   return # TODO
   node.typeAnnotation = identifier : {array: 'Number'}
 
@@ -567,7 +613,7 @@ walk_objectInitializer = (node, scope) ->
   # debug 'ObjectInitialiser', node.typeAnnotation
 
 
-walk_class = (node, scope) ->
+walkClass = (node, scope) ->
   return # TODO
   classScope = new ClassScope scope
   this_scope = {}
@@ -591,7 +637,7 @@ walk_class = (node, scope) ->
   # collect @values first
   if node.body?.statements?
     for statement in node.body.statements when statement.identifier is 'vardef'
-      walk_vardef statement, classScope
+      walkVardef statement, classScope
 
   # constructor
   if node.ctor?
@@ -627,16 +673,41 @@ walk_class = (node, scope) ->
 
 # Node * Scope * Type
 # predef :: Type defined at assignee
-# walk_function :: Node * Scope * TypeAnnotation -> ()
-walk_function = (node, scope, predef = null) ->
+# walkFunction :: Node * Scope * TypeAnnotation -> ()
+walkFunction = (node, scope, predef = null) ->
   # return # TODO
   args = node.parameters?.map (param) -> param.typeAnnotation?.identifier ? 'Any'
-  debug 'func', node
+  # debug 'func', node
   # node.typeAnnotation.identifier.arguments = args
   functionScope = new Scope scope
 
   if scope instanceof ClassScope
     functionScope._this = scope._this
+
+  # if predef
+  #   node.typeAnnotation.identifier = predef
+  #   for param, index in node.parameters
+  #     # Destructive
+  #     if param.members
+  #       for member in param.members
+  #         # This
+  #         if member.expression?.expression?.raw in ['@', 'this']
+  #           t = functionScope.getThis(member.key.data)
+  #           unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
+  #         # Var
+  #         else
+  #           if member.key?.data
+  #             functionScope.addVar member.key.data, 'Any'
+  #     # This
+  #     else if param.expression?.raw in ['@', 'this']
+  #       t = functionScope.getThis(param.memberName)
+  #       if err = scope.checkAcceptableObject predef.arguments?[index], t?.identifier
+  #         err = typeErrorText predef.arguments?[index], t?.identifier
+  #         reporter.add_error node, err
+  #       unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
+  #     # Var
+  #     else
+  #       functionScope.addVar param.data, (predef.arguments?[index] ? 'Any')
 
   # register arguments to function scope
   # TODO: DRY
@@ -717,11 +788,14 @@ walk_function = (node, scope, predef = null) ->
   #   if node.typeAnnotation?
   #     node.typeAnnotation.identifier.returnType = last_expr?.typeAnnotation?.identifier
 
-walk_functionApplication = (node, scope) ->
+walkFunctionApplication = (node, scope) ->
   return # TODO
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
+  debug 'FunctionApplication', node
+  # throw 'stop'
+
   node.typeAnnotation = identifier: (node.function.typeAnnotation?.identifier?.returnType)
 
   if node.function.typeAnnotation
@@ -733,6 +807,7 @@ walk_functionApplication = (node, scope) ->
 # Traverse all nodes
 # Node -> void
 walk = (node, scope) ->
+  console.error 'walking node:', node?.className
   # debug 'walk', node
   switch
     # undefined(mayby null body)
@@ -741,50 +816,50 @@ walk = (node, scope) ->
     when node.length?                    then  walk s, scope for s in node
     # Struct
     # Dirty hack on Number
-    when node.nodeType is 'struct'       then walk_struct node, scope
-    when node.nodeType is 'vardef'       then walk_vardef node, scope
+    when node.nodeType is 'struct'       then walkStruct node, scope
+    when node.nodeType is 'vardef'       then walkVardef node, scope
     # Program
-    when node.instanceof CS.Program      then walk_program node, scope
+    when node.instanceof CS.Program      then walkProgram node, scope
     # Block
-    when node.instanceof CS.Block        then walk_block node, scope
+    when node.instanceof CS.Block        then walkBlock node, scope
     # Retrun
-    when node.instanceof CS.Return       then  walk_return node, scope
+    when node.instanceof CS.Return       then  walkReturn node, scope
     # New
-    when node.instanceof CS.NewOp        then  walk_newOp node, scope
+    when node.instanceof CS.NewOp        then  walkNewOp node, scope
     # BinaryOperator
     when node.instanceof(CS.PlusOp) or node.instanceof(CS.MultiplyOp) or node.instanceof(CS.DivideOp) or node.instanceof(CS.SubtractOp)
-      walk_binOp node, scope
+      walkBinOp node, scope
 
     # === Controlle flow ===
     # Switch
-    when node.instanceof CS.Switch then walk_switch node, scope
+    when node.instanceof CS.Switch then walkSwitch node, scope
     # If
-    when node.instanceof CS.Conditional  then walk_conditional node, scope
+    when node.instanceof CS.Conditional  then walkConditional node, scope
     # For
-    when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf) then walk_for node, scope
+    when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf) then walkFor node, scope
     # Primitives
-    when node.instanceof CS.Primitives        then walk_primitives node, scope
+    when node.instanceof CS.Primitives        then walkPrimitives node, scope
     # This
-    when node.instanceof CS.This              then walk_this node, scope
+    when node.instanceof CS.This              then walkThis node, scope
     # Identifier
-    when node.instanceof CS.Identifier        then walk_identifier node, scope
+    when node.instanceof CS.Identifier        then walkIdentifier node, scope
     # ClassProto
-    when node.instanceof CS.ClassProtoAssignOp then walk_classProtoAssignOp node, scope
+    when node.instanceof CS.ClassProtoAssignOp then walkClassProtoAssignOp node, scope
     # MemberAccessOps TODO: imperfect
-    when node.instanceof CS.MemberAccessOps   then walk_memberAccess node, scope
+    when node.instanceof CS.MemberAccessOps   then walkMemberAccess node, scope
     # Array
-    when node.instanceof CS.ArrayInitialiser  then walk_arrayInializer node, scope
+    when node.instanceof CS.ArrayInitialiser  then walkArrayInializer node, scope
     # Range
-    when node.instanceof CS.Range             then walk_range node, scope
+    when node.instanceof CS.Range             then walkRange node, scope
     # Object
     when node.instanceof CS.ObjectInitialiser then walk_objectInitializer node, scope
     # Class
-    when node.instanceof CS.Class             then walk_class node, scope
+    when node.instanceof CS.Class             then walkClass node, scope
     # Function
-    when node.instanceof CS.Function          then walk_function node, scope
+    when node.instanceof CS.Function          then walkFunction node, scope
     # FunctionApplication
-    when node.instanceof CS.FunctionApplication then walk_functionApplication node, scope
+    when node.instanceof CS.FunctionApplication then walkFunctionApplication node, scope
     # left.typeAnnotation.identifier
-    when node.instanceof CS.AssignOp then walk_assignOp node, scope
+    when node.instanceof CS.AssignOp then walkAssignOp node, scope
 
 module.exports = {checkNodes}
