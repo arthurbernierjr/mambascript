@@ -7,5 +7,6 @@ tcoffee -c src/type-checker.coffee -o lib
 tcoffee -c src/types.coffee -o lib
 # tcoffee -c src/reporter.coffee -o lib
 # node_modules/.bin/mocha --compilers coffee:./register -u tdd -R dot test/_setup.coffee test/type_checker.coffee
-./bin/tcoffee scratch.coffee
-# ./bin/tcoffee examples/assing.coffee
+# ./bin/tcoffee examples/assign.coffee
+./bin/tcoffee examples/function.coffee
+# ./bin/tcoffee scratch.coffee

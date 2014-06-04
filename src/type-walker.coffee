@@ -53,13 +53,23 @@ walkStruct = (node, scope) ->
   scope.addStructType node
 
 walkVardef = (node, scope) ->
-  return # TODO
+  # return # TODO
   # avoid 'constructor' because it's property has special action on EcmaScript
-  symbol = if node.name is 'constructor' then '_constructor_' else node.name
+  # debug 'vardef', node
+  symbol = node.name.identifier.typeRef
+
   if scope instanceof ClassScope
+    if symbol is 'constructor'
+      symbol = '_constructor_'
+    return # TODO
+
     scope.addThis symbol, node.expr
   else
-    scope.addVar symbol, node.expr
+    scope.addVar
+      nodeType: 'variable'
+      identifier:
+        typeRef: symbol
+      typeAnnotation: node.expr
 
 walkProgram = (node, scope) ->
   walk node.body.statements, scope
@@ -265,12 +275,12 @@ walkAssignOp = (node, scope) ->
   right = node.expression
   symbol = left.data
 
-  preRegisteredTypeAnnotation = left.typeAnnotation #TODO: dirty...
+  preAnnotation = left.typeAnnotation #TODO: dirty...
 
   walk left, scope
 
   # TODO: refactor as functionTypeCheck
-  # if preRegisteredTypeAnnotation and (right.typeAnnotation?.identifier?.identifier is left.typeAnnotation?.identifier?.identifier is 'Function')
+  # if preAnnotation and (right.typeAnnotation?.identifier?.identifier is left.typeAnnotation?.identifier?.identifier is 'Function')
   #   if scope.checkAcceptableObject(left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType)
   #     err = typeErrorText left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType
   #     return reporter.add_error node, err
@@ -281,11 +291,18 @@ walkAssignOp = (node, scope) ->
 
   # if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
   #   walkFunction right, scope, scope.getVarInScope(symbol).identifier
-  # else if right.instanceof?(CS.Function) and preRegisteredTypeAnnotation
+  # else if right.instanceof?(CS.Function) and preAnnotation
   #   walkFunction right, scope, left.typeAnnotation.identifier
   # else
-  walk right, scope
-  debug 'walk right', right
+
+  # Example
+  #   add :: Int * Int -> Int
+  #   add = (x, y) -> x + y
+  if (right.instanceof CS.Function) and scope.getVarInScope(symbol)
+    v = scope.getVarInScope(symbol)
+    walkFunction right, scope, v.typeAnnotation
+  else
+    walk right, scope
 
   # Array initializer
   if left.instanceof CS.ArrayInitialiser
@@ -302,7 +319,7 @@ walkAssignOp = (node, scope) ->
     #   else
     #     scope.addVar member.data, "Any", false
 
-  # Destructive
+  # Destructive Assignment
   else if left?.members?
     return # TODO
     # if left.expression.instanceof CS.This
@@ -317,7 +334,8 @@ walkAssignOp = (node, scope) ->
 
   # Member
   else if left.instanceof CS.MemberAccessOp
-    return # TODO
+    return unless checkType scope, node, left, right
+    # TODO: this
     # if left.expression.instanceof CS.This
     #   T = scope.getThis(left.memberName)
     #   left.typeAnnotation = T if T?
@@ -327,14 +345,14 @@ walkAssignOp = (node, scope) ->
     #       reporter.add_error node, err
     # # return if left.expression.raw is '@' # ignore @ yet
     # else if left.typeAnnotation?.identifier? and right.typeAnnotation?.identifier?
-    #   if left.typeAnnotation.identifier isnt 'Any'
-    #     if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
+      # if left.typeAnnotation.identifier isnt 'Any'
+        # if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
     #       err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
     #       return reporter.add_error node, err
 
   # Identifier
   else if left.instanceof CS.Identifier
-    if scope.getVarInScope(symbol) and preRegisteredTypeAnnotation
+    if scope.getVarInScope(symbol) and preAnnotation
       return reporter.add_error node, 'double bind: '+ symbol
 
     if left.typeAnnotation? and right.typeAnnotation?
@@ -343,22 +361,30 @@ walkAssignOp = (node, scope) ->
       else
         return unless checkType scope, node, left, right
 
-    if preRegisteredTypeAnnotation?
-      console.error '--------- preRegisteredTypeAnnotation'
-      # debug 'a', preRegisteredTypeAnnotation
-      v =
+    if preAnnotation?
+      scope.addVar
         nodeType: 'variable'
         identifier:
           typeRef: symbol
-        typeAnnotation: preRegisteredTypeAnnotation
-      scope.addVar v
+        typeAnnotation: preAnnotation
+    else if not right.typeAnnotation.implicit and left.typeAnnotation.implicit
+      left.typeAnnotation = right.typeAnnotation
+      scope.addVar
+        nodeType: 'variable'
+        identifier:
+          typeRef: symbol
+        typeAnnotation: right.typeAnnotation
     else
+      scope.addVar
+        nodeType: 'variable'
+        identifier:
+          typeRef: symbol
+        typeAnnotation: ImplicitAnyAnnotation
       left.typeAnnotation ?= ImplicitAnyAnnotation
 
   # Vanilla CS
   else
-    throw 'stop by vanialla'
-    scope.addVar symbol, 'Any', false
+    throw 'unexpected node:' + node?.className
 
 walkPrimitives = (node, scope) ->
   switch
@@ -435,25 +461,36 @@ walkThis = (node, scope) ->
   node.typeAnnotation ?= {identifier}
 
 walkMemberAccess = (node, scope) ->
-  return # TODO
-  # hoge?.fuga
-  if node.instanceof CS.SoakedMemberAccessOp
+  if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
-    identifier = scope.extendTypeLiteral(node.expression.typeAnnotation?.identifier)
-    if identifier?
-      node.typeAnnotation =
-        identifier:
-          possibilities:['Undefined', identifier[node.memberName]]
-    else
-      node.typeAnnotation = identifier: 'Any', explicit: false
 
-  else if node.instanceof CS.MemberAccessOp
-    walk node.expression, scope
-    identifier = scope.extendTypeLiteral(node.expression.typeAnnotation?.identifier)
-    if identifier?
-      node.typeAnnotation = identifier: identifier[node.memberName], explicit: true
-    else
-      node.typeAnnotation = identifier: 'Any', explicit: false
+  type = scope.getTypeByIdentifier(node.expression.typeAnnotation)
+
+  if type
+    member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName
+    node.typeAnnotation = member?.typeAnnotation ? ImplicitAnyAnnotation # FIXME
+  else
+    node.typeAnnotation ?= ImplicitAnyAnnotation
+
+  debug 'walkMemberAccess', node
+
+  # if node.instanceof CS.SoakedMemberAccessOp
+  #   walk node.expression, scope
+  #   identifier = scope.extendTypeLiteral(node.expression.typeAnnotation?.identifier)
+  #   if identifier?
+  #     node.typeAnnotation =
+  #       identifier:
+  #         possibilities:['Undefined', identifier[node.memberName]]
+  #   else
+  #     node.typeAnnotation = identifier: 'Any', explicit: false
+
+  # else if node.instanceof CS.MemberAccessOp
+  #   walk node.expression, scope
+  #   identifier = scope.extendTypeLiteral(node.expression.typeAnnotation?.identifier)
+  #   if identifier?
+  #     node.typeAnnotation = identifier: identifier[node.memberName], explicit: true
+  #   else
+  #     node.typeAnnotation = identifier: 'Any', explicit: false
 
 walkArrayInializer = (node, scope) ->
   return # TODO
@@ -466,10 +503,7 @@ walkRange = (node, scope) ->
   return # TODO
   node.typeAnnotation = identifier : {array: 'Number'}
 
-
-walk_objectInitializer = (node, scope) ->
-  # debug 'ObjectInitialiser', node
-
+walkObjectInitializer = (node, scope) ->
   obj = {}
   nextScope = new Scope scope
   nextScope.name = 'object'
@@ -480,7 +514,8 @@ walk_objectInitializer = (node, scope) ->
     walk expression, nextScope
     props.push
       implicit: true
-      identifier: identifier(key.data)
+      identifier:
+        typeRef: key.data
       nodeType: 'identifier'
       typeAnnotation: expression.typeAnnotation
 
@@ -489,7 +524,11 @@ walk_objectInitializer = (node, scope) ->
     nodeType: 'members'
     implicit: true
     heritages: # TODO: check scheme later
-      extend: identifier('Object')
+      extend:
+        implicit: true
+        nodeType: 'identifier'
+        identifier:
+          typeRef: 'Object'
   # debug 'ObjectInitialiser', node.typeAnnotation
 
 
@@ -497,7 +536,6 @@ walkClass = (node, scope) ->
   return # TODO
   classScope = new ClassScope scope
   this_scope = {}
-
   # Add props to this_socpe by extends and implements
   if node.nameAssignee?.data
     # extends
@@ -527,10 +565,10 @@ walkClass = (node, scope) ->
     if node.ctor.expression.parameters?
       # vardef exists: constructor :: X, Y, Z
       if constructorScope.getThis('_constructor_')
-        predef = constructorScope.getThis('_constructor_').identifier
+        preAnnotation = constructorScope.getThis('_constructor_').identifier
         for param, index in node.ctor.expression.parameters when param?
           walk param, constructorScope
-          constructorScope.addVar param.data, (predef.arguments?[index] ? 'Any')
+          constructorScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
       else
         for param, index in node.ctor.expression.parameters when param?
           walk param, constructorScope
@@ -552,20 +590,61 @@ walkClass = (node, scope) ->
     scope.addType node.nameAssignee.data, this_scope
 
 # Node * Scope * Type
-# predef :: Type defined at assignee
-# walkFunction :: Node * Scope * TypeAnnotation -> ()
-walkFunction = (node, scope, predef = null) ->
-  # return # TODO
-  args = node.parameters?.map (param) -> param.typeAnnotation?.identifier ? 'Any'
-  # debug 'func', node
-  # node.typeAnnotation.identifier.arguments = args
+# preAnnotation :: Type defined at assignee
+# walkFunction :: Node * Scope * TypeAnnotation? -> ()
+walkFunction = (node, scope, preAnnotation = null) ->
   functionScope = new Scope scope
-
-  if scope instanceof ClassScope
+  if scope instanceof ClassScope # TODO: fat arrow
     functionScope._this = scope._this
 
-  # if predef
-  #   node.typeAnnotation.identifier = predef
+  if preAnnotation?
+    hasError = false
+    node.typeAnnotation = preAnnotation
+    node.parameters?.map (param, n) ->
+      if param.typeAnnotation?
+        unless isAcceptable scope, preAnnotation.arguments[n], param.typeAnnotation
+          typeErrorText = (left, right) ->
+            util = require 'util'
+            "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
+          err = typeErrorText preAnnotation.arguments[n], param.typeAnnotation
+          hasError = true
+          return reporter.add_error node, err
+      param.typeAnnotation ?= preAnnotation.arguments[n]
+      scope.addVar
+        nodeType: 'variable'
+        identifier:
+          typeRef: param.data
+        typeAnnotation: param.typeAnnotation
+    if hasError then return
+  else
+    node.parameters?.map (param, n) ->
+      scope.addVar
+        nodeType: 'variable'
+        identifier:
+          typeRef: param.data
+        typeAnnotation: param.typeAnnotation ? ImplicitAnyAnnotation
+
+  walk node.body, functionScope
+
+  debug 'left', node.body.typeAnnotation
+  debug 'right', node.typeAnnotation.returnType
+  # debug 'rrrr', node.typeAnnotation
+  node.body.typeAnnotation ?= ImplicitAnyAnnotation
+  node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
+
+  unless isAcceptable scope, node.body.typeAnnotation, node.typeAnnotation.returnType
+    typeErrorText = (left, right) ->
+      util = require 'util'
+      "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
+    err = typeErrorText node.body.typeAnnotation, node.typeAnnotation.returnType
+    return reporter.add_error node, err
+
+  # debug 'function', node
+
+  # debug 'func', node
+  # node.typeAnnotation.identifier.arguments = args
+  # if preAnnotation
+  #   node.typeAnnotation.identifier = preAnnotation
   #   for param, index in node.parameters
   #     # Destructive
   #     if param.members
@@ -581,13 +660,13 @@ walkFunction = (node, scope, predef = null) ->
   #     # This
   #     else if param.expression?.raw in ['@', 'this']
   #       t = functionScope.getThis(param.memberName)
-  #       if err = scope.checkAcceptableObject predef.arguments?[index], t?.identifier
-  #         err = typeErrorText predef.arguments?[index], t?.identifier
+  #       if err = scope.checkAcceptableObject preAnnotation.arguments?[index], t?.identifier
+  #         err = typeErrorText preAnnotation.arguments?[index], t?.identifier
   #         reporter.add_error node, err
   #       unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
   #     # Var
   #     else
-  #       functionScope.addVar param.data, (predef.arguments?[index] ? 'Any')
+  #       functionScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
 
   # register arguments to function scope
   # TODO: DRY
@@ -595,8 +674,8 @@ walkFunction = (node, scope, predef = null) ->
   #   # example.
   #   #   f :: Int -> Int
   #   #   f: (n) -> n
-  #   if predef
-  #     node.typeAnnotation.identifier = predef
+  #   if preAnnotation
+  #     node.typeAnnotation.identifier = preAnnotation
   #     for param, index in node.parameters
   #       # Destructive
   #       if param.members
@@ -612,13 +691,13 @@ walkFunction = (node, scope, predef = null) ->
   #       # This
   #       else if param.expression?.raw in ['@', 'this']
   #         t = functionScope.getThis(param.memberName)
-  #         if err = scope.checkAcceptableObject predef.arguments?[index], t?.identifier
-  #           err = typeErrorText predef.arguments?[index], t?.identifier
+  #         if err = scope.checkAcceptableObject preAnnotation.arguments?[index], t?.identifier
+  #           err = typeErrorText preAnnotation.arguments?[index], t?.identifier
   #           reporter.add_error node, err
   #         unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
   #       # Var
   #       else
-  #         functionScope.addVar param.data, (predef.arguments?[index] ? 'Any')
+  #         functionScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
   #   # example.
   #   #   f: (n) -> n
   #   else
@@ -642,7 +721,6 @@ walkFunction = (node, scope, predef = null) ->
   #       else
   #         functionScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
 
-  walk node.body, functionScope
 
   # () :: Number -> 3
   # if node.typeAnnotation?.identifier?.returnType isnt 'Any'
@@ -669,19 +747,23 @@ walkFunction = (node, scope, predef = null) ->
   #     node.typeAnnotation.identifier.returnType = last_expr?.typeAnnotation?.identifier
 
 walkFunctionApplication = (node, scope) ->
-  return # TODO
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
-  # throw 'stop'
 
-  node.typeAnnotation = identifier: (node.function.typeAnnotation?.identifier?.returnType)
+  node.typeAnnotation = node.function.typeAnnotation?.returnType ? ImplicitAnyAnnotation
+  debug 'FunctionApplication', node
 
-  if node.function.typeAnnotation
-    args = node.arguments?.map (arg) -> arg.typeAnnotation?.identifier
-    if err = scope.checkAcceptableObject node.function.typeAnnotation.identifier, {arguments: (args ? []), returnType: 'Any'}
-      err = typeErrorText node.function.typeAnnotation.identifier, {arguments: (args ? []), returnType: 'Any'}
-      return reporter.add_error node, err
+  for arg, n in node.arguments
+    left = node.function.typeAnnotation?.arguments?[n]
+    right = arg?.typeAnnotation
+    if left and right
+      unless isAcceptable scope, left, right
+        typeErrorText = (left, right) ->
+          util = require 'util'
+          "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
+        err = typeErrorText left, right
+        reoprter.add_error node, err
 
 # Traverse all nodes
 # Node -> void
@@ -731,7 +813,7 @@ walk = (node, scope) ->
     # Range
     when node.instanceof CS.Range             then walkRange node, scope
     # Object
-    when node.instanceof CS.ObjectInitialiser then walk_objectInitializer node, scope
+    when node.instanceof CS.ObjectInitialiser then walkObjectInitializer node, scope
     # Class
     when node.instanceof CS.Class             then walkClass node, scope
     # Function

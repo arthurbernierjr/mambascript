@@ -144,13 +144,12 @@ class Scope
   getTypeByIdentifier: (node) ->
     # debug 'getTypeByIdentifier', node
     # debug 'getTypeByIdentifier', @vars
-    if node.nodeType isnt 'identifier'
+    if node.nodeType not in ['identifier', 'primitiveIdentifier']
       throw 'node is not identifier node'
     switch node.nodeType
       when 'members'
         return node
       when 'identifier'
-        # console.error 'checkPoint!'
         @getTypeInScope(node.identifier.typeRef)
 
   addThis: (symbol, typeRef) ->

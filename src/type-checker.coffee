@@ -103,8 +103,8 @@ isAcceptable = (scope, left, right) ->
     else
       throw node?.nodeType + " is not registered nodeType"
 
-  debug 'isAcceptable, left', leftAnnotation
-  debug 'isAcceptable, rightAnnotation', rightAnnotation
+  # debug 'isAcceptable, left', leftAnnotation
+  # debug 'isAcceptable, rightAnnotation', rightAnnotation
 
   # Grasp if left is any
   if leftAnnotation.nodeType is 'primitiveIdentifier'

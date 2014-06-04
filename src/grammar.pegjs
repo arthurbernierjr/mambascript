@@ -1324,6 +1324,7 @@ returnTypeExpr
 
 assignableTypeIdentifier = identifierName
 
+
 typeIdentifier
   = e: identifierName es:('.' identifierName)+ {
     var list = [e].concat(es.map(function(e){return e[1]}));
