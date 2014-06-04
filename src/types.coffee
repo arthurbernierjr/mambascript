@@ -1,14 +1,6 @@
-pj = try require 'prettyjson'
-render = (obj) -> pj?.render obj
 {debug} = require './helpers'
-reporter = require './reporter'
 {clone, rewrite} = require './type-helpers'
-reporter = require './reporter'
-{find} = require './functional-helpers'
 _ = require 'lodash'
-
-typeErrorText = (left, right) ->
-  "TypeError: #{JSON.stringify left} expect to #{JSON.stringify right}"
 
 # Var and typeRef scope as node
 class Scope
@@ -118,7 +110,7 @@ class Scope
 
   # getTypeByString :: String -> Type
   getTypeByString: (typeName) ->
-    ret = find @types, (i) -> i.identifier.typeRef is typeName
+    ret = _.find @types, (i) -> i.identifier.typeRef is typeName
     return (if ret.nodeType is 'struct' then ret.members else ret)
 
   # getTypeByMemberAccess :: TypeRef -> Type
@@ -176,7 +168,6 @@ class Scope
 
   # addVar :: Type * TypeArgument[] -> ()
   addVar: (type, args = []) ->
-    # console.trace()
     # TODO: Apply typeArgument
     @vars.push type
     debug 'addVar', type
@@ -193,34 +184,32 @@ class Scope
 class ClassScope extends Scope
 class FunctionScope extends Scope
 
-# Initialize primitive types
-# Number, Boolean, Object, Array, Any
-initializeGlobalTypes = (node) ->
-  AnyType =
+primitives =
+  AnyType:
     nodeType: 'primitiveIdentifier'
     identifier:
       typeRef: 'Any'
       isPrimitive: true
 
-  StringType =
+  StringType:
     nodeType: 'primitiveIdentifier'
     identifier:
       typeRef: 'String'
       isPrimitive: true
 
-  BooleanType =
+  BooleanType:
     nodeType: 'primitiveIdentifier'
     identifier:
       typeRef: 'Boolean'
       isPrimitive: true
 
-  IntType =
+  IntType:
     nodeType: 'primitiveIdentifier'
     identifier:
       typeRef: 'Int'
       isPrimitive: true
 
-  FloatType =
+  FloatType:
     nodeType: 'primitiveIdentifier'
     identifier:
       typeRef: 'Float'
@@ -231,7 +220,7 @@ initializeGlobalTypes = (node) ->
           typeRef: 'Int'
           isPrimitive: true
 
-  NumberType =
+  NumberType:
     nodeType: 'primitiveIdentifier'
     identifier:
       typeRef: 'Number'
@@ -242,14 +231,15 @@ initializeGlobalTypes = (node) ->
           typeRef: 'Float'
           isPrimitive: true
 
-  node.addPrimitiveType AnyType
-  node.addPrimitiveType StringType
-  node.addPrimitiveType IntType
-  node.addPrimitiveType FloatType
-  node.addPrimitiveType NumberType
-  node.addPrimitiveType BooleanType
+initializeGlobalTypes = (node) ->
+  node.addPrimitiveType primitives.AnyType
+  node.addPrimitiveType primitives.StringType
+  node.addPrimitiveType primitives.IntType
+  node.addPrimitiveType primitives.FloatType
+  node.addPrimitiveType primitives.NumberType
+  node.addPrimitiveType primitives.BooleanType
 
 module.exports = {
-  initializeGlobalTypes,
+  initializeGlobalTypes, primitives
   Scope, ClassScope, FunctionScope
 }
