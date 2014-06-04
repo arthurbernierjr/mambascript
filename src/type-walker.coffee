@@ -338,13 +338,9 @@ walkAssignOp = (node, scope) ->
 
     if left.typeAnnotation? and right.typeAnnotation?
       if left.typeAnnotation?.properties?
-        unless isAcceptable scope, left.typeAnnotation, right.typeAnnotation
-          err = typeErrorText left.typeAnnotation, right.typeAnnotation
-          return reporter.add_error node, err
+        return unless checkType scope, left, right
       else
-        unless isAcceptable scope, left.typeAnnotation, right.typeAnnotation
-          err = typeErrorText left.typeAnnotation, right.typeAnnotation
-          return reporter.add_error node, err
+        return unless checkType scope, left, right
 
     if preRegisteredTypeAnnotation?
       console.error '--------- preRegisteredTypeAnnotation'
