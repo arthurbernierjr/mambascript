@@ -317,6 +317,8 @@ walkAssignOp = (node, scope) ->
   if (right.instanceof CS.Function) and scope.getVarInScope(symbol)
     v = scope.getVarInScope(symbol)
     walkFunction right, scope, v.typeAnnotation
+  else if (right.instanceof CS.Function) and preAnnotation
+    walkFunction right, scope, preAnnotation
   else
     walk right, scope
 
