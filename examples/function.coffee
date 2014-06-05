@@ -7,9 +7,8 @@ id5 = (x) -> x
 id6 :: Any -> Any = (x) -> x
 
 id7 :: String -> String = (x :: String) :: String ->
-  ''
-  x
   1
+  x
 
 add :: Int * Int -> Int
 add = (x, y) -> x + y

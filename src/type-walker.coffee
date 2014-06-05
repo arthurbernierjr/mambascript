@@ -104,8 +104,8 @@ walkBinOp = (node, scope) ->
     else
       throw node?.nodeType + " is not registered nodeType"
 
-  leftRef = leftAnnotation?.identifier.typeRef
-  rightRef = rightAnnotation?.identifier.typeRef
+  leftRef = leftAnnotation?.identifier?.typeRef
+  rightRef = rightAnnotation?.identifier?.typeRef
 
   # TODO: implicit
   if leftRef and rightRef
@@ -673,7 +673,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
   if node.body?
     walk node.body, functionScope
-    debug 'walked body', node.body
+    # debug 'walked body', node.body
     left = node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
     right = node.body.typeAnnotation ?= ImplicitAnyAnnotation
 

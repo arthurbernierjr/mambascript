@@ -11,14 +11,14 @@ shouldBeTypeError = (input) ->
     return
   throw 'must be type error but parsed'
 
-suite 'TypeChecker', ->
-  setup ->
-    reporter.clean()
+# suite 'TypeChecker', ->
+#   setup ->
+#     reporter.clean()
 
-  suite 'Assignment', ->
-    test 'basic assign', ->
-      x :: Number = 3
-      eq x, 3
+#   suite 'Assignment', ->
+#     test 'basic assign', ->
+#       x :: Number = 3
+#       eq x, 3
 
 #     test 'int assign', ->
 #       x :: Int = 3
