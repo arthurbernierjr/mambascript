@@ -12,7 +12,9 @@ shouldBeTypeError = (input) ->
   throw 'must be type error but parsed'
 
 suite 'TypeChecker', ->
-  setup -> reporter.clean()
+  setup ->
+    global._root_.vars = []
+    reporter.clean()
 
   suite 'Assignment', ->
     test 'basic assign', ->
@@ -30,6 +32,12 @@ suite 'TypeChecker', ->
       shouldBeTypeError """
       bbb :: Number
       bbb = "str"
+      """
+
+    test 'throw pre-defined', ->
+      shouldBeTypeError """
+      i :: Int
+      i :: Float
       """
 
     test 'pre-defined function', ->
@@ -280,10 +288,10 @@ suite 'TypeChecker', ->
       f :: Number -> Number = (n :: Number) :: String ->  n * n
       """
 
-    test 'typed function return type error', ->
-      shouldBeTypeError """
-      f = (n :: Number) :: String ->  n * n
-      """
+    # test 'typed function return type error', ->
+    #   shouldBeTypeError """
+    #   f = (n :: Number) :: String ->  n * n
+    #   """
 
   suite 'FunctionApplication', ->
     test 'typed function and binding', ->

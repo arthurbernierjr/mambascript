@@ -52,7 +52,6 @@ walkStruct = (node, scope) ->
   scope.addStructType node
 
 walkVardef = (node, scope) ->
-  # return # TODO
   # avoid 'constructor' because it's property has special action on EcmaScript
   symbol = node.name.identifier.typeRef
 
@@ -63,11 +62,14 @@ walkVardef = (node, scope) ->
 
     scope.addThis symbol, node.expr
   else
-    scope.addVar
-      nodeType: 'variable'
-      identifier:
-        typeRef: symbol
-      typeAnnotation: node.expr
+    unless scope.getVar symbol
+      scope.addVar
+        nodeType: 'variable'
+        identifier:
+          typeRef: symbol
+        typeAnnotation: node.expr
+    else
+      reporter.add_error node, 'double bind: '+ symbol
 
 walkProgram = (node, scope) ->
   walk node.body.statements, scope
@@ -319,6 +321,8 @@ walkAssignOp = (node, scope) ->
     return unless checkType scope, node, left, right
   # Identifier
   else if left.instanceof CS.Identifier
+    debug 'assign left', left
+    debug 'assign left in scope', scope.getVarInScope(left.data)
     if scope.getVarInScope(symbol) and preAnnotation
       return reporter.add_error node, 'double bind: '+ symbol
 
@@ -685,7 +689,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  console.error 'walking node:', node?.className, node?.raw
+  # console.error 'walking node:', node?.className, node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)

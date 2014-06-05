@@ -186,6 +186,11 @@ class Scope
   # addVar :: Type * TypeArgument[] -> ()
   addVar: (type, args = []) ->
     # TODO: Apply typeArgument
+
+    # debug 'addVar', node
+    debug 'addVar', @getTypeByVarNode type
+    # scope.getVarInScope
+
     @vars.push type
 
   # getVar :: String -> ()
