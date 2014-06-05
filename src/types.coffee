@@ -210,61 +210,61 @@ class FunctionScope extends Scope
 primitives =
   AnyType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'Any'
-      isPrimitive: true
 
   StringType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'String'
-      isPrimitive: true
 
   BooleanType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'Boolean'
-      isPrimitive: true
 
   IntType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'Int'
-      isPrimitive: true
 
   FloatType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'Float'
-      isPrimitive: true
     heritages:
       extend:
+        nodeType: 'identifier'
         identifier:
           typeRef: 'Int'
-          isPrimitive: true
 
   NumberType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'Number'
-      isPrimitive: true
     heritages:
       extend:
+        nodeType: 'identifier'
         identifier:
           typeRef: 'Float'
-          isPrimitive: true
 
   NullType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'Null'
-      isPrimitive: true
 
   UndefinedType:
     nodeType: 'primitiveIdentifier'
+    isPrimitive: true
     identifier:
       typeRef: 'Updefined'
-      isPrimitive: true
 
 initializeGlobalTypes = (node) ->
   node.addPrimitiveType primitives.AnyType

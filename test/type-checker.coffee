@@ -20,8 +20,8 @@ suite 'TypeChecker', ->
       x :: Int = 3
       eq x, 3
 
-#     test 'int assign', ->
-#       x :: Int = 3
+    test 'int assign', ->
+      x :: Number = 3
 
     test 'apply float to int', ->
       shouldBeTypeError """
@@ -33,13 +33,13 @@ suite 'TypeChecker', ->
       x :: Int = 'a'
       """
 
-#     test 'primitive extended assign', ->
-#       x :: Int = 3
-#       y :: Number = x
+    test 'primitive extended assign', ->
+      x :: Int = 3
+      y :: Number = x
 
-#     test 'primitive extended assign', ->
-#       x :: Int = 3
-#       y :: Float = x
+    test 'primitive extended assign', ->
+      x :: Int = 3
+      y :: Float = x
 
     test 'throw primitive extended assign', ->
       shouldBeTypeError """
@@ -59,35 +59,35 @@ suite 'TypeChecker', ->
     #   f :: Int -> Int = (n) -> n
     #   g :: Int -> Int = f
 
-#     test 'throw type mismatch', ->
-#       shouldBeTypeError """
-#         x :: Number = "3"
-#       """
+    test 'throw type mismatch', ->
+      shouldBeTypeError """
+        x :: Number = "3"
+      """
 
-    # test 'object assign', ->
-    #   obj :: { x :: Number} = { x : 2}
+    test 'object assign', ->
+      obj :: { x :: Number} = { x : 2 }
 
-#     test 'throw object literal mitmatching', ->
-#       shouldBeTypeError """
-#         obj :: { x :: Number } = { x : '' }
-#       """
+    test 'throw object literal mitmatching', ->
+      shouldBeTypeError """
+        obj :: { x :: Number } = { x : '' }
+      """
 
-#     test 'throw at lacking of object member', ->
-#       shouldBeTypeError """
-#         obj :: { x :: Number, y :: Number } = { x : 3 }
-#       """
+    test 'throw at lacking of object member', ->
+      shouldBeTypeError """
+        obj :: { x :: Number, y :: Number } = { x : 3 }
+      """
 
-#     test 'throw member access error', ->
-#       shouldBeTypeError """
-#         obj :: { x :: Number } = { x : 3 }
-#         obj.x = ""
-#       """
+    test 'throw member access error', ->
+      shouldBeTypeError """
+        obj :: { x :: Number } = { x : 3 }
+        obj.x = ""
+      """
 
-#     test 'object literal with newline', ->
-#       p :: {
-#         x :: Number
-#         y :: Number
-#       } = {x : 1, y: 5}
+    test 'object literal with newline', ->
+      p :: {
+        x :: Number
+        y :: Number
+      } = {x : 1, y: 5}
 
     test 'any type thorough everything', ->
       a :: Any = 3
@@ -130,7 +130,6 @@ suite 'TypeChecker', ->
 
     # test 'typed function that has 2 arguments', ->
     #   f :: Number * Number -> Number = (n, m) :: Number ->  n * m
-
 
     test 'typed function that has 3 arguments', ->
       f :: Number * Number * Number -> Number = (n :: Number, m :: Number, r :: Number) :: Number ->  n * m * r
@@ -351,10 +350,10 @@ suite 'TypeChecker', ->
 #       f1 :: () -> Number = () :: Number ->
 #         3
 
-#     test 'throw function return type mismatch', ->
-#       shouldBeTypeError """
-#       f0 :: () -> Number = () :: Number -> ''
-#       """
+    test 'throw function return type mismatch', ->
+      shouldBeTypeError """
+      f0 :: () -> Number = () :: Number -> ''
+      """
 
   suite 'return', ->
     # test 'throw function return type mismatch', ->
@@ -374,27 +373,27 @@ suite 'TypeChecker', ->
 #       list :: String[] = [1..10]
 #       """
 
-#     test 'BinOps Num', ->
-#       a :: Number = (3 + 3 * 6) / 2
+    test 'BinOps Num', ->
+      a :: Number = (3 + 3 * 6) / 2
 
-#     test 'BinOps Int * Int -> Int', ->
-#       a :: Int = 3 + 5
+    test 'BinOps Int * Int -> Int', ->
+      a :: Int = 3 + 5
 
-#     test 'BinOps Int * Float -> Float', ->
-#       a :: Float = 3 + 5.5
+    test 'BinOps Int * Float -> Float', ->
+      a :: Float = 3 + 5.5
 
-#     test 'throw BinOps Int * Int -> Int', ->
-#       throws -> parse """
-#       a :: Int = 3 + 5.5
-#       """
+    test 'throw BinOps Int * Int -> Int', ->
+      shouldBeTypeError """
+      a :: Int = 3 + 5.5
+      """
 
-#     test 'BinOps String', ->
-#       a :: String = "hello" + "world"
+    test 'BinOps String', ->
+      a :: String = "hello" + "world"
 
-#     test 'miscast BinOp', ->
-#       throws -> parse """
-#       c :: Number = "" + 3
-#       """
+    test 'miscast BinOp', ->
+      shouldBeTypeError """
+      c :: Number = "" + 3
+      """
 
 #     test 'Switch', ->
 #       x :: String =
@@ -498,32 +497,31 @@ suite 'TypeChecker', ->
 #       hash.set 5, 1
 #       """
 
-#     test 'throw when function args mismatch', ->
-#       throws -> parse """
-#       f :: Number * String -> String = (n, s) ->
-#         a :: Number = s
-#       """
+    test 'throw when function args mismatch', ->
+      shouldBeTypeError """
+      f :: Number * String -> String = (n, s) ->
+        a :: Number = s
+      """
 
-#     test 'pre-defined syntax', ->
-#       a :: Number
-#       a = 3
+    test 'pre-defined syntax', ->
+      a :: Number
+      a = 3
 
-#     test 'throw pre-defined', ->
-#       throws -> parse """
-#       a :: Number
-#       a = "str"
-#       """
+    test 'throw pre-defined', ->
+      shouldBeTypeError """
+      a :: Number
+      a = "str"
+      """
 
-#     test 'pre-defined function', ->
-#       a :: Number -> Number
-#       a = (n) -> n
+    test 'pre-defined function', ->
+      a :: Number -> Number
+      a = (n) -> n
 
-#     test 'throw pre-defined args mismatch', ->
-#       throws -> parse """
-#       a :: Number -> Number
-#       a = (n) ->
-#         n2 :: String = n
-#       """
+    test 'throw pre-defined args mismatch', ->
+      throws -> parse """
+      a :: Number -> Number
+      a = (n) ->
+        n2 :: String = n """
 
 #     test 'pre-defined args in class', ->
 #       class X
@@ -710,7 +708,6 @@ suite 'TypeChecker', ->
 #     test 'receive this with destructive args', ->
 #       class X
 #         x :: Int
-
 
   suite 'Explicit Rules', ->
     test 'type propagation', ->

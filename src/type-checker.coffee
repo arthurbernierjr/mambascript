@@ -44,14 +44,37 @@ ImplicitAnyAnnotation =
   FunctionScope
 } = require './types'
 
-# isAcceptablePrimitiveSymbol :: TypeAnnotation * TypeAnnotation -> Boolean
-isAcceptablePrimitiveSymbol = (left, right) ->
+# correctExtends :: Scope * TypeAnnotation -> TypeAnnotation[]
+correctExtends = (scope, annotation) ->
+  extendList = [annotation]
+  cur = annotation
+  while cur?.heritages?.extend?
+    next = scope.getTypeByIdentifier cur.heritages.extend
+    if next
+      extendList.push next
+      cur = next
+    else
+      break
+  debug 'correctExtends', annotation
+  debug 'extendList', extendList
+  extendList
+
+isAcceptableExtends = (scope, left, right) ->
+  debug 'isAcceptable right', right
+  _.any correctExtends(scope, left).map (le) ->
+    debug 'isAcceptable le', le
+    le.identifier.typeRef is right.identifier.typeRef
+
+# isAcceptablePrimitiveSymbol :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
+isAcceptablePrimitiveSymbol = (scope, left, right) ->
   if left.nodeType isnt 'primitiveIdentifier'
     throw 'left is not primitive'
 
   return true if left.identifier.typeRef is 'Any'
   # type check
-  return false if left.identifier.typeRef isnt right?.identifier?.typeRef
+  # if left.identifier.typeRef isnt right?.identifier?.typeRef
+  unless isAcceptableExtends(scope, left, right)
+    return false
   # array check
   if !!left.identifier.isArray
     if right?.identifier?.isArray?
@@ -119,7 +142,7 @@ isAcceptable = (scope, left, right) ->
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
     return isAcceptableStruct scope, leftAnnotation, rightAnnotation
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'primitiveIdentifier'
-    return isAcceptablePrimitiveSymbol leftAnnotation, rightAnnotation
+    return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'functionType'
     return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
 
