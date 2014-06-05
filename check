@@ -9,4 +9,5 @@ tcoffee -c src/types.coffee -o lib
 node_modules/.bin/mocha --compilers coffee:./register -u tdd -R dot test/_setup.coffee test/type-checker.coffee
 # ./bin/tcoffee examples/assign.coffee
 # ./bin/tcoffee examples/function.coffee
+# echo '~~~~~~~~~~~~~~~~~~~~~~~'
 # ./bin/tcoffee scratch.coffee

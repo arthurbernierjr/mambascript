@@ -587,8 +587,6 @@ walkClass = (node, scope) ->
       this_scope[fname] = val.identifier
     scope.addType node.nameAssignee.data, this_scope
 
-# Node * Scope * Type
-# preAnnotation :: Type defined at assignee
 # walkFunction :: Node * Scope * TypeAnnotation? -> ()
 walkFunction = (node, scope, preAnnotation = null) ->
   functionScope = new Scope scope
@@ -596,8 +594,26 @@ walkFunction = (node, scope, preAnnotation = null) ->
     functionScope._this = scope._this
 
   if preAnnotation?
+    # debug 'node.typeAnnotation', node.typeAnnotation
+    # if node.typeAnnotation?.identifier?.typeRef is 'Any'
+    if node.typeAnnotation?
+      annotation = _.clone node.typeAnnotation
+      annotation.returnType ?= ImplicitAnyAnnotation
+      annotation.arguments ?= annotation.arguments?.map (arg) -> arg ? ImplicitAnyAnnotation
+      annotation.arguments ?= []
+
+      # debug 'preAnnotation', preAnnotation
+      # debug 'typeAnnotation', node.typeAnnotation
+      unless isAcceptable scope, annotation, preAnnotation
+        typeErrorText = (left, right) ->
+          util = require 'util'
+          "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
+        err = typeErrorText annotation, preAnnotation
+        return reporter.add_error node, err
+
     hasError = false
     node.typeAnnotation = preAnnotation
+
     node.parameters?.map (param, n) ->
       if param.typeAnnotation?
         unless isAcceptable scope, preAnnotation.arguments[n], param.typeAnnotation
@@ -624,6 +640,9 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
   if node.body?
     walk node.body, functionScope
+    unless preAnnotation
+      node.typeAnnotation.returnType = node.body.typeAnnotation
+
     left = node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
     right = node.body.typeAnnotation ?= ImplicitAnyAnnotation
 
@@ -634,110 +653,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
       err = typeErrorText left, right
       return reporter.add_error node, err
 
-
-  # node.typeAnnotation.identifier.arguments = args
-  # if preAnnotation
-  #   node.typeAnnotation.identifier = preAnnotation
-  #   for param, index in node.parameters
-  #     # Destructive
-  #     if param.members
-  #       for member in param.members
-  #         # This
-  #         if member.expression?.expression?.raw in ['@', 'this']
-  #           t = functionScope.getThis(member.key.data)
-  #           unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
-  #         # Var
-  #         else
-  #           if member.key?.data
-  #             functionScope.addVar member.key.data, 'Any'
-  #     # This
-  #     else if param.expression?.raw in ['@', 'this']
-  #       t = functionScope.getThis(param.memberName)
-  #       if err = scope.checkAcceptableObject preAnnotation.arguments?[index], t?.identifier
-  #         err = typeErrorText preAnnotation.arguments?[index], t?.identifier
-  #         reporter.add_error node, err
-  #       unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
-  #     # Var
-  #     else
-  #       functionScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
-
-  # register arguments to function scope
-  # TODO: DRY
-  # if node.parameters?
-  #   # example.
-  #   #   f :: Int -> Int
-  #   #   f: (n) -> n
-  #   if preAnnotation
-  #     node.typeAnnotation.identifier = preAnnotation
-  #     for param, index in node.parameters
-  #       # Destructive
-  #       if param.members
-  #         for member in param.members
-  #           # This
-  #           if member.expression?.expression?.raw in ['@', 'this']
-  #             t = functionScope.getThis(member.key.data)
-  #             unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
-  #           # Var
-  #           else
-  #             if member.key?.data
-  #               functionScope.addVar member.key.data, 'Any'
-  #       # This
-  #       else if param.expression?.raw in ['@', 'this']
-  #         t = functionScope.getThis(param.memberName)
-  #         if err = scope.checkAcceptableObject preAnnotation.arguments?[index], t?.identifier
-  #           err = typeErrorText preAnnotation.arguments?[index], t?.identifier
-  #           reporter.add_error node, err
-  #         unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
-  #       # Var
-  #       else
-  #         functionScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
-  #   # example.
-  #   #   f: (n) -> n
-  #   else
-  #     for param, index in node.parameters
-  #       # Destructive
-  #       if param.members
-  #         for member in param.members
-  #           # This
-  #           if member.expression?.expression?.raw in ['@', 'this']
-  #             t = functionScope.getThis(member.key.data)
-  #             unless t?.identifier? then functionScope.addThis member.key.data, 'Any'
-  #           # Var
-  #           else
-  #             if member.key?.data
-  #               functionScope.addVar member.key.data, 'Any'
-  #       # This
-  #       else if param.expression?.raw in ['@', 'this']
-  #         t = functionScope.getThis(param.memberName)
-  #         unless t?.identifier? then functionScope.addThis param.memberName, 'Any'
-  #       # Var
-  #       else
-  #         functionScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
-
-
-  # () :: Number -> 3
-  # if node.typeAnnotation?.identifier?.returnType isnt 'Any'
-  #   # last expr or single line expr
-  #   last_expr =
-  #     if node.body?.statements?.length # => Blcok
-  #       node.body.statements?[node.body?.statements?.length-1]
-  #     else # => Expr
-  #       node.body
-
-  #   # 明示的に宣言してある場合
-  #   if err = scope.checkAcceptableObject(node.typeAnnotation?.identifier.returnType, last_expr?.typeAnnotation?.identifier)
-  #     err = typeErrorText node.typeAnnotation?.identifier.returnType, last_expr?.typeAnnotation?.identifier
-  #     return reporter.add_error node, err
-
-  # else
-  #   last_expr =
-  #     if node.body?.statements?.length # => Blcok
-  #       node.body.statements?[node.body?.statements?.length-1]
-  #     else # => Expr
-  #       node.body
-
-  #   if node.typeAnnotation?
-  #     node.typeAnnotation.identifier.returnType = last_expr?.typeAnnotation?.identifier
 
 walkFunctionApplication = (node, scope) ->
   for arg in node.arguments
@@ -765,7 +680,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  console.error 'walking node:', node?.className, node?.raw
+  # console.error 'walking node:', node?.className, node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)

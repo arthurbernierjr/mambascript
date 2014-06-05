@@ -28,8 +28,8 @@ suite 'TypeChecker', ->
 
     test 'throw pre-defined', ->
       shouldBeTypeError """
-      a :: Number
-      a = "str"
+      bbb :: Number
+      bbb = "str"
       """
 
     test 'pre-defined function', ->
@@ -49,7 +49,7 @@ suite 'TypeChecker', ->
 
     test 'throw type mismatch', ->
       shouldBeTypeError """
-        x :: Number = "3"
+      x :: Number = "3"
       """
 
     test 'primitive extended assign', ->
@@ -271,19 +271,19 @@ suite 'TypeChecker', ->
       f0 :: () -> Number = () :: Number -> ''
       """
 
-    # test 'typed function', ->
-    #   f = (n :: Int) ->  n * n
-    #   n :: Int = f(3)
+    test 'typed function', ->
+      f = (n :: Int) ->  n * n
+      n :: Int = f(3)
 
-    # test 'typed function return type error', ->
-    #   shouldBeTypeError """
-    #   f :: Number -> Number = (n :: Number) :: String ->  n * n
-    #   """
+    test 'typed function return type error', ->
+      shouldBeTypeError """
+      f :: Number -> Number = (n :: Number) :: String ->  n * n
+      """
 
-    # test 'typed function return type error', ->
-    #   shouldBeTypeError """
-    #   f = (n :: Number) :: String ->  n * n
-    #   """
+    test 'typed function return type error', ->
+      shouldBeTypeError """
+      f = (n :: Number) :: String ->  n * n
+      """
 
   suite 'FunctionApplication', ->
     test 'typed function and binding', ->
