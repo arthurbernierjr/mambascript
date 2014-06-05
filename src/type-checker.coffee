@@ -55,14 +55,10 @@ correctExtends = (scope, annotation) ->
       cur = next
     else
       break
-  debug 'correctExtends', annotation
-  debug 'extendList', extendList
   extendList
 
 isAcceptableExtends = (scope, left, right) ->
-  debug 'isAcceptable right', right
   _.any correctExtends(scope, left).map (le) ->
-    debug 'isAcceptable le', le
     le.identifier.typeRef is right.identifier.typeRef
 
 # isAcceptablePrimitiveSymbol :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
@@ -91,15 +87,11 @@ isAcceptableStruct = (scope, left, right) ->
   _.all left.properties.map (lprop, n) =>
     rprop = _.find right.properties, (rp) ->
       rp.identifier?.typeRef is lprop.identifier?.typeRef
-    # debug 'left', lprop.typeAnnotation
-    # debug 'right', rprop.typeAnnotation
     unless rprop? then return false
     return isAcceptable scope, lprop.typeAnnotation, rprop.typeAnnotation
 
 # isAcceptableFunction :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
 isAcceptableFunctionType = (scope, left, right) ->
-  # debug 'isAcceptableFunction left', left
-  # debug 'isAcceptableFunction right', right
   left.returnType ?= ImplicitAnyAnnotation
   right.returnType ?= ImplicitAnyAnnotation
   unless isAcceptable(scope, left.returnType, right.returnType)
@@ -116,7 +108,6 @@ isAcceptable = (scope, left, right) ->
   # FIXME
   return true if not left? or not right?
 
-  # debug 'idsAcceptable right', right
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
     if node.nodeType is 'identifier'
       scope.getTypeByIdentifier(node)
@@ -128,9 +119,6 @@ isAcceptable = (scope, left, right) ->
       node
     else
       throw node?.nodeType + " is not registered nodeType"
-
-  # debug 'isAcceptable, left', leftAnnotation
-  # debug 'isAcceptable, rightAnnotation', rightAnnotation
 
   # Grasp if left is any
   return true if not leftAnnotation? or not rightAnnotation? # FIXME

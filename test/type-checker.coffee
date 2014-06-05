@@ -52,12 +52,12 @@ suite 'TypeChecker', ->
       x = 5
       eq x, 5
 
-    # test 'assign function', ->
-    #   f :: Int -> Int = (n) -> n
+    test 'assign function', ->
+      f :: Int -> Int = (n) -> n
 
-    # test 'assign function', ->
-    #   f :: Int -> Int = (n) -> n
-    #   g :: Int -> Int = f
+    test 'assign function', ->
+      f :: Int -> Int = (n) -> n
+      g :: Int -> Int = f
 
     test 'throw type mismatch', ->
       shouldBeTypeError """
@@ -104,15 +104,15 @@ suite 'TypeChecker', ->
     #   f = (n :: Int) ->  n * n
     #   n :: Int = f(3)
 
-    test 'typed function return type error', ->
-      shouldBeTypeError """
-      f :: Number -> Number = (n :: Number) :: String ->  n * n
-      """
+    # test 'typed function return type error', ->
+    #   shouldBeTypeError """
+    #   f :: Number -> Number = (n :: Number) :: String ->  n * n
+    #   """
 
-    test 'typed function return type error', ->
-      shouldBeTypeError """
-      f = (n :: Number) :: String ->  n * n
-      """
+    # test 'typed function return type error', ->
+    #   shouldBeTypeError """
+    #   f = (n :: Number) :: String ->  n * n
+    #   """
 
     test 'typed function return type error', ->
       shouldBeTypeError """
@@ -125,11 +125,11 @@ suite 'TypeChecker', ->
     test 'typed function that has 2 arguments', ->
       f :: (Number, Number) -> Number = (n :: Number, m :: Number) :: Number ->  n * m
 
-    # test 'typed function that has 2 arguments', ->
-    #   f :: Number * Number -> Number = (n, m) ->  n * m
+    test 'typed function that has 2 arguments', ->
+      f :: Number * Number -> Number = (n, m) ->  n * m
 
-    # test 'typed function that has 2 arguments', ->
-    #   f :: Number * Number -> Number = (n, m) :: Number ->  n * m
+    test 'typed function that has 2 arguments', ->
+      f :: Number * Number -> Number = (n, m) :: Number ->  n * m
 
     test 'typed function that has 3 arguments', ->
       f :: Number * Number * Number -> Number = (n :: Number, m :: Number, r :: Number) :: Number ->  n * m * r
@@ -140,9 +140,9 @@ suite 'TypeChecker', ->
       """
 
   suite 'Assignment', ->
-    # test 'typed function and binding', ->
-    #   f :: Int -> Int = (n :: Int) ->  n * n
-    #   n :: Int  = f 4
+    test 'typed function and binding', ->
+      f :: Int -> Int = (n :: Int) ->  n * n
+      n :: Int  = f 4
 
     test 'typed function mismatching application', ->
       shouldBeTypeError """
@@ -731,4 +731,3 @@ suite 'TypeChecker', ->
       b = a.x
       b = "hoge"
       """
-

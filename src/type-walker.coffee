@@ -295,22 +295,6 @@ walkAssignOp = (node, scope) ->
 
   walk left, scope
 
-  # TODO: refactor as functionTypeCheck
-  # if preAnnotation and (right.typeAnnotation?.identifier?.identifier is left.typeAnnotation?.identifier?.identifier is 'Function')
-  #   if scope.checkAcceptableObject(left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType)
-  #     err = typeErrorText left.typeAnnotation.identifier.returnType, right.typeAnnotation.identifier.returnType
-  #     return reporter.add_error node, err
-  #   for arg, n in left.typeAnnotation.identifier.arguments
-  #     if scope.checkAcceptableObject(left.typeAnnotation.identifier.arguments[n]?.identifier, right.typeAnnotation.identifier.arguments[n]?.identifier)
-  #       err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
-  #       return reporter.add_error node, err
-
-  # if right.instanceof?(CS.Function) and scope.getVarInScope(symbol)
-  #   walkFunction right, scope, scope.getVarInScope(symbol).identifier
-  # else if right.instanceof?(CS.Function) and preAnnotation
-  #   walkFunction right, scope, left.typeAnnotation.identifier
-  # else
-
   # Example
   #   add :: Int * Int -> Int
   #   add = (x, y) -> x + y
@@ -325,49 +309,14 @@ walkAssignOp = (node, scope) ->
   # Array initializer
   if left.instanceof CS.ArrayInitialiser
     return # TODO
-    # if left.expression.instanceof CS.This
-    # for member, index in left.members when member.data?
-    #   l = left.typeAnnotation?.identifier?.array?[index]
-    #   r = right.typeAnnotation?.identifier?.array?[index]
-    #   if err = scope.checkAcceptableObject l, r
-    #     err = typeErrorText l, r
-    #     reporter.add_error node, err
-    #   if l
-    #     scope.addVar member.data, l, true
-    #   else
-    #     scope.addVar member.data, "Any", false
 
   # Destructive Assignment
   else if left?.members?
     return # TODO
-    # if left.expression.instanceof CS.This
-    # for member in left.members when member.key?.data?
-    #   if scope.getVarInScope member.key.data
-    #     l_type = scope.getVarInScope(member.key.data).identifier
-    #     if err = scope.checkAcceptableObject l_type, right.typeAnnotation?.identifier?[member.key.data]
-    #       err = typeErrorText l_type, right.typeAnnotation?.identifier?[member.key.data]
-    #       reporter.add_error node, err
-    #   else
-    #     scope.addVar member.key.data, 'Any', false
 
   # Member
   else if left.instanceof CS.MemberAccessOp
     return unless checkType scope, node, left, right
-    # TODO: this
-    # if left.expression.instanceof CS.This
-    #   T = scope.getThis(left.memberName)
-    #   left.typeAnnotation = T if T?
-    #   if T?
-    #     if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
-    #       err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
-    #       reporter.add_error node, err
-    # # return if left.expression.raw is '@' # ignore @ yet
-    # else if left.typeAnnotation?.identifier? and right.typeAnnotation?.identifier?
-      # if left.typeAnnotation.identifier isnt 'Any'
-        # if err = scope.checkAcceptableObject(left.typeAnnotation.identifier, right.typeAnnotation.identifier)
-    #       err = typeErrorText left.typeAnnotation.identifier, right.typeAnnotation.identifier
-    #       return reporter.add_error node, err
-
   # Identifier
   else if left.instanceof CS.Identifier
     if scope.getVarInScope(symbol) and preAnnotation
@@ -675,7 +624,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
   if node.body?
     walk node.body, functionScope
-    # debug 'walked body', node.body
     left = node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
     right = node.body.typeAnnotation ?= ImplicitAnyAnnotation
 
