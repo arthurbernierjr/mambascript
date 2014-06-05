@@ -2,6 +2,14 @@
 {clone, rewrite} = require './type-helpers'
 _ = require 'lodash'
 
+ImplicitAnyAnnotation =
+  implicit: true
+  isPrimitive: true
+  nodeType: 'primitiveIdentifier'
+  identifier:
+    typeRef: 'Any'
+
+
 # Var and typeRef scope as node
 class Scope
   # constructor :: (Scope) -> Scope
@@ -111,9 +119,6 @@ class Scope
   # getTypeByString :: String -> Type
   getTypeByString: (typeName) ->
     ret = _.find @types, (i) -> i.identifier.typeRef is typeName
-    # debug 'getTypeByString', @types
-    # console.error 'checkPoint!4', ret, typeName
-
     return null unless ret?
     return (if ret.nodeType is 'struct' then ret.members else ret)
 
@@ -142,15 +147,20 @@ class Scope
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByIdentifier: (node) ->
-    # debug 'getTypeByIdentifier', node
-    # debug 'getTypeByIdentifier', @vars
-    if node.nodeType not in ['identifier', 'primitiveIdentifier']
-      throw 'node is not identifier node'
-    switch node.nodeType
+    # if node?.nodeType noti n ['identifier', 'primitiveIdentifier', 'functionType', 'members']
+    #   throw node?.nodeType + ' is not gettable node'
+    switch node?.nodeType
       when 'members'
-        return node
+        node
+      when 'primitiveIdentifier'
+        node
       when 'identifier'
         @getTypeInScope(node.identifier.typeRef)
+      when 'functionType'
+        null
+        ImplicitAnyAnnotation
+      else
+        ImplicitAnyAnnotation
 
   addThis: (symbol, typeRef) ->
     # TODO: Refactor with addVar
@@ -177,7 +187,6 @@ class Scope
   addVar: (type, args = []) ->
     # TODO: Apply typeArgument
     @vars.push type
-    # debug 'addVar', type
 
   # getVar :: String -> ()
   getVar: (typeName) ->
@@ -245,6 +254,18 @@ primitives =
           typeRef: 'Float'
           isPrimitive: true
 
+  NullType:
+    nodeType: 'primitiveIdentifier'
+    identifier:
+      typeRef: 'Null'
+      isPrimitive: true
+
+  UndefinedType:
+    nodeType: 'primitiveIdentifier'
+    identifier:
+      typeRef: 'Updefined'
+      isPrimitive: true
+
 initializeGlobalTypes = (node) ->
   node.addPrimitiveType primitives.AnyType
   node.addPrimitiveType primitives.StringType
@@ -252,6 +273,8 @@ initializeGlobalTypes = (node) ->
   node.addPrimitiveType primitives.FloatType
   node.addPrimitiveType primitives.NumberType
   node.addPrimitiveType primitives.BooleanType
+  node.addPrimitiveType primitives.NullType
+  node.addPrimitiveType primitives.UndefinedType
 
 module.exports = {
   initializeGlobalTypes, primitives

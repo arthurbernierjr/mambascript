@@ -90,7 +90,10 @@ isAcceptableFunctionType = (scope, left, right) ->
 
 # isAcceptable :: Types.Scope * TypeAnnotation * TypeAnnotaion -> Boolean
 isAcceptable = (scope, left, right) ->
-  # debug 'isAcceptable right', right
+  # FIXME
+  return true if not left? or not right?
+
+  # debug 'idsAcceptable right', right
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
     if node.nodeType is 'identifier'
       scope.getTypeByIdentifier(node)
@@ -107,6 +110,8 @@ isAcceptable = (scope, left, right) ->
   # debug 'isAcceptable, rightAnnotation', rightAnnotation
 
   # Grasp if left is any
+  return true if not leftAnnotation? or not rightAnnotation? # FIXME
+
   if leftAnnotation.nodeType is 'primitiveIdentifier'
     if leftAnnotation.identifier.typeRef is 'Any'
       return true

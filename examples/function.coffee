@@ -6,6 +6,11 @@ id4 = (x :: Any) -> x
 id5 = (x) -> x
 id6 :: Any -> Any = (x) -> x
 
+id7 :: String -> String = (x :: String) :: String ->
+  ''
+  x
+  1
+
 add :: Int * Int -> Int
 add = (x, y) -> x + y
 console.log add 3, 5
