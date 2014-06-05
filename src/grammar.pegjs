@@ -1292,8 +1292,8 @@ vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
 }
 
 typeExpr
-  = typeLiteral
-  / typeFunction
+  = typeFunction
+  / typeLiteral
   / typeSymbol
 
 typeLiteral
@@ -1352,8 +1352,9 @@ typeSymbol
     return [e].concat(es.map(function(e){ return e[2]; }));
   }
 
-typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeSymbol {
-  return {arguments: args, returnType: returnType, nodeType: 'functionType'};
+typeFunction
+  = args:typeFunctionArguments _ "->" _ returnType:typeExpr {
+    return {arguments: args, returnType: returnType, nodeType: 'functionType'};
 }
 
 typeFunctionArguments

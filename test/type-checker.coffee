@@ -310,9 +310,42 @@ suite 'TypeChecker', ->
       y :: String = (f 3)
       """
 
-    # test 'return function type', ->
-    #   fh = (n :: Int) :: (Int -> Int) -> (m) -> n * m
-    #   eq fh(2)(3), 6
+    test 'return function type', ->
+      f :: Int -> Int -> Int = (n) -> (m) -> n * m
+
+    test 'return function type', ->
+      f :: Int -> Int -> Int = (n) -> (m) -> n * m
+      f2 :: Int -> Int = f(2)
+
+    test 'return function type', ->
+      f :: Int -> Int -> Int = (n) -> (m) -> n * m
+      n :: Int = f(2)(3)
+
+    test 'return function type', ->
+      shouldBeTypeError """
+      f :: Int -> Int -> Int = (n) -> (m) -> n * m
+      n :: Int = f("")(3)
+      """
+
+    test 'return function type', ->
+      shouldBeTypeError """
+      f :: Int -> Int -> Int = (n) -> (m) -> n * m
+      n :: Int = f(2)("")
+      """
+
+    test 'return function type', ->
+      shouldBeTypeError """
+      f :: Int -> Int -> Int = (n) -> (m) -> n * m
+      n :: String = f(2)(3)
+      """
+
+    test 'return function type', ->
+      f :: Int -> Int * String -> Int = (n) -> (m, str) -> n * m
+
+    test 'return function type', ->
+      f :: Int -> Int * String -> Int
+      f = (n) -> (m, str) -> n * m
+      f(1)(2, 'hey!')
 
   suite 'Soaked', ->
     # test 'cant catch undefined', ->

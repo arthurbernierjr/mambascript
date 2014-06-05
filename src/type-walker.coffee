@@ -639,7 +639,13 @@ walkFunction = (node, scope, preAnnotation = null) ->
         typeAnnotation: param.typeAnnotation ? ImplicitAnyAnnotation
 
   if node.body?
-    walk node.body, functionScope
+    if node.body instanceof CS.Function
+      debug 'node body', node
+      debug 'node body', node.body.className
+      walkFunction node.body, functionScope, node.typeAnnotation.returnType
+    else
+      walk node.body, functionScope
+
     unless preAnnotation
       node.typeAnnotation.returnType = node.body.typeAnnotation
 
@@ -664,7 +670,6 @@ walkFunctionApplication = (node, scope) ->
   else if node.function.typeAnnotation?.nodeType is 'primitiveIdentifier'
     node.typeAnnotation ?= ImplicitAnyAnnotation
 
-
   for arg, n in node.arguments
     left = arg?.typeAnnotation
     right = node.function.typeAnnotation?.arguments?[n]
@@ -680,7 +685,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  # console.error 'walking node:', node?.className, node?.raw
+  console.error 'walking node:', node?.className, node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)
