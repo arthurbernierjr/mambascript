@@ -11,22 +11,27 @@ shouldBeTypeError = (input) ->
     return
   throw 'must be type error but parsed'
 
-# suite 'TypeChecker', ->
-#   setup ->
-#     reporter.clean()
+suite 'TypeChecker', ->
+  setup ->
+    reporter.clean()
 
-#   suite 'Assignment', ->
-#     test 'basic assign', ->
-#       x :: Number = 3
-#       eq x, 3
+  suite 'Assignment', ->
+    test 'basic assign', ->
+      x :: Int = 3
+      eq x, 3
 
 #     test 'int assign', ->
 #       x :: Int = 3
 
-#     test 'int assign', ->
-#       shouldBeTypeError """
-#       x :: Int = 3.5
-#       """
+    test 'apply float to int', ->
+      shouldBeTypeError """
+      x :: Int = 3.5
+      """
+
+    test 'apply string to int', ->
+      shouldBeTypeError """
+      x :: Int = 'a'
+      """
 
 #     test 'primitive extended assign', ->
 #       x :: Int = 3
@@ -36,28 +41,31 @@ shouldBeTypeError = (input) ->
 #       x :: Int = 3
 #       y :: Float = x
 
-#     test 'throw primitive extended assign', ->
-#       shouldBeTypeError """
-#       x :: Float = 3.3
-#       y :: Int = x
-#       """
+    test 'throw primitive extended assign', ->
+      shouldBeTypeError """
+      x :: Float = 3.3
+      y :: Int = x
+      """
 
-#     test 'basic assign', ->
-#       x :: Number = 3
-#       x = 5
-#       eq x, 5
+    test 'basic assign', ->
+      x :: Int = 3
+      x = 5
+      eq x, 5
 
-#     test 'assign function', ->
-#       f :: Number -> Number = (n) -> n
-#       g :: Number -> Number = f
+    # test 'assign function', ->
+    #   f :: Int -> Int = (n) -> n
+
+    # test 'assign function', ->
+    #   f :: Int -> Int = (n) -> n
+    #   g :: Int -> Int = f
 
 #     test 'throw type mismatch', ->
 #       shouldBeTypeError """
 #         x :: Number = "3"
 #       """
 
-#     test 'object assign', ->
-#       obj :: { x :: Number} = { x : 2}
+    # test 'object assign', ->
+    #   obj :: { x :: Number} = { x : 2}
 
 #     test 'throw object literal mitmatching', ->
 #       shouldBeTypeError """
@@ -81,44 +89,79 @@ shouldBeTypeError = (input) ->
 #         y :: Number
 #       } = {x : 1, y: 5}
 
-#     test 'any type thorough everything', ->
-#       a :: Any = 3
-#       a = false
-#       eq a, false
+    test 'any type thorough everything', ->
+      a :: Any = 3
+      a = false
+      eq a, false
 
-#     test 'typed function', ->
-#       f :: Number -> Number = (n :: Number) :: Number ->  n * n
+    test 'typed function', ->
+      f :: Number -> Number = (n :: Number) :: Number ->  n * n
 
-#     test 'typed function that has 2 arguments', ->
-#       f :: Number * Number -> Number = (n :: Number, m :: Number) :: Number ->  n * m
+    test 'typed function', ->
+      f = (n :: Number) :: Number ->  n * n
 
-#     test 'typed function that has 2 arguments', ->
-#       f :: (Number, Number) -> Number = (n :: Number, m :: Number) :: Number ->  n * m
+    # test 'typed function', ->
+    #   f = (n :: Int) ->  n * n
+    #   n :: Int = f(3)
 
-#     test 'typed function that has 3 arguments', ->
-#       f :: Number * Number * Number -> Number = (n :: Number, m :: Number, r :: Number) :: Number ->  n * m * r
+    test 'typed function return type error', ->
+      shouldBeTypeError """
+      f :: Number -> Number = (n :: Number) :: String ->  n * n
+      """
 
-#     test 'typed function type mismatch', ->
-#       shouldBeTypeError """
-#         f :: Number -> Number = (n :: Number) :: String ->  n * n
-#       """
+    test 'typed function return type error', ->
+      shouldBeTypeError """
+      f = (n :: Number) :: String ->  n * n
+      """
 
-#     test 'typed function and binding', ->
-#       f :: Number -> Number = (n :: Number) ->  n * n
-#       n :: Number  = f 4
+    test 'typed function return type error', ->
+      shouldBeTypeError """
+      f :: Number -> String = (n :: Number) :: String ->  n * n
+      """
 
-#     test 'typed function mismatching application', ->
-#       shouldBeTypeError """
-#         f :: Number -> Number = 3
-#       """
+    test 'typed function that has 2 arguments', ->
+      f :: Number * Number -> Number = (n :: Number, m :: Number) :: Number ->  n * m
 
-#     test 'typed function with return type', ->
-#       f :: Number -> Number = (n :: Number) :: Number ->  n * n
-#       n :: Number  = f 4
+    test 'typed function that has 2 arguments', ->
+      f :: (Number, Number) -> Number = (n :: Number, m :: Number) :: Number ->  n * m
 
-#     test 'return function type', ->
-#       fh = (n :: Number) :: (Number -> Number) -> (m)-> n * m
-#       eq fh(2)(3), 6
+    # test 'typed function that has 2 arguments', ->
+    #   f :: Number * Number -> Number = (n, m) ->  n * m
+
+    # test 'typed function that has 2 arguments', ->
+    #   f :: Number * Number -> Number = (n, m) :: Number ->  n * m
+
+
+    test 'typed function that has 3 arguments', ->
+      f :: Number * Number * Number -> Number = (n :: Number, m :: Number, r :: Number) :: Number ->  n * m * r
+
+    test 'typed function type mismatch', ->
+      shouldBeTypeError """
+        f :: Number -> Number = (n :: Number) :: String ->  n * n
+      """
+
+  suite 'Assignment', ->
+    # test 'typed function and binding', ->
+    #   f :: Int -> Int = (n :: Int) ->  n * n
+    #   n :: Int  = f 4
+
+    test 'typed function mismatching application', ->
+      shouldBeTypeError """
+        f :: Number -> Number = 3
+      """
+
+    test 'typed function mismatching application', ->
+      shouldBeTypeError """
+        f :: Number -> Number = {}
+      """
+
+    test 'typed function with return type', ->
+      f :: Int -> Int = (n :: Int) :: Int ->  n * n
+      n :: Int  = f 4
+
+    # test 'return function type', ->
+    #   fh = (n :: Int) :: (Int -> Int) -> (m) -> n * m
+    #   eq fh(2)(3), 6
 
 #     test 'avoid polution about prototype', ->
 #       class X
@@ -132,66 +175,109 @@ shouldBeTypeError = (input) ->
 
 #       p :: Point = {x: 3, y: 3}
 
-#     test 'struct definition without blace', ->
-#       struct Point
-#         x :: Number
-#         y :: Number
-#       p :: Point = {x: 3, y: 3}
+  suite 'Struct', ->
+    test 'struct definition without blace', ->
+      struct Point {
+        x :: Int
+        y :: Int
+      }
 
-#     test 'struct definition with symbol', ->
-#       struct A
-#         num :: Number
+    test 'struct definition without blace', ->
+      struct Point
+        x :: Int
+        y :: Int
 
-#       struct Point
-#         x :: Number
-#         y ::
-#           a :: A
-#           b :: String
+    test 'struct definition without blace', ->
+      struct A {}
+      struct B {}
+      struct Point
+        x :: A
+        y :: B
 
-#       p :: Point = {x: 3, y: {a : {num: 4} , b : 'foo'}}
+    test 'struct definition without blace', ->
+      struct Point
+        x :: Int
+        y :: Int
+      p :: Point = {x: 3, y: 3}
 
-#     test 'nested struct definition', ->
-#       struct Point
-#         x :: Number
-#         y ::
-#           a :: Number
-#           b :: String
+    test 'struct with namespace', ->
+      struct A.B.Point
+        x :: Int
+        y :: Int
 
-#       p :: Point = {x: 3, y: {a : 1 , b : 'foo'}}
+      p :: A.B.Point = {x: 1, y: 3}
 
-#     test 'throw struct member access with mismatch type', ->
-#       shouldBeTypeError """
-#         struct Point {
-#           x :: Number
-#           y :: Number
-#         }
-#         p :: Point = {x:3, y:3}
-#         p.x = "hoge"
-#       """
+    test 'struct definition without blace', ->
+      shouldBeTypeError """
+      struct Point
+        x :: Int
+        y :: String
+      p :: Point = {x: 3, y: 3}
+      """
 
-#     test 'void', ->
-#       nf :: () -> () = -> setTimeout (->), 100
-#       nf()
+    test 'struct definition without blace', ->
+      shouldBeTypeError """
+      struct Point
+        x :: Int
+        y :: Int
+      p :: Point = {x: "", y: 3}
+      """
 
-#     test 'void keyword', ->
-#       nf :: () -> void = -> setTimeout (->), 100
-#       nf()
+    test 'struct definition with symbol', ->
+      struct A
+        num :: Int
 
-#     test 'throw function arguments mismatch', ->
-#       shouldBeTypeError """
-#         f :: Number -> Number = (n :: Number) :: Number ->  n * n
-#         (f "hello")
-#       """
+      struct Point
+        x :: Int
+        y ::
+          a :: A
+          b :: String
 
-#     test 'void keyword', ->
-#       f :: Number -> Number = (n :: Number) :: Number ->  n * n
-#       x :: Number = (f 3)
+      p :: Point = {x: 3, y: {a : {num: 4} , b : 'foo'}}
 
-#     test 'throw function arguments mismatch', ->
-#       shouldBeTypeError """
-#         f :: Number -> Number = (n :: Number) :: Number ->  n * n
-#         y :: String = (f 3)
-#       """
+    test 'nested struct definition', ->
+      struct Point
+        x :: Int
+        y ::
+          a :: Int
+          b :: String
+
+      p :: Point = {x: 3, y: {a : 1 , b : 'foo'}}
+
+    test 'throw struct member access with mismatch type', ->
+      shouldBeTypeError """
+        struct Point {
+          x :: Int
+          y :: Int
+        }
+        p :: Point = {x:3, y:3}
+        p.x = "hoge"
+      """
+
+    # TODO: should add error test about this
+    test 'void', ->
+      nf :: () -> () = -> setTimeout (->), 100
+      nf()
+
+    test 'void keyword', ->
+      nf :: () -> void = -> setTimeout (->), 100
+      nf()
+
+    test 'throw function arguments mismatch', ->
+      shouldBeTypeError """
+        f :: Number -> Number = (n :: Number) :: Number ->  n * n
+        (f "hello")
+      """
+
+    test 'function application', ->
+      f :: Int -> Int = (n :: Int) :: Int ->  n * n
+      x :: Int = (f 3)
+
+    test 'throw function arguments mismatch', ->
+      shouldBeTypeError """
+      f :: Int -> Int = (n :: Int) :: Int ->  n * n
+      y :: String = (f 3)
+      """
 
 #     test 'typed array', ->
 #       struct Point
@@ -257,8 +343,8 @@ shouldBeTypeError = (input) ->
 #             val
 #       """
 
-#     test 'function return type', ->
-#       f0 :: () -> Number = () :: Number -> 3
+    test 'function return type', ->
+      f0 :: () -> Int = () :: Int -> 3
 
 #     test 'function return type mismatch with block', ->
 #       list :: Number[] =
@@ -270,11 +356,15 @@ shouldBeTypeError = (input) ->
 #       f0 :: () -> Number = () :: Number -> ''
 #       """
 
-#     test 'throw function return type mismatch', ->
-#       shouldBeTypeError """
-#       f2 :: () -> Number = ->
-#         return ""
-#       """
+  suite 'return', ->
+    # test 'throw function return type mismatch', ->
+    #   f2 :: () -> Int = ->
+    #     return 3
+    # test 'throw function return type mismatch', ->
+    #   shouldBeTypeError """
+    #   f2 :: () -> Number = ->
+    #     return ""
+    #   """
 
 #     test 'Range', ->
 #       list :: Number[] = [1..10]
@@ -621,34 +711,27 @@ shouldBeTypeError = (input) ->
 #       class X
 #         x :: Int
 
-#     test 'struct with namespace', ->
-#       struct A.B.Point
-#         x :: Int
-#         y :: Int
 
-#       p :: A.B.Point = {x: 1, y: 3}
+  suite 'Explicit Rules', ->
+    test 'type propagation', ->
+      a :: Int = 3
+      b = a
 
+    test 'throw type propagation', ->
+      throws -> parse """
+      a :: Int = 3
+      b = a
+      b = "Hoge"
+      """
 
-#   suite 'Explicit Rules', ->
-#     test 'type propagation', ->
-#       a :: Int = 3
-#       b = a
+    test 'type propagationw with member access', ->
+      a :: {x :: Int, y :: Int} = {x: 3, y: 5}
+      b :: Int = a.x
 
-#     test 'throw type propagation', ->
-#       throws -> parse """
-#       a :: Int = 3
-#       b = a
-#       b = "Hoge"
-#       """
-
-#     test 'type propagationw with member access', ->
-#       a :: {x :: Int, y :: Int} = {x: 3, y: 5}
-#       b = a.x
-
-#     test 'throw explicit with member access', ->
-#       throws -> parse """
-#       a :: {x :: Int, y :: Int} = {x: 3, y: 5}
-#       b = a.x
-#       b = "hoge"
-#       """
+    test 'throw explicit with member access', ->
+      shouldBeTypeError """
+      a :: {x :: Int, y :: Int} = {x: 3, y: 5}
+      b = a.x
+      b = "hoge"
+      """
 
