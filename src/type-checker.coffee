@@ -134,12 +134,12 @@ isAcceptable = (scope, left, right) ->
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'functionType'
     return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
 
-# isAcceptable :: Types.Scope * Type * Type -> ()
-checkType = (scope, node, left, right) ->
-  typeErrorText = (left, right) ->
-    util = require 'util'
-    "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
+typeErrorText = (left, right) ->
+  util = require 'util'
+  "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
 
+# checkType :: Scope * Node * Type * Type -> ()
+checkType = (scope, node, left, right) ->
   ret = isAcceptable scope, left.typeAnnotation, right.typeAnnotation
   if ret
     return true
@@ -151,6 +151,19 @@ checkType = (scope, node, left, right) ->
       reporter.add_error node, err
     return false
 
+# checkTypeAnnotation :: Scope * Node * Type * Type -> ()
+checkTypeAnnotation = (scope, node, left, right) ->
+  ret = isAcceptable scope, left, right
+  if ret
+    return true
+  else
+    err = typeErrorText left, right
+    if left.implicit and right.implicit
+      reporter.add_warning node, err
+    else
+      reporter.add_error node, err
+    return false
+
 module.exports = {
-  checkType, isAcceptable
+  checkType, checkTypeAnnotation, isAcceptable
 }

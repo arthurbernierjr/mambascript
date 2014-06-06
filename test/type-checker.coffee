@@ -496,10 +496,10 @@ suite 'TypeChecker', ->
     #   """
 
   suite 'Class', ->
-    # test 'avoid polution about prototype', ->
-    #   class X
-    #   X::x = 3
-    #   eq X.prototype.x, 3
+    test 'avoid polution about prototype', ->
+      class X
+      X::x = 3
+      eq X.prototype.x, 3
 
     # test 'struct definition', ->
     #   struct Point

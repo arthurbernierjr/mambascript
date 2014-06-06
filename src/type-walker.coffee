@@ -3,7 +3,7 @@ reporter = require './reporter'
 CS = require './nodes'
 _ = require 'lodash'
 
-{isAcceptable, checkType} = require './type-checker'
+{isAcceptable, checkType, checkTypeAnnotation} = require './type-checker'
 
 ImplicitAnyAnnotation =
   implicit: true
@@ -11,12 +11,6 @@ ImplicitAnyAnnotation =
   nodeType: 'primitiveIdentifier'
   identifier:
     typeRef: 'Any'
-
-# same :: Any... -> Boolean
-same = (args...) ->
-  len = args.length
-  list = i for i, n in args when n isnt len-1
-  _.all list, _.last args
 
 typeErrorText = (left, right) ->
   util = require 'util'
@@ -321,8 +315,6 @@ walkAssignOp = (node, scope) ->
     return unless checkType scope, node, left, right
   # Identifier
   else if left.instanceof CS.Identifier
-    debug 'assign left', left
-    debug 'assign left in scope', scope.getVarInScope(left.data)
     if scope.getVarInScope(symbol) and preAnnotation
       return reporter.add_error node, 'double bind: '+ symbol
 
@@ -598,7 +590,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
     functionScope._this = scope._this
 
   if preAnnotation?
-    # debug 'node.typeAnnotation', node.typeAnnotation
     # if node.typeAnnotation?.identifier?.typeRef is 'Any'
     if node.typeAnnotation?
       annotation = _.clone node.typeAnnotation
@@ -606,27 +597,14 @@ walkFunction = (node, scope, preAnnotation = null) ->
       annotation.arguments ?= annotation.arguments?.map (arg) -> arg ? ImplicitAnyAnnotation
       annotation.arguments ?= []
 
-      # debug 'preAnnotation', preAnnotation
-      # debug 'typeAnnotation', node.typeAnnotation
-      unless isAcceptable scope, annotation, preAnnotation
-        typeErrorText = (left, right) ->
-          util = require 'util'
-          "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
-        err = typeErrorText annotation, preAnnotation
-        return reporter.add_error node, err
+      return unless checkTypeAnnotation scope, node,  annotation, preAnnotation
 
     hasError = false
     node.typeAnnotation = preAnnotation
 
     node.parameters?.map (param, n) ->
       if param.typeAnnotation?
-        unless isAcceptable scope, preAnnotation.arguments[n], param.typeAnnotation
-          typeErrorText = (left, right) ->
-            util = require 'util'
-            "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
-          err = typeErrorText preAnnotation.arguments?[n], param.typeAnnotation
-          hasError = true
-          return reporter.add_error node, err
+        return unless checkTypeAnnotation scope, node, preAnnotation.arguments[n], param.typeAnnotation
       param.typeAnnotation ?= preAnnotation.arguments?[n] ? ImplicitAnyAnnotation
       functionScope.addVar
         nodeType: 'variable'
@@ -644,8 +622,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
   if node.body?
     if node.body instanceof CS.Function
-      debug 'node body', node
-      debug 'node body', node.body.className
       walkFunction node.body, functionScope, node.typeAnnotation.returnType
     else
       walk node.body, functionScope
@@ -656,13 +632,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
     left = node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
     right = node.body.typeAnnotation ?= ImplicitAnyAnnotation
 
-    unless isAcceptable scope, left, right
-      typeErrorText = (left, right) ->
-        util = require 'util'
-        "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
-      err = typeErrorText left, right
-      return reporter.add_error node, err
-
+    return unless checkTypeAnnotation scope, node, left, right
 
 walkFunctionApplication = (node, scope) ->
   for arg in node.arguments
@@ -678,12 +648,7 @@ walkFunctionApplication = (node, scope) ->
     left = arg?.typeAnnotation
     right = node.function.typeAnnotation?.arguments?[n]
     if left and right
-      unless isAcceptable scope, left, right
-        typeErrorText = (left, right) ->
-          util = require 'util'
-          "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
-        err = typeErrorText left, right
-        reporter.add_error node, err
+      checkTypeAnnotation scope, node, left, right
 
 # Traverse all nodes
 # Node -> void
