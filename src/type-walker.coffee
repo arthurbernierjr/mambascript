@@ -160,31 +160,43 @@ walkBinOp = (node, scope) ->
   else
     node.typeAnnotation = ImplicitAnyAnnotation
 
-walkConditional = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
-  # condition expr
-  walk node.condition, scope #=> Expr
 
+compareAsParent = (scope, a, b) ->
+  retA = isAcceptable scope, a, b
+  retB = isAcceptable scope, b, a
+  if retA and retB
+    a
+  else if retA
+    a
+  else if retB
+    b
+  else
+    ImplicitAnyAnnotation
+
+walkConditional = (node, scope) ->
+  # node.typeAnnotation ?= ImplicitAnyAnnotation
+  walk node.condition, scope #=> Expr
   # else if
-  walk node.consequent, scope #=> Block
+  if node.consequent
+    walk node.consequent, scope #=> Block
 
   # else
   if node.alternate?
     walk node.alternate, scope #=> Block
 
-  # if node.alternate doesn't exist, then return type is Undefined
-  alternate_typeAnnotation = (node.alternate?.typeAnnotation) ? (identifier: 'Undefined')
+  consequentAnnotation = node.consequent?.typeAnnotation
+  alternateAnnotation = node.alternate?.typeAnnotation
 
-  possibilities = []
-  for typeAnnotation in [node.consequent?.typeAnnotation, alternate_typeAnnotation] when typeAnnotation?
-    if typeAnnotation.identifier?.possibilities?
-      possibilities.push identifier for identifier in typeAnnotation.identifier.possibilities
-
-    else if typeAnnotation.identifier?
-      possibilities.push typeAnnotation.identifier
-
-  node.typeAnnotation = identifier: {possibilities}
+  if consequentAnnotation and alternateAnnotation
+    parentType = compareAsParent scope, consequentAnnotation, alternateAnnotation
+    node.typeAnnotation = parentType
+  else if consequentAnnotation and not alternateAnnotation
+    t = _.clone consequentAnnotation
+    t.identifier.nullable = true
+    node.typeAnnotation = t
+  else
+    node.typeAnnotation = ImplicitAnyAnnotation
+  debug 'Conditional', node
 
 walkSwitch = (node, scope) ->
   node.typeAnnotation ?= ImplicitAnyAnnotation

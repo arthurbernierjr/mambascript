@@ -513,25 +513,77 @@ suite 'TypeChecker', ->
     #       val
 
   suite 'if', ->
-    # test 'if', ->
-    #   f :: Number -> Number = (n) -> n
+    test 'if expr', ->
+      n :: Int =
+        if true
+          1
+        else if false
+          2
+        else
+          3
 
-    #   tf :: () -> Boolean = -> true
-    #   a :: Number =
-    #     if tf()
-    #       if true
-    #         f 4
-    #       else
-    #         6
-    #     else if true
-    #       4
-    #     else
-    #       8
+    test 'if expr', ->
+      shouldBeTypeError """
+      n :: Int =
+        if true
+          1
+        else if false
+          ''
+        else
+          3
+      """
 
-    # test 'throw if return type mismatch', ->
-    #   shouldBeTypeError """
-    #     a :: Number = if true then 3 else ""
-    #   """
+    test 'if expr', ->
+      n :: { x :: Number } =
+        if true
+          x: 1
+        else if false
+          x: 1, y: 2
+        else
+          x: 1, y: 2, z: 3
+
+    test 'if expr', ->
+      shouldBeTypeError """
+      n :: { x :: Number, y :: Number} =
+        if true
+          {x: 1}
+        else if false
+          {x: 1, y: 2}
+        else
+          {x: 1, y: 2, z: 3}
+      """
+
+    test 'if expr', ->
+      shouldBeTypeError """
+      n :: { x :: String} =
+        if true
+          {x: 1}
+        else if false
+          {x: 1, y: 2}
+        else
+          {x: 1, y: 2, z: 3}
+      """
+
+    test 'if expr without altenative', ->
+      n :: Int? =
+        if true
+          1
+
+    test 'if expr without altenative', ->
+      n :: Int? = if true then 1
+
+    test 'if expr without altenative', ->
+      shouldBeTypeError """
+      n :: Int = if true then 1
+      """
+
+    test 'if expr without altenative', ->
+      n :: Int = if true then 1 else 1
+
+    test 'throw if return type mismatch', ->
+      shouldBeTypeError """
+        a :: Number = if true then 3 else ""
+      """
 
     # test.skip 'throw return type mismatch', ->
     #   shouldBeTypeError """
