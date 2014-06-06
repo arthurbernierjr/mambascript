@@ -234,6 +234,26 @@ suite 'TypeChecker', ->
         obj.x = ""
       """
 
+  suite 'Nullable', ->
+    test 'nullable', ->
+      struct A
+        a :: Int?
+      a :: A = {}
+
+    test 'nullable', ->
+      shouldBeTypeError """
+      struct A
+        a :: Int?
+      a :: A = {a: ''}
+      """
+
+    test 'nullable', ->
+      struct A
+        a :: Int?
+        b :: Int
+      a1 :: A = a: 1, b: 1
+      a2 :: A = b: 1
+
   suite 'Explicit Rules', ->
     test 'type propagation', ->
       a :: Int = 3

@@ -1337,9 +1337,10 @@ typeSymbol
   / "(" _ ret: _typeSymbol _ ")" { return {identifier: ret, nodeType: 'identifier'};}
   / t:_typeSymbol { return {identifier: t, nodeType: 'identifier'};}
 
-  _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? isArray:isArray? {
+  _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? isArray:isArray? nullable:'?'? {
     var obj = {typeRef: symbol};
     if(isArray) obj.isArray = true;
+    if(nullable) obj.nullable = true;
     if(args) obj.typeArguments = (args || []);
     return obj;
   }

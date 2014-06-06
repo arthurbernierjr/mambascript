@@ -87,7 +87,8 @@ isAcceptableStruct = (scope, left, right) ->
   _.all left.properties.map (lprop, n) =>
     rprop = _.find right.properties, (rp) ->
       rp.identifier?.typeRef is lprop.identifier?.typeRef
-    unless rprop? then return false
+    unless rprop?
+      return lprop.typeAnnotation?.identifier?.nullable
     return isAcceptable scope, lprop.typeAnnotation, rprop.typeAnnotation
 
 # isAcceptableFunction :: Scope * TypeAnnotation * TypeAnnotation -> Boolean

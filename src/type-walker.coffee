@@ -43,6 +43,7 @@ checkNodes = (cs_ast) ->
   return root
 
 walkStruct = (node, scope) ->
+  debug 'node', node
   scope.addStructType node
 
 walkVardef = (node, scope) ->
@@ -745,7 +746,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  # console.error 'walking node:', node?.className #, node?.raw
+  console.error 'walking node:', node?.className #, node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)
