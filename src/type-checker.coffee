@@ -62,7 +62,7 @@ isAcceptableExtends = (scope, left, right) ->
     le.identifier.typeRef is right.identifier.typeRef
 
 # isAcceptablePrimitiveSymbol :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
-isAcceptablePrimitiveSymbol = (scope, left, right) ->
+isAcceptablePrimitiveSymbol = (scope, left, right, nullable = false) ->
   if left.nodeType isnt 'primitiveIdentifier'
     throw 'left is not primitive'
 
@@ -70,6 +70,9 @@ isAcceptablePrimitiveSymbol = (scope, left, right) ->
   # type check
   # if left.identifier.typeRef isnt right?.identifier?.typeRef
   unless isAcceptableExtends(scope, left, right)
+    # debug 'isAcceptableExtends', left, right
+    if nullable and right.identifier.typeRef in ['Null', 'Undefined']
+      return true
     return false
   # array check
   if !!left.identifier.isArray
@@ -108,9 +111,6 @@ isAcceptableFunctionType = (scope, left, right) ->
 isAcceptable = (scope, left, right) ->
   # FIXME
   return true if not left? or not right?
-  # debug 'isAcceptable left', left
-  # debug 'isAcceptable right', right
-
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
     if node.nodeType is 'identifier'
       scope.getTypeByIdentifier(node)
@@ -133,7 +133,8 @@ isAcceptable = (scope, left, right) ->
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
     return isAcceptableStruct scope, leftAnnotation, rightAnnotation
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'primitiveIdentifier'
-    return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation
+    nullable = left.identifier.nullable
+    return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation, nullable
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'functionType'
     return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
 

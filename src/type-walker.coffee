@@ -746,7 +746,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  console.error 'walking node:', node?.className #, node?.raw
+  console.error 'walking node:', node?.className , node?.raw2
   # debug 'walk', node
   switch
     # undefined(mayby null body)
@@ -775,11 +775,14 @@ walk = (node, scope) ->
     # If
     when node.instanceof CS.Conditional  then walkConditional node, scope
 
+    when node.instanceof CS.Undefined         then walkUndefined node, scope
+
     when node.instanceof CS.OfOp              then walkOfOp node, scope
     # For
     when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf) then walkFor node, scope
     # Primitives
     when node.instanceof CS.Primitives        then walkPrimitives node, scope
+    when node.instanceof CS.Null              then walkNull node, scope
     # This
     when node.instanceof CS.This              then walkThis node, scope
     # Identifier

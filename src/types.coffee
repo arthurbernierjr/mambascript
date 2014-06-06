@@ -256,7 +256,7 @@ primitives =
     nodeType: 'primitiveIdentifier'
     isPrimitive: true
     identifier:
-      typeRef: 'Updefined'
+      typeRef: 'Undefined'
 
 initializeGlobalTypes = (node) ->
   node.addPrimitiveType primitives.AnyType

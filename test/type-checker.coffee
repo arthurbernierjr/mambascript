@@ -241,18 +241,26 @@ suite 'TypeChecker', ->
       a :: A = {}
 
     test 'nullable', ->
-      shouldBeTypeError """
       struct A
         a :: Int?
-      a :: A = {a: ''}
-      """
+      a :: A = a: null
 
     test 'nullable', ->
       struct A
         a :: Int?
-        b :: Int
-      a1 :: A = a: 1, b: 1
-      a2 :: A = b: 1
+      a :: A = a: undefined
+
+    test 'nullable', ->
+      struct A
+        a :: Int?
+      a :: A = a: 1
+
+    test 'nullable', ->
+      shouldBeTypeError """
+      struct A
+        a :: Int?
+      a :: A = a: ''
+      """
 
   suite 'Explicit Rules', ->
     test 'type propagation', ->
