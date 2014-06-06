@@ -107,6 +107,8 @@ isAcceptableFunctionType = (scope, left, right) ->
 isAcceptable = (scope, left, right) ->
   # FIXME
   return true if not left? or not right?
+  # debug 'isAcceptable left', left
+  # debug 'isAcceptable right', right
 
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
     if node.nodeType is 'identifier'

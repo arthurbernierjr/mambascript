@@ -704,19 +704,19 @@ suite 'TypeChecker', ->
       a :: S = new A
       """
 
-    # test 'new', ->
-    #   class X
-    #     f :: Number -> Number
-    #     f: (n) -> n * n
-    #   x :: X = new X
-    #   n :: Number = x.f 3
+    test 'new', ->
+      class X
+        f :: Number -> Number
+        f: (n) -> n * n
+      x :: X = new X
+      n :: Number = x.f 3
 
-    # test 'access proto this in class', ->
-    #   class X
-    #     constructor :: Number * String -> ()
-    #     constructor: (num, fuga) ->
-    #       @num = num
-    #   x :: X = new X 3, ""
+    test 'access proto this in class', ->
+      class X
+        constructor :: Number * String -> ()
+        constructor: (num, fuga) ->
+          @num = num
+      x :: X = new X 3, ""
 
     test 'throw access proto this in class', ->
       shouldBeTypeError """

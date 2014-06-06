@@ -224,8 +224,8 @@ walkNewOp = (node, scope) ->
   for arg, n in node.arguments
     walk arg, scope
 
-    left = arg?.typeAnnotation
-    right = ctorAnnotation?.typeAnnotation?.arguments?[n]
+    left = ctorAnnotation?.typeAnnotation?.arguments?[n]
+    right = arg?.typeAnnotation
     # debug 'walk left', left
     # debug 'walk right', right
 
@@ -726,8 +726,8 @@ walkFunctionApplication = (node, scope) ->
     node.typeAnnotation ?= ImplicitAnyAnnotation
 
   for arg, n in node.arguments
-    left = arg?.typeAnnotation
-    right = node.function.typeAnnotation?.arguments?[n]
+    left = node.function.typeAnnotation?.arguments?[n]
+    right = arg?.typeAnnotation
     if left and right
       checkTypeAnnotation scope, node, left, right
 
