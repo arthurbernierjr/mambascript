@@ -12,16 +12,25 @@ ImplicitAnyAnnotation =
   identifier:
     typeRef: 'Any'
 
-typeErrorText = (left, right) ->
-  util = require 'util'
-  "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
-
 {
   initializeGlobalTypes,
   Scope,
   ClassScope,
   FunctionScope
 } = require './types'
+
+compareAsParent = (scope, a, b) ->
+  retA = isAcceptable scope, a, b
+  retB = isAcceptable scope, b, a
+  if retA and retB
+    a
+  else if retA
+    a
+  else if retB
+    b
+  else
+    ImplicitAnyAnnotation
+
 
 # CS_AST -> Scope
 checkNodes = (cs_ast) ->
@@ -160,19 +169,6 @@ walkBinOp = (node, scope) ->
   else
     node.typeAnnotation = ImplicitAnyAnnotation
 
-
-compareAsParent = (scope, a, b) ->
-  retA = isAcceptable scope, a, b
-  retB = isAcceptable scope, b, a
-  if retA and retB
-    a
-  else if retA
-    a
-  else if retB
-    b
-  else
-    ImplicitAnyAnnotation
-
 walkConditional = (node, scope) ->
   # node.typeAnnotation ?= ImplicitAnyAnnotation
   walk node.condition, scope #=> Expr
@@ -196,36 +192,36 @@ walkConditional = (node, scope) ->
     node.typeAnnotation = t
   else
     node.typeAnnotation = ImplicitAnyAnnotation
-  debug 'Conditional', node
+  # debug 'Conditional', node
 
 walkSwitch = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
-  walk node.expression, scope
+  if node.expression
+    walk node.expression, scope
 
+  canditates = []
   # condition expr
   for c in node.cases
     # when a, b, c
     for cond in c.conditions
       walk c, scope #=> Expr
+    # console.error c.className
     walk c.consequent, scope
-
-  # else if
-  walk node.consequent, scope #=> Block
+    canditates.push c.consequent.typeAnnotation
 
   # else
   if node.alternate?
     walk node.alternate, scope #=> Block
+    canditates.push c.consequent.typeAnnotation
 
-  # if node.alternate doesn't exist, then return type is Undefined
-  alternate_typeAnnotation = (node.alternate?.typeAnnotation) ? (identifier: 'Undefined')
+  # debug 'walkSwitch', node
+  [head, tail...] = canditates
+  ret = _.clone _.reduce tail, ((a, b) -> compareAsParent scope, a, b), head
+  if ret.identifier?
+    ret.identifier.nullable = not node.alternate?
+    node.typeAnnotation = ret ? ImplicitAnyAnnotation
+  else
+    node.typeAnnotation = ImplicitAnyAnnotation
 
-  possibilities = []
-  for c in node.cases when c.typeAnnotation?
-    possibilities.push c.consequent.typeAnnotation
-
-  possibilities.push alternate_typeAnnotation.identifier
-  node.typeAnnotation = identifier: {possibilities}
 
 walkNewOp = (node, scope) ->
   type = scope.getTypeInScope node.ctor.data

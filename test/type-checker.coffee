@@ -523,6 +523,15 @@ suite 'TypeChecker', ->
           3
 
     test 'if expr', ->
+      n :: Number =
+        if true
+          1
+        else if false
+          1.1
+        else
+          1
+
+    test 'if expr', ->
       shouldBeTypeError """
       n :: Int =
         if true
@@ -613,24 +622,54 @@ suite 'TypeChecker', ->
     #   """
 
   suite 'Switch', ->
+    test 'Switch', ->
+      x :: String? =
+        switch true
+          when 0
+            'foo'
+          when 1
+            'bar'
+
     # test 'Switch', ->
-    #   x :: String =
-    #     switch true
-    #       when 0
-    #         'foo'
-    #       when 1
-    #         'bar'
-    #       else
-    #         'fuga'
-    # test 'miscast Switch', ->
-    #   shouldBeTypeError """
     #   x :: Number =
     #     switch true
     #       when 0
     #         1
+    #       when 1
+    #         2.5
     #       else
-    #         'str'
-    #   """
+    #         3.1
+
+    # test 'switch', ->
+    #   n :: { x :: Int } =
+    #     switch 1
+    #       when 1
+    #         x: 1
+    #       when 2
+    #         x: 1, y: 2
+    #       else 2
+    #         x: 1, y: 2, z: 3
+
+    test 'Switch', ->
+      x :: String =
+        switch true
+          when 0
+            'foo'
+          when 1
+            'bar'
+          else
+            'fuga'
+
+    test 'Switch', ->
+      shouldBeTypeError """
+      x :: String =
+        switch true
+          when 0
+            'foo'
+          when 1
+            'bar'
+      """
+
 
   suite 'Class', ->
     test 'define class', ->
