@@ -11,9 +11,17 @@ shouldBeTypeError = (input) ->
     return
   throw 'must be type error but parsed'
 
+shouldBeError = (input) ->
+  try
+    CoffeeScript.parse input
+  catch e
+    return
+  throw 'must be error but parsed'
+
 suite 'TypeChecker', ->
   setup ->
     global._root_.vars = []
+    global._root_._this = []
     reporter.clean()
 
   suite 'Assignment', ->
@@ -179,7 +187,7 @@ suite 'TypeChecker', ->
       """
 
     test 'throw pre-defined args mismatch', ->
-      throws -> parse """
+      shouldBeTypeError """
       a :: Number -> Number
       a = (n) ->
         n2 :: String = n """
@@ -207,7 +215,7 @@ suite 'TypeChecker', ->
       b = a
 
     test 'throw type propagation', ->
-      throws -> parse """
+      shouldBeTypeError """
       a :: Int = 3
       b = a
       b = "Hoge"
@@ -357,7 +365,7 @@ suite 'TypeChecker', ->
 
   suite 'Soaked', ->
     # test 'cant catch undefined', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   x :: Number = global?.require
     #   """
 
@@ -405,7 +413,7 @@ suite 'TypeChecker', ->
     # test 'Range', ->
     #   list :: Number[] = [1..10]
     # test 'throw function return type mismatch', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   list :: String[] = [1..10]
     #   """
 
@@ -486,7 +494,7 @@ suite 'TypeChecker', ->
     #       else
     #         'fuga'
     # test 'miscast Switch', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   x :: Number =
     #     switch true
     #       when 0
@@ -500,49 +508,121 @@ suite 'TypeChecker', ->
       class A
         name :: String
 
+    test 'throw double assignment', ->
+      shouldBeError """
+      class A
+        name :: String
+        name :: Int
+      """
+
     suite 'constructor', ->
-      test 'define class', ->
+      test 'define class with pre defined arugments', ->
         class A
           constructor :: String -> ()
           constructor: (name :: String) ->
 
-      test 'define class', ->
+      test 'define class with pre defined arguments', ->
         class A
           constructor :: () -> ()
           constructor: () ->
 
-      test 'define class', ->
+      test 'throw constructor arguments', ->
         shouldBeTypeError '''
         class A
           constructor :: String -> ()
-          constructor: (_name :: Int) ->
+          constructor: (name :: Int) ->
         '''
 
-      test 'define class', ->
+      test 'throw unmatched constructor arguments', ->
         shouldBeTypeError '''
         class A
           constructor :: String -> ()
           constructor: (name :: String, foo :: Int) ->
         '''
 
-    test 'pre-defined args in class', ->
+      test 'this member access', ->
+        class A
+          name :: String
+          constructor :: String -> ()
+          constructor: (name :: String) ->
+            @name = name
+
+      test 'throw member assignment', ->
+        shouldBeTypeError """
+        class A
+          name :: String
+          constructor: ->
+            @name = 3
+        """
+
+    suite 'classProtoAssign', ->
+      test 'throw member assignment', ->
+        class A
+          f :: Int -> Int
+          f: (n :: Int) -> n
+
+      test 'throw member assignment', ->
+        shouldBeTypeError """
+        class A
+          f :: Int -> Int
+          f: (n :: String) -> n
+        """
+
+    test 'throw return type in class', ->
+      shouldBeTypeError """
       class X
         text :: String
         f :: Number -> Number
         f: (n) ->
           @text = n.toString()
+      """
 
-    # test 'throw pre-defined args mismatch in class', ->
-    #   throws -> parse """
-    #   class X
-    #     text :: String
-    #     f :: Number -> Number
-    #     f: (n) ->
-    #       @text = n
-    #   """
+    test 'throw pre-defined args mismatch in class', ->
+      shouldBeTypeError """
+      class X
+        text :: String
+        f :: Number -> Number
+        f: (n) ->
+          @text = n
+          1
+      """
 
+    suite 'MemberAccess in class', ->
+      test 'access this in class', ->
+        class X
+          foo :: Number
+          constructor: ->
+            @foo = 3
+
+      test 'access this in class', ->
+        shouldBeTypeError """
+        class X
+          foo :: Number
+          constructor: ->
+            @foo = ''
+        """
+
+      test 'access this proto in class', ->
+        class Y
+          foo :: Number
+          bar: ->
+            @foo = 3
+
+    suite 'Extends', ->
+      # test 'extends properties', ->
+      #   class Point
+      #     x :: Int
+      #     y :: Int
+
+      #   class Entity extends Point
+      #     width  :: Int
+      #     height :: Int
+
+      #   e :: {x :: Int, y :: Int} = new Entity
+
+  suite 'Generics', ->
     # test 'throw generics object', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   struct Hash<K, V> {
     #     get :: K -> V
     #     set :: K * V -> ()
@@ -556,31 +636,42 @@ suite 'TypeChecker', ->
     #   hash.get 1
     #   """
 
-    # test 'access this in class', ->
+
+  suite 'NewOp', ->
+    # test 'new', ->
     #   class X
-    #     foo :: Number
-    #     constructor: ->
-    #       @foo = 3
+    #     f: (n :: Number) :: Number ->
+    #       n * n
+    #   x :: X = new X
+    #   n :: Number = x.f 3
 
-    # test 'access this proto in class', ->
-    #   class Y
-    #     foo :: Number
-    #     bar: ->
-    #       @foo = 3
+    # test 'access proto this in class', ->
+    #   class X
+    #     constructor :: Number * String -> ()
+    #     constructor: (num, fuga) ->
+    #       @num = num
+    #   x :: X = new X 3, ""
 
-    # test 'extends properties', ->
-    #   class Point
-    #     x :: Int
-    #     y :: Int
+    # test 'throw access proto this in class', ->
+    #   shouldBeTypeError """
+    #   class X
+    #     constructor :: Number -> ()
+    #     constructor: (num, fuga) ->
+    #       @num = num
+    #   x :: X = new X ""
+    #   """
 
-    #   class Entity extends Point
-    #     width  :: Int
-    #     height :: Int
-
-    #   e :: {x :: Int, y :: Int} = new Entity
+    # test 'new', ->
+    #   shouldBeTypeError """
+    #   class X
+    #     f: (n :: Number) :: Number ->
+    #       n * n
+    #   x :: X = new X
+    #   n :: String = x.f 3
+    #   """
 
     # test 'throw extends properties', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   class Point
     #     x :: String
     #     y :: Int
@@ -592,71 +683,6 @@ suite 'TypeChecker', ->
     #   e :: {x :: Int, y :: Int} = new Entity
     #   """
 
-    # test 'throw access this in class', ->
-    #   throws -> parse """
-    #   class Z
-    #     foo :: Number
-    #     constructor: ->
-    #       @foo = 'fuga'
-    #   """
-
-    # test 'throw access proto this in class', ->
-    #   throws -> parse """
-    #   class K
-    #     bar :: String
-    #     f : (n) ->
-    #       @bar = 2
-    #   """
-
-    # test 'access proto this in class', ->
-    #   class X
-    #     num :: Number
-    #     constructor :: Number -> ()
-    #     constructor: (num) ->
-    #       @num = num
-
-    # test 'throw access proto this in class', ->
-    #   throws -> parse """
-    #   class X
-    #     num :: String
-    #     constructor :: Number -> ()
-    #     constructor: (num) ->
-    #       @num = num
-    #   """
-
-    # test 'access proto this in class', ->
-    #   class X
-    #     constructor :: Number * String -> ()
-    #     constructor: (num, fuga) ->
-    #       @num = num
-    #   x :: X = new X 3, ""
-
-    # test 'throw access proto this in class', ->
-    #   throws -> parse """
-    #   class X
-    #     constructor :: Number -> ()
-    #     constructor: (num, fuga) ->
-    #       @num = num
-    #   x :: X = new X ""
-    #   """
-
-
-  suite 'NewOp', ->
-    # test 'new', ->
-    #   class X
-    #     f: (n :: Number) :: Number ->
-    #       n * n
-    #   x :: X = new X
-    #   n :: Number = x.f 3
-
-    # test 'new', ->
-    #   throws -> parse """
-    #   class X
-    #     f: (n :: Number) :: Number ->
-    #       n * n
-    #   x :: X = new X
-    #   n :: String = x.f 3
-    #   """
 
   suite 'Generics', ->
     # test 'generics', ->
@@ -669,7 +695,7 @@ suite 'TypeChecker', ->
     #   s :: Numbertgra = origin.getInstance()
 
     # test 'throw generics', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #     struct Singleton<T> {
     #       getInstance :: () -> T
     #     }
@@ -691,7 +717,7 @@ suite 'TypeChecker', ->
     #   num :: Number = hash.get "a"
 
     # test 'throw generics hash', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   struct Hash<K, V> {
     #     get :: K -> V
     #     set :: K * V -> ()
@@ -705,7 +731,7 @@ suite 'TypeChecker', ->
     #   """
 
     # test 'throw generics hash', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   struct Hash<K, V> {
     #     get :: K -> V
     #     set :: K * V -> ()
@@ -738,7 +764,7 @@ suite 'TypeChecker', ->
     #   e :: {x :: Int, width :: Int} = new Entity
 
     # test 'throw implements', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   struct Size {
     #     width  :: Int
     #     height :: Int
@@ -752,7 +778,7 @@ suite 'TypeChecker', ->
     #   {a, b, c} = {a: 3, b:5, c:6}
 
     # test 'throw destructive assignment', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   a :: String
     #   {a, b, c} = {a: 3, b:5, c:6}
     #   """
@@ -760,7 +786,7 @@ suite 'TypeChecker', ->
     #   [a, b, c] = [3, 5, 6]
 
     # test 'destructive assignment', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   a :: String
     #   [a, b, c] = [3, 5, 6]
     #   """
@@ -777,7 +803,7 @@ suite 'TypeChecker', ->
     #     f: (@x) -> 3
 
     # test 'throw destructive assignment', ->
-    #   throws -> parse """
+    #   shouldBeTypeError """
     #   class X
     #     x :: String
     #     f :: Int -> Int

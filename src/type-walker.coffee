@@ -48,16 +48,20 @@ walkStruct = (node, scope) ->
 walkVardef = (node, scope) ->
   # avoid 'constructor' because it's property has special action on EcmaScript
   symbol = node.name.identifier.typeRef
-  debug 'classScope', symbol
+  # debug 'classScope', symbol
 
   if scope instanceof ClassScope
     if symbol is 'constructor'
       symbol = '_constructor_'
-    scope.addThis
-      nodeType: 'variable'
-      identifier:
-        typeRef: symbol
-      typeAnnotation: node.expr
+
+    unless scope.getThis symbol
+      scope.addThis
+        nodeType: 'variable'
+        identifier:
+          typeRef: symbol
+        typeAnnotation: node.expr
+    else
+      reporter.add_error node, 'double bind: '+ symbol
   else
     unless scope.getVar symbol
       scope.addVar
@@ -264,22 +268,48 @@ walkFor = (node, scope) ->
   delete scope._vars[node.keyAssignee?.data] # WILL FIX
 
 walkClassProtoAssignOp = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
+  # node.typeAnnotation ?= ImplicitAnyAnnotation
+  # return # TODO
+
   left  = node.assignee
   right = node.expression
   symbol = left.data
 
-  walk left, scope
+  # walk left, scope
+  # debug 'left',
   if (right.instanceof CS.Function) and scope.getThis(symbol)
-    walkFunction right, scope, scope.getThis(symbol).identifier
+    annotation = scope.getThis(symbol)?.typeAnnotation
+    # register before walk. for recursive call
+    if annotation?
+      left.typeAnnotation = annotation
+      scope.addThis
+        nodeType: 'variable'
+        identifier:
+          typeRef: symbol
+        typeAnnotation: annotation
+    walkFunction right, scope, annotation
   else
+    annotation =
+      nodeType: 'variable'
+      identifier:
+        typeRef: symbol
+      typeAnnotation: null
+    scope.addThis annotation
     walk right, scope
 
-  symbol = left.data
+    if right.typeAnnotation
+      annotation.typeAnnotation = right.typeAnnotation
 
-  if right.typeAnnotation?
-    scope.addThis symbol, right.typeAnnotation.identifier
+  # symbol = left.data
+
+  # if right.typeAnnotation?
+  #   scope.addThis symbol, right.typeAnnotation.identifier
+
+  console.error left.className
+  debug 'proto left', left
+  console.error right.className
+  debug 'proto right', right
+
 
 walkCompoundAssignOp = (node, scope) ->
   node.typeAnnotation ?= ImplicitAnyAnnotation
@@ -439,12 +469,11 @@ walkIdentifier = (node, scope) ->
     node.typeAnnotation ?= ImplicitAnyAnnotation
 
 walkThis = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
-  identifier = {}
-  for key, val of scope._this
-    identifier[key] = val.identifier
-  node.typeAnnotation ?= {identifier}
+  # debug 'walkThis', node
+  # debug 'walkThis members', scope._this
+  node.typeAnnotation =
+    nodeType: 'members'
+    properties: scope._this
 
 walkDynamicMemberAccessOp = (node, scope) ->
   node.typeAnnotation ?= ImplicitAnyAnnotation
@@ -459,6 +488,7 @@ walkProtoMemberAccessOp = (node, scope) ->
   return # TODO
 
 walkMemberAccess = (node, scope) ->
+  # debug 'walkMemberAccess', node.expression.className
   if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
 
@@ -545,46 +575,21 @@ walkClass = (node, scope) ->
     for statement in node.body.statements when statement.nodeType is 'vardef'
       walkVardef statement, classScope
 
-  # debug 'walkClass', classScope._this
-  # debug 'walkClass', node
-  # return
-
   # constructor
   if node.ctor?
-    constructorScope = new FunctionScope classScope
-    constructorScope.name = 'constructor'
-    constructorScope._this = classScope._this # delegate this scope
-
-    walkFunction node.ctor.expression, constructorScope, classScope.getConstructorType()
-
-    # # arguments
-    # if node.ctor.expression.parameters?
-    #   # vardef exists: constructor :: X, Y, Z
-    #   if constructorScope.getThis('_constructor_')
-    #     preAnnotation = constructorScope.getThis('_constructor_').identifier
-    #     for param, index in node.ctor.expression.parameters when param?
-    #       walk param, constructorScope
-    #       constructorScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
-    #   else
-    #     for param, index in node.ctor.expression.parameters when param?
-    #       walk param, constructorScope
-    #       constructorScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
-
-    # constructor body
-    if node.ctor.expression.body?.statements?
-      for statement in node.ctor.expression.body.statements
-        walk statement, constructorScope
-  return
+    walkFunction node.ctor.expression, classScope, classScope.getConstructorType()
 
   # walk
-  if node.body?.statements?
-    for statement in node.body.statements when statement.identifier isnt 'vardef'
+  if node.body instanceof CS.Block
+    for statement in node.body.statements when statement.nodeType isnt 'vardef'
       walk statement, classScope
+  return
 
   if node.nameAssignee?.data
     for fname, val of classScope._this
       this_scope[fname] = val.identifier
     scope.addType node.nameAssignee.data, this_scope
+
   # classScope = new ClassScope scope
   # this_scope = {}
   # # Add props to this_socpe by extends and implements
@@ -642,7 +647,6 @@ walkClass = (node, scope) ->
 
 # walkFunction :: Node * Scope * TypeAnnotation? -> ()
 walkFunction = (node, scope, preAnnotation = null) ->
-  debug 'walkFunction', preAnnotation
   functionScope = new Scope scope
   if scope instanceof ClassScope # TODO: fat arrow
     functionScope._this = scope._this
@@ -712,7 +716,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  # console.error 'walking node:', node?.className, node?.raw
+  console.error 'walking node:', node?.className, node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)
