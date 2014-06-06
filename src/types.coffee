@@ -9,7 +9,6 @@ ImplicitAnyAnnotation =
   identifier:
     typeRef: 'Any'
 
-
 # Var and typeRef scope as node
 class Scope
   # constructor :: (Scope) -> Scope
@@ -80,6 +79,10 @@ class Scope
           return null
       cur = mod
     cur
+
+  addType: (node) ->
+    @types.push node
+    return node
 
   addPrimitiveType: (node) ->
     if node.nodeType isnt 'primitiveIdentifier'

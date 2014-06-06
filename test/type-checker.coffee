@@ -363,7 +363,7 @@ suite 'TypeChecker', ->
       f = (n) -> (m, str) -> n * m
       f(1)(2, 'hey!')
 
-  suite 'Soaked', ->
+  suite 'Nullable', ->
     # test 'cant catch undefined', ->
     #   shouldBeTypeError """
     #   x :: Number = global?.require
@@ -636,12 +636,66 @@ suite 'TypeChecker', ->
     #   hash.get 1
     #   """
 
-
   suite 'NewOp', ->
+
+    test 'new', ->
+      class A
+      a = new A
+
+    test 'new', ->
+      class A
+        text :: String
+      a = new A
+      s :: String = a.text
+
+    test 'new', ->
+      shouldBeTypeError """
+      class A
+      a :: { num :: Number } = new A
+      """
+
+    test 'new', ->
+      shouldBeTypeError """
+      class A
+        text :: String
+      a = new A
+      s :: Int = a.text
+      """
+
+    test 'constructor', ->
+      class A
+        constructor :: Int -> ()
+      a :: A = new A 3
+
+    # test 'constructor', ->
+    #   shouldBeTypeError """
+    #   class A
+    #     constructor :: Int -> ()
+    #   a :: A = new A ''
+    #   """
+
+    # test 'new', ->
+    #   shouldBeTypeError """
+    #   struct S
+    #     foo: String
+    #   class A
+    #     bar: String
+    #   a :: S = new A
+    #   """
+
+    # test 'new', ->
+    #   shouldBeTypeError """
+    #   struct S {
+    #     foo: String
+    #   }
+    #   class A
+    #   a :: S = new A
+    #   """
+
     # test 'new', ->
     #   class X
-    #     f: (n :: Number) :: Number ->
-    #       n * n
+    #     f :: Number -> Number
+    #     f: (n) -> n * n
     #   x :: X = new X
     #   n :: Number = x.f 3
 
@@ -668,19 +722,6 @@ suite 'TypeChecker', ->
     #       n * n
     #   x :: X = new X
     #   n :: String = x.f 3
-    #   """
-
-    # test 'throw extends properties', ->
-    #   shouldBeTypeError """
-    #   class Point
-    #     x :: String
-    #     y :: Int
-
-    #   class Entity extends Point
-    #     width  :: Int
-    #     height :: Int
-
-    #   e :: {x :: Int, y :: Int} = new Entity
     #   """
 
 

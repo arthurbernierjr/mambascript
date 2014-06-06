@@ -215,18 +215,24 @@ walkSwitch = (node, scope) ->
   node.typeAnnotation = identifier: {possibilities}
 
 walkNewOp = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
-  for arg in node.arguments
-    walk arg, scope
-  Type = scope.getTypeInScope node.ctor.data
-  if Type
-    args = node.arguments?.map (arg) -> arg.typeAnnotation?.identifier
-    if err = scope.checkAcceptableObject Type.identifier._constructor_, {arguments: (args ? []), returnType: 'Any'}
-      err = typeErrorText Type.identifier._constructor_, {arguments: (args ? []), returnType: 'Any'}
-      return reporter.add_error node, err
+  type = scope.getTypeInScope node.ctor.data
 
-  node.typeAnnotation = identifier: Type?.identifier
+  if type
+    ctorAnnotation = _.find type.properties, (i) ->
+      i.identifier?.typeRef is '_constructor_'
+
+  for arg, n in node.arguments
+    walk arg, scope
+
+    left = arg?.typeAnnotation
+    right = ctorAnnotation?.typeAnnotation?.arguments?[n]
+    # debug 'walk left', left
+    # debug 'walk right', right
+
+    if left and right
+      checkTypeAnnotation scope, node, left, right
+
+  node.typeAnnotation = type ? ImplicitAnyAnnotation
 
 walkOfOp = (node, scope) ->
   node.typeAnnotation ?= ImplicitAnyAnnotation
@@ -305,10 +311,10 @@ walkClassProtoAssignOp = (node, scope) ->
   # if right.typeAnnotation?
   #   scope.addThis symbol, right.typeAnnotation.identifier
 
-  console.error left.className
-  debug 'proto left', left
-  console.error right.className
-  debug 'proto right', right
+  # console.error left.className
+  # debug 'proto left', left
+  # console.error right.className
+  # debug 'proto right', right
 
 
 walkCompoundAssignOp = (node, scope) ->
@@ -564,11 +570,11 @@ walkClass = (node, scope) ->
   if node.nameAssignee?.data
     classScope.name = node.nameAssignee?.data
     # has parent class?
-    if node.parent?.data
-      return #TODO
-    # has implements?
     if node.impl?.length?
       return #TODO
+
+  # if node.parent?
+  #   debug 'parent', scope.getTypeInScope(node.parent.data)
 
   # collect @values first
   if node.body?.statements?
@@ -583,12 +589,25 @@ walkClass = (node, scope) ->
   if node.body instanceof CS.Block
     for statement in node.body.statements when statement.nodeType isnt 'vardef'
       walk statement, classScope
-  return
 
   if node.nameAssignee?.data
-    for fname, val of classScope._this
-      this_scope[fname] = val.identifier
-    scope.addType node.nameAssignee.data, this_scope
+    scope.addType
+      nodeType: 'struct'
+      newable: true
+      identifier:
+        typeRef: node.nameAssignee.data
+      members:
+        nodeType: 'members'
+        properties: _.clone _.map classScope._this, (prop) ->
+          prop.nodeType = 'identifier' # hack for type checking
+          prop
+    # debug 'addType', scope
+
+    # TODO Namespace
+    # scope.addType
+    #   nodeType: 'identifier'
+    #   identifier:
+    #     typeRef: node.nameAssignee.data
 
   # classScope = new ClassScope scope
   # this_scope = {}
@@ -716,7 +735,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  console.error 'walking node:', node?.className, node?.raw
+  # console.error 'walking node:', node?.className #, node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)

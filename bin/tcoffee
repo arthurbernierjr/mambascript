@@ -127,14 +127,13 @@ switch mode
     source = fs.readFileSync(fpath).toString()
     js = compileFromSourceToJS(source)
     console.log js
-
-    exec "node -e \"#{js}\"", {
-      cwd: process.cwd()
-      env: process.env
-    },  (err, stdout, stderr) =>
-      throw err if err
-      throw stderr if stderr
-      console.log stdout
+    # exec "node -e \"#{js}\"", {
+    #   cwd: process.cwd()
+    #   env: process.env
+    # },  (err, stdout, stderr) =>
+    #   throw err if err
+    #   throw stderr if stderr
+    #   console.log stdout
 
   when 'repl'
     repl.start()
