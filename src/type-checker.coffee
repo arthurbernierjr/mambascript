@@ -133,8 +133,12 @@ isAcceptable = (scope, left, right) ->
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
     return isAcceptableStruct scope, leftAnnotation, rightAnnotation
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'primitiveIdentifier'
-    nullable = left.identifier.nullable
-    return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation, nullable
+    leftNullable = left.identifier.nullable
+    rightNullable = right.identifier.nullable
+    if not leftNullable and rightNullable
+      return false
+    return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation, leftNullable
+
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'functionType'
     return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
 

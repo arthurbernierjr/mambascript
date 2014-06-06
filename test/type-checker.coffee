@@ -236,30 +236,54 @@ suite 'TypeChecker', ->
 
   suite 'Nullable', ->
     test 'nullable', ->
+      a :: Int? = 1
+
+    test 'nullable', ->
+      a :: Int? = null
+
+    test 'nullable', ->
+      a :: Int? = undefined
+
+    test 'nullable', ->
+      shouldBeTypeError """
+      a :: Int? = ''
+      """
+
+    test 'nullable member', ->
       struct A
         a :: Int?
       a :: A = {}
 
-    test 'nullable', ->
+    test 'nullable member', ->
       struct A
         a :: Int?
       a :: A = a: null
 
-    test 'nullable', ->
+    test 'nullable member', ->
       struct A
         a :: Int?
       a :: A = a: undefined
 
-    test 'nullable', ->
+    test 'nullable member', ->
       struct A
         a :: Int?
       a :: A = a: 1
 
-    test 'nullable', ->
+    test 'nullable member', ->
       shouldBeTypeError """
       struct A
         a :: Int?
       a :: A = a: ''
+      """
+
+    test 'nullable assign', ->
+      nn :: Int? = 1
+      n :: Int? = nn
+
+    test 'nullable assign', ->
+      shouldBeTypeError """
+      nn :: Int? = 1
+      n :: Int = nn
       """
 
   suite 'Explicit Rules', ->
