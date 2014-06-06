@@ -48,13 +48,16 @@ walkStruct = (node, scope) ->
 walkVardef = (node, scope) ->
   # avoid 'constructor' because it's property has special action on EcmaScript
   symbol = node.name.identifier.typeRef
+  debug 'classScope', symbol
 
   if scope instanceof ClassScope
     if symbol is 'constructor'
       symbol = '_constructor_'
-    return # TODO
-
-    scope.addThis symbol, node.expr
+    scope.addThis
+      nodeType: 'variable'
+      identifier:
+        typeRef: symbol
+      typeAnnotation: node.expr
   else
     unless scope.getVar symbol
       scope.addVar
@@ -526,52 +529,52 @@ walkObjectInitializer = (node, scope) ->
           typeRef: 'Object'
 
 walkClass = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
   classScope = new ClassScope scope
-  this_scope = {}
   # Add props to this_socpe by extends and implements
   if node.nameAssignee?.data
-    # extends
+    classScope.name = node.nameAssignee?.data
+    # has parent class?
     if node.parent?.data
-      parent = scope.getTypeInScope node.parent.data
-      if parent
-        for key, val of parent.identifier
-          this_scope[key] = val
-    # implements
+      return #TODO
+    # has implements?
     if node.impl?.length?
-      for name in node.impl
-        cls = scope.getTypeInScope name
-        if cls
-          for key, val of cls.identifier
-            this_scope[key] = val
+      return #TODO
 
   # collect @values first
   if node.body?.statements?
-    for statement in node.body.statements when statement.identifier is 'vardef'
+    for statement in node.body.statements when statement.nodeType is 'vardef'
       walkVardef statement, classScope
+
+  # debug 'walkClass', classScope._this
+  # debug 'walkClass', node
+  # return
 
   # constructor
   if node.ctor?
     constructorScope = new FunctionScope classScope
+    constructorScope.name = 'constructor'
     constructorScope._this = classScope._this # delegate this scope
-    # arguments
-    if node.ctor.expression.parameters?
-      # vardef exists: constructor :: X, Y, Z
-      if constructorScope.getThis('_constructor_')
-        preAnnotation = constructorScope.getThis('_constructor_').identifier
-        for param, index in node.ctor.expression.parameters when param?
-          walk param, constructorScope
-          constructorScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
-      else
-        for param, index in node.ctor.expression.parameters when param?
-          walk param, constructorScope
-          constructorScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
+
+    walkFunction node.ctor.expression, constructorScope, classScope.getConstructorType()
+
+    # # arguments
+    # if node.ctor.expression.parameters?
+    #   # vardef exists: constructor :: X, Y, Z
+    #   if constructorScope.getThis('_constructor_')
+    #     preAnnotation = constructorScope.getThis('_constructor_').identifier
+    #     for param, index in node.ctor.expression.parameters when param?
+    #       walk param, constructorScope
+    #       constructorScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
+    #   else
+    #     for param, index in node.ctor.expression.parameters when param?
+    #       walk param, constructorScope
+    #       constructorScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
 
     # constructor body
     if node.ctor.expression.body?.statements?
       for statement in node.ctor.expression.body.statements
         walk statement, constructorScope
+  return
 
   # walk
   if node.body?.statements?
@@ -582,9 +585,64 @@ walkClass = (node, scope) ->
     for fname, val of classScope._this
       this_scope[fname] = val.identifier
     scope.addType node.nameAssignee.data, this_scope
+  # classScope = new ClassScope scope
+  # this_scope = {}
+  # # Add props to this_socpe by extends and implements
+  # if node.nameAssignee?.data
+  #   # extends
+  #   if node.parent?.data
+  #     parent = scope.getTypeInScope node.parent.data
+  #     if parent
+  #       for key, val of parent.identifier
+  #         this_scope[key] = val
+  #   # implements
+  #   if node.impl?.length?
+  #     for name in node.impl
+  #       cls = scope.getTypeInScope name
+  #       if cls
+  #         for key, val of cls.identifier
+  #           this_scope[key] = val
+
+  # # collect @values first
+  # if node.body?.statements?
+  #   for statement in node.body.statements when statement.identifier is 'vardef'
+  #     walkVardef statement, classScope
+
+  # # constructor
+  # if node.ctor?
+  #   constructorScope = new FunctionScope classScope
+  #   constructorScope._this = classScope._this # delegate this scope
+  #   # arguments
+  #   if node.ctor.expression.parameters?
+  #     # vardef exists: constructor :: X, Y, Z
+  #     if constructorScope.getThis('_constructor_')
+  #       preAnnotation = constructorScope.getThis('_constructor_').identifier
+  #       for param, index in node.ctor.expression.parameters when param?
+  #         walk param, constructorScope
+  #         constructorScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
+  #     else
+  #       for param, index in node.ctor.expression.parameters when param?
+  #         walk param, constructorScope
+  #         constructorScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
+
+  #   # constructor body
+  #   if node.ctor.expression.body?.statements?
+  #     for statement in node.ctor.expression.body.statements
+  #       walk statement, constructorScope
+
+  # # walk
+  # if node.body?.statements?
+  #   for statement in node.body.statements when statement.identifier isnt 'vardef'
+  #     walk statement, classScope
+
+  # if node.nameAssignee?.data
+  #   for fname, val of classScope._this
+  #     this_scope[fname] = val.identifier
+  #   scope.addType node.nameAssignee.data, this_scope
 
 # walkFunction :: Node * Scope * TypeAnnotation? -> ()
 walkFunction = (node, scope, preAnnotation = null) ->
+  debug 'walkFunction', preAnnotation
   functionScope = new Scope scope
   if scope instanceof ClassScope # TODO: fat arrow
     functionScope._this = scope._this

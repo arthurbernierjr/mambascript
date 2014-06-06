@@ -496,24 +496,41 @@ suite 'TypeChecker', ->
     #   """
 
   suite 'Class', ->
-    test 'avoid polution about prototype', ->
+    test 'define class', ->
+      class A
+        name :: String
+
+    suite 'constructor', ->
+      test 'define class', ->
+        class A
+          constructor :: String -> ()
+          constructor: (name :: String) ->
+
+      test 'define class', ->
+        class A
+          constructor :: () -> ()
+          constructor: () ->
+
+      test 'define class', ->
+        shouldBeTypeError '''
+        class A
+          constructor :: String -> ()
+          constructor: (_name :: Int) ->
+        '''
+
+      test 'define class', ->
+        shouldBeTypeError '''
+        class A
+          constructor :: String -> ()
+          constructor: (name :: String, foo :: Int) ->
+        '''
+
+    test 'pre-defined args in class', ->
       class X
-      X::x = 3
-      eq X.prototype.x, 3
-
-    # test 'struct definition', ->
-    #   struct Point
-    #     x :: Number
-    #     y :: Number
-
-    #   p :: Point = {x: 3, y: 3}
-
-    # test 'pre-defined args in class', ->
-    #   class X
-    #     text :: String
-    #     f :: Number -> Number
-    #     f: (n) ->
-    #       @text = n.toString()
+        text :: String
+        f :: Number -> Number
+        f: (n) ->
+          @text = n.toString()
 
     # test 'throw pre-defined args mismatch in class', ->
     #   throws -> parse """

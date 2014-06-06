@@ -26,7 +26,7 @@ class Scope
     @types = [] #=> Type[]
 
     # This scope
-    @_this  = {}
+    @_this  = []
 
     # Module scope
     @_modules  = {}
@@ -57,8 +57,6 @@ class Scope
 
   getModuleInScope: (name) ->
     @getModule(name) or @parent?.getModuleInScope(name) or undefined
-
-  # addType :: StructNode -> ()
 
   # resolveNamespace :: TypeRef -> Module
   resolveNamespace: (ref, autoCreate = false) ->
@@ -147,8 +145,6 @@ class Scope
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByIdentifier: (node) ->
-    # if node?.nodeType noti n ['identifier', 'primitiveIdentifier', 'functionType', 'members']
-    #   throw node?.nodeType + ' is not gettable node'
     switch node?.nodeType
       when 'members'
         node
@@ -157,31 +153,21 @@ class Scope
       when 'identifier'
         @getTypeInScope(node.identifier.typeRef)
       when 'functionType'
-        null
         ImplicitAnyAnnotation
       else
         ImplicitAnyAnnotation
 
-  addThis: (symbol, typeRef) ->
-    # TODO: Refactor with addVar
-    if typeRef?._base_?
-      T = @getType(typeRef._base_)
-      return undefined unless T
-      obj = clone T.typeRef
-      if T._templates_
-        # TODO: length match
-        rewrite_to = typeRef._templates_
-        replacer = {}
-        for t, n in T._templates_
-          replacer[t] = rewrite_to[n]
-        rewrite obj, replacer
+  # addThis :: Type * TypeArgument[] -> ()
+  addThis: (type, args = []) ->
+    # TODO: Refactor with addThis
+    @_this.push type
 
-      @_this[symbol] = {typeRef:obj}
-    else
-      @_this[symbol] = {typeRef}
+  getThis: (propName) ->
+    _.find @_this, (v) -> v.identifier.typeRef is propName
 
-  getThis: (symbol) ->
-    @_this[symbol]
+  getThisByNode: (node) ->
+    typeName = node.identifier.typeRef
+    @getThis(typeName)?.typeAnnotation
 
   # addVar :: Type * TypeArgument[] -> ()
   addVar: (type, args = []) ->
@@ -205,6 +191,9 @@ class Scope
   checkAcceptableObject: (left, right) -> false
 
 class ClassScope extends Scope
+  getConstructorType: ->
+    (_.find @_this, (v) -> v.identifier.typeRef is '_constructor_')?.typeAnnotation
+
 class FunctionScope extends Scope
 
 primitives =

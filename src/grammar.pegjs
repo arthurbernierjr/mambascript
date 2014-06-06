@@ -774,7 +774,7 @@ class
         }
       }
       var n = rp(new CS.Class(name, parent, ctor, body, boundMembers));
-      n.impl = impl;
+      n.impl = impl || null;
       return n;
     }
   extendee = secondaryExpressionNoImplicitObjectCall
