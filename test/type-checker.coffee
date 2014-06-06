@@ -614,16 +614,49 @@ suite 'TypeChecker', ->
             @foo = 3
 
     suite 'Extends', ->
-      # test 'extends properties', ->
-      #   class Point
-      #     x :: Int
-      #     y :: Int
+      test 'extends', ->
+        class A
+          a :: String
+        class B extends A
+          b :: String
+        b :: { a :: String, b :: String} = new B
 
-      #   class Entity extends Point
-      #     width  :: Int
-      #     height :: Int
+      test 'extends', ->
+        class A
+          a :: String
+        class B extends A
+          b :: String
+        b1 :: A = new B
+        b2 :: B = new B
 
-      #   e :: {x :: Int, y :: Int} = new Entity
+      test 'down cast', ->
+        class A
+          a :: String
+        class B extends A
+          b :: String
+        b :: A = new B
+        str :: String = b.a
+
+      test 'throw down cast', ->
+        shouldBeTypeError """
+        class A
+          a :: String
+        class B extends A
+          b :: String
+        b :: A = new B
+        str :: String = b.b
+        """
+
+      test 'extends properties', ->
+        class Point
+          x :: Int
+          y :: Int
+
+        class Entity extends Point
+          width  :: Int
+          height :: Int
+
+        e :: {x :: Int, y :: Int} = new Entity
 
   suite 'Generics', ->
     # test 'throw generics object', ->

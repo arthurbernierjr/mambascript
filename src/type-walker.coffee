@@ -573,9 +573,11 @@ walkClass = (node, scope) ->
     if node.impl?.length?
       return #TODO
 
-  # if node.parent?
-  #   debug 'parent', scope.getTypeInScope(node.parent.data)
-
+  if node.parent?
+    parentAnnotation = scope.getTypeInScope(node.parent.data)
+    if parentAnnotation
+      parentAnnotation.properties.map (prop) ->
+        classScope.addThis _.clone(prop)
   # collect @values first
   if node.body?.statements?
     for statement in node.body.statements when statement.nodeType is 'vardef'
