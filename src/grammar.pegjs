@@ -754,12 +754,12 @@ try
       return r({block: body ? body.block : null});
     }
 
-classImplements = _ IMPLEMENTS __ !reserved e:ObjectInitialiserKeys _ es:(_ "," _ !reserved ObjectInitialiserKeys)* _ {
-  return [e.data].concat(es.map(function(e){return e[3].data;}));
+classImplements = _ IMPLEMENTS __ e:typeSymbol _ es:(_ "," _ typeSymbol)* _ {
+  return [e].concat(es.map(function(e){return e[3];}));
 }
 
 class
-  = CLASS name:(_ Assignable)? !reserved parent:(_ EXTENDS _ extendee)? impl:classImplements? body:classBody {
+  = CLASS name:(_ Assignable)? parent:(_ EXTENDS _ extendee)? impl:classImplements? body:classBody {
       var ctor = null;
       name = name ? name[1] : null;
       parent = parent ? parent[3] : null;

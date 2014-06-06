@@ -97,6 +97,26 @@ suite 'TypeChecker', ->
       a = false
       eq a, false
 
+  suite 'destructive assignment', ->
+    # test 'destructive assignment', ->
+    #   a :: Int
+    #   {a, b, c} = {a: 3, b:5, c:6}
+
+    # test 'throw destructive assignment', ->
+    #   shouldBeTypeError """
+    #   a :: String
+    #   {a, b, c} = {a: 3, b:5, c:6}
+    #   """
+    # test 'destructive assignment', ->
+    #   [a, b, c] = [3, 5, 6]
+
+    # test 'destructive assignment', ->
+    #   shouldBeTypeError """
+    #   a :: String
+    #   [a, b, c] = [3, 5, 6]
+    #   """
+
+
   suite 'Struct', ->
     test 'object assign', ->
       obj :: {x :: Number} = {x : 2 }
@@ -613,6 +633,25 @@ suite 'TypeChecker', ->
           bar: ->
             @foo = 3
 
+      # test 'receive this', ->
+      #   class X
+      #     x :: Int
+      #     f: (@x) -> 3
+
+      # test 'receive this with pre-defined function', ->
+      #   class X
+      #     x :: Int
+      #     f :: Int -> Int
+      #     f: (@x) -> 3
+
+      # test 'throw destructive assignment', ->
+      #   shouldBeTypeError """
+      #   class X
+      #     x :: String
+      #     f :: Int -> Int
+      #     f: (@x) -> {b:5, c:6}
+      #   """
+
     suite 'Extends', ->
       test 'extends', ->
         class A
@@ -657,6 +696,7 @@ suite 'TypeChecker', ->
           height :: Int
 
         e :: {x :: Int, y :: Int} = new Entity
+
 
   suite 'Generics', ->
     # test 'throw generics object', ->
@@ -829,72 +869,29 @@ suite 'TypeChecker', ->
     #   """
 
   suite "implements", ->
-    # test 'implements', ->
-    #   struct Size
-    #     width  :: Int
-    #     height :: Int
-    #   class Entity implements Size
-    #   e :: {width :: Int, height :: Int} = new Entity
+    test 'implements', ->
+      struct Size
+        width  :: Int
+        height :: Int
+      class Entity implements Size
+      e :: {width :: Int, height :: Int} = new Entity
 
-    # test 'multi class implements and extends', ->
-    #   class Point
-    #     x :: Int
-    #     y :: Int
+    test 'multi class implements and extends', ->
+      class Point
+        x :: Int
+        y :: Int
 
-    #   struct Size {
-    #     width  :: Int
-    #     height :: Int
-    #   }
-    #   class Entity extends Object implements Point, Size
-    #   e :: {x :: Int, width :: Int} = new Entity
+      struct Size
+        width  :: Int
+        height :: Int
+      class Entity extends Object implements Point, Size
+      e :: {x :: Int, width :: Int} = new Entity
 
-    # test 'throw implements', ->
-    #   shouldBeTypeError """
-    #   struct Size {
-    #     width  :: Int
-    #     height :: Int
-    #   }
-    #   class Entity implements Size
-    #   e :: {z :: Int} = new Entity
-    #   """
-
-    # test 'destructive assignment', ->
-    #   a :: Int
-    #   {a, b, c} = {a: 3, b:5, c:6}
-
-    # test 'throw destructive assignment', ->
-    #   shouldBeTypeError """
-    #   a :: String
-    #   {a, b, c} = {a: 3, b:5, c:6}
-    #   """
-    # test 'destructive assignment', ->
-    #   [a, b, c] = [3, 5, 6]
-
-    # test 'destructive assignment', ->
-    #   shouldBeTypeError """
-    #   a :: String
-    #   [a, b, c] = [3, 5, 6]
-    #   """
-
-    # test 'receive this', ->
-    #   class X
-    #     x :: Int
-    #     f: (@x) -> 3
-
-    # test 'receive this with pre-defined function', ->
-    #   class X
-    #     x :: Int
-    #     f :: Int -> Int
-    #     f: (@x) -> 3
-
-    # test 'throw destructive assignment', ->
-    #   shouldBeTypeError """
-    #   class X
-    #     x :: String
-    #     f :: Int -> Int
-    #     f: (@x) -> {b:5, c:6}
-    #   """
-
-    # test 'receive this with destructive args', ->
-    #   class X
-    #     x :: Int
+    test 'throw implements', ->
+      shouldBeTypeError """
+      struct Size
+        width  :: Int
+        height :: Int
+      class Entity implements Size
+      e :: {z :: Int} = new Entity
+      """

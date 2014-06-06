@@ -569,11 +569,19 @@ walkClass = (node, scope) ->
   # Add props to this_socpe by extends and implements
   if node.nameAssignee?.data
     classScope.name = node.nameAssignee?.data
-    # has parent class?
-    if node.impl?.length?
-      return #TODO
 
+  # has parent class?
+  if node.impl?.length
+    # debug 'walkClass impl!', node
+    for impl in node.impl
+      parentAnnotation = scope.getTypeInScope(impl.identifier.typeRef) # TODO: member access
+      if parentAnnotation
+        parentAnnotation.properties.map (prop) ->
+          classScope.addThis _.clone(prop)
+
+  # has parent class?
   if node.parent?
+    # TODO: member access
     parentAnnotation = scope.getTypeInScope(node.parent.data)
     if parentAnnotation
       parentAnnotation.properties.map (prop) ->
