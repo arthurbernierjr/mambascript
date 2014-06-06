@@ -1,4 +1,6 @@
+{initializeGlobalTypes} = require '../lib/types'
 reporter = require '../lib/reporter'
+
 parse = (coffee) ->
   reporter.clean()
   parse coffee
@@ -21,7 +23,10 @@ shouldBeError = (input) ->
 suite 'TypeChecker', ->
   setup ->
     global._root_.vars = []
+    global._root_.types = []
     global._root_._this = []
+
+    initializeGlobalTypes(global._root_)
     reporter.clean()
 
   suite 'Assignment', ->
@@ -662,35 +667,42 @@ suite 'TypeChecker', ->
       s :: Int = a.text
       """
 
-    test 'constructor', ->
+    suite 'constructor', ->
+      test 'constructor annotation', ->
+        class A
+          constructor :: Int -> ()
+        a :: A = new A 3
+
+      test 'constructor', ->
+        class A
+          constructor :: Int -> ()
+          constructor: (n) ->
+        a :: A = new A 3
+
+      test 'constructor', ->
+        shouldBeTypeError """
+        class A
+          constructor :: Int -> ()
+        new A ''
+        """
+
+    test 'new', ->
+      shouldBeError """
+      struct S
+        foo :: String
       class A
-        constructor :: Int -> ()
-      a :: A = new A 3
+        bar: String
 
-    # test 'constructor', ->
-    #   shouldBeTypeError """
-    #   class A
-    #     constructor :: Int -> ()
-    #   a :: A = new A ''
-    #   """
+      a :: S = new A
+      """
 
-    # test 'new', ->
-    #   shouldBeTypeError """
-    #   struct S
-    #     foo: String
-    #   class A
-    #     bar: String
-    #   a :: S = new A
-    #   """
-
-    # test 'new', ->
-    #   shouldBeTypeError """
-    #   struct S {
-    #     foo: String
-    #   }
-    #   class A
-    #   a :: S = new A
-    #   """
+    test 'new', ->
+      shouldBeTypeError """
+      struct S
+        foo :: String
+      class A
+      a :: S = new A
+      """
 
     # test 'new', ->
     #   class X
@@ -706,24 +718,23 @@ suite 'TypeChecker', ->
     #       @num = num
     #   x :: X = new X 3, ""
 
-    # test 'throw access proto this in class', ->
-    #   shouldBeTypeError """
-    #   class X
-    #     constructor :: Number -> ()
-    #     constructor: (num, fuga) ->
-    #       @num = num
-    #   x :: X = new X ""
-    #   """
+    test 'throw access proto this in class', ->
+      shouldBeTypeError """
+      class X
+        constructor :: Number -> ()
+        constructor: (num, fuga) ->
+          @num = num
+      x :: X = new X ""
+      """
 
-    # test 'new', ->
-    #   shouldBeTypeError """
-    #   class X
-    #     f: (n :: Number) :: Number ->
-    #       n * n
-    #   x :: X = new X
-    #   n :: String = x.f 3
-    #   """
-
+    test 'new', ->
+      shouldBeTypeError """
+      class X
+        f :: Number -> Number
+        f: (n) -> n * n
+      x :: X = new X
+      n :: String = x.f 3
+      """
 
   suite 'Generics', ->
     # test 'generics', ->
