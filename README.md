@@ -32,7 +32,7 @@ $ tcoffee foo.coffee # execute
 
 ## Project Status
 
-### ~0.9
+### `~v0.9`
 
 - Implement basic concepts
 
