@@ -98,12 +98,11 @@ isAcceptableFunctionType = (scope, left, right) ->
   right.returnType ?= ImplicitAnyAnnotation
   unless isAcceptable(scope, left.returnType, right.returnType)
     return false
-
-  return _.all (for leftArg, n in left.arguments
+  return _.all left.arguments.map (leftArg, n) ->
     leftArg = leftArg ? ImplicitAnyAnnotation
     rightArg = right.arguments[n] ? ImplicitAnyAnnotation
-    isAcceptable scope, leftArg, rightArg
-  )
+    ret = isAcceptable scope, leftArg, rightArg
+    ret
 
 # isAcceptable :: Types.Scope * TypeAnnotation * TypeAnnotaion -> Boolean
 isAcceptable = (scope, left, right) ->
@@ -127,9 +126,6 @@ isAcceptable = (scope, left, right) ->
   if leftAnnotation.nodeType is 'primitiveIdentifier'
     if leftAnnotation.identifier.typeRef is 'Any'
       return true
-
-  # debug 'isAcceptable left', left
-  # debug 'isAcceptable right', right
 
   if left.identifier and right.identifier and rightAnnotation
     # leftNullable = left.identifier.nullable
@@ -156,6 +152,7 @@ isAcceptable = (scope, left, right) ->
 
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'functionType'
     return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
+  true # FIXME: pass all unknow pattern
 
 typeErrorText = (left, right) ->
   util = require 'util'

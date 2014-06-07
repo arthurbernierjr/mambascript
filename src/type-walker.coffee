@@ -261,8 +261,7 @@ walkOfOp = (node, scope) ->
 walkFor = (node, scope) ->
   walk node.target, scope
   if node.valAssignee?
-    # scope.addVar node.valAssignee.data, (node.valAssignee?.typeAnnotation?.identifier) ? 'Any'
-    preAnnotation = node.valAssignee.typeAnnotation
+    preAnnotation = node?.valAssignee?.typeAnnotation
     walk node.valAssignee, scope
     # Override annotation if it is implicit Any
     # if node.target.typeAnnotation?.identifier?.isArray
@@ -314,10 +313,13 @@ walkFor = (node, scope) ->
   # check body
   walk node.body, scope #=> Block
 
-  arrayType =  _.clone node.body.typeAnnotation
   if arrayType?.identifier?
-    arrayType.identifier.isArray = true
-    node.typeAnnotation = arrayType
+    if node.body?
+      arrayType =  _.clone node.body.typeAnnotation
+      arrayType.identifier.isArray = true
+      node.typeAnnotation = arrayType
+    else
+      node.typeAnnotation = ImplicitAnyAnnotation
   else
     node.typeAnnotation = ImplicitAnyAnnotation
 
@@ -724,7 +726,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
     node.typeAnnotation ?=
       implicit: true
-      nodeType: 'functinoType'
+      nodeType: 'functionType'
       returnType: null
       arguments: []
 
