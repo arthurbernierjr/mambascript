@@ -640,15 +640,15 @@ suite 'TypeChecker', ->
           else
             3.1
 
-    # test 'switch', ->
-    #   n :: { x :: Int } =
-    #     switch 1
-    #       when 1
-    #         x: 1
-    #       when 2
-    #         x: 1, y: 2
-    #       else 2
-    #         x: 1, y: 2, z: 3
+    test 'switch', ->
+      n :: { x :: Int } =
+        switch 1
+          when 1
+            x: 1
+          when 2
+            x: 1, y: 2
+          else 2
+            x: 1, y: 2, z: 3
 
     test 'Switch', ->
       x :: String =

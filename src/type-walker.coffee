@@ -22,10 +22,6 @@ ImplicitAnyAnnotation =
 compareAsParent = (scope, a, b) ->
   retA = isAcceptable scope, a, b
   retB = isAcceptable scope, b, a
-  debug 'a', a
-  debug 'b', b
-  console.error 'retA', retA, 'retB', retB
-
   if retA and retB then b
   else if retA then a
   else if retB then b
@@ -186,9 +182,10 @@ walkConditional = (node, scope) ->
     parentType = compareAsParent scope, consequentAnnotation, alternateAnnotation
     node.typeAnnotation = parentType
   else if consequentAnnotation and not alternateAnnotation
-    t = _.clone consequentAnnotation
-    t.identifier.nullable = true
-    node.typeAnnotation = t
+    ret = _.clone consequentAnnotation
+    if ret.identifier?
+      ret.identifier.nullable = true
+    node.typeAnnotation = ret
   else
     node.typeAnnotation = ImplicitAnyAnnotation
   # debug 'Conditional', node
@@ -217,9 +214,9 @@ walkSwitch = (node, scope) ->
   ret = _.clone _.reduce tail, ((a, b) ->
     compareAsParent scope, a, b
   ), head
-  # debug 'ret', ret
-  if ret.identifier?
-    ret.identifier.nullable = not node.alternate?
+  if ret?
+    if ret.identifier?
+      ret.identifier.nullable = not node.alternate?
     node.typeAnnotation = ret ? ImplicitAnyAnnotation
   else
     node.typeAnnotation = ImplicitAnyAnnotation
@@ -417,43 +414,42 @@ walkPrimitives = (node, scope) ->
 walkUndefined = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
-    nodeType: 'primitiveIdentifier'
-    isPrimitive: true
+    nodeType: 'identifier'
     identifier:
       typeRef: 'Undefined'
 
 walkNull = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
-    nodeType: 'primitiveIdentifier'
-    isPrimitive: true
+    nodeType: 'identifier'
     identifier:
       typeRef: 'Null'
 
 walkString = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
-    nodeType: 'primitiveIdentifier'
-    isPrimitive: true
+    nodeType: 'identifier'
     identifier:
       typeRef: 'String'
 
 walkInt = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'identifier'
+    implicit: true
     identifier:
       typeRef: 'Int'
 
 walkBool = (node, scope) ->
   node.typeAnnotation ?=
-    nodeType: 'primitiveIdentifier'
-    isPrimitive: true
+    nodeType: 'identifier'
+    implicit: true
     identifier:
       typeRef: 'Boolean'
 
 walkFloat = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'identifier'
+    implicit: true
     identifier:
       typeRef: 'Float'
 
@@ -471,14 +467,14 @@ walkFloat = (node, scope) ->
 
 walkNumbers = (node, scope) ->
   node.typeAnnotation ?=
-    nodeType: 'primitiveIdentifier'
-    isPrimitive: true
+    nodeType: 'identifier'
+    implicit: true
     identifier:
       typeRef: 'Number'
-    heritages:
-      extend:
-        identifier:
-          typeRef: 'Float'
+    # heritages:
+    #   extend:
+    #     identifier:
+    #       typeRef: 'Float'
 
 walkIdentifier = (node, scope) ->
   typeName = node.data
@@ -622,71 +618,9 @@ walkClass = (node, scope) ->
         typeRef: node.nameAssignee.data
       members:
         nodeType: 'members'
-        properties: _.clone _.map classScope._this, (prop) ->
+        properties: _.map _.clone(classScope._this), (prop) ->
           prop.nodeType = 'identifier' # hack for type checking
           prop
-    # debug 'addType', scope
-
-    # TODO Namespace
-    # scope.addType
-    #   nodeType: 'identifier'
-    #   identifier:
-    #     typeRef: node.nameAssignee.data
-
-  # classScope = new ClassScope scope
-  # this_scope = {}
-  # # Add props to this_socpe by extends and implements
-  # if node.nameAssignee?.data
-  #   # extends
-  #   if node.parent?.data
-  #     parent = scope.getTypeInScope node.parent.data
-  #     if parent
-  #       for key, val of parent.identifier
-  #         this_scope[key] = val
-  #   # implements
-  #   if node.impl?.length?
-  #     for name in node.impl
-  #       cls = scope.getTypeInScope name
-  #       if cls
-  #         for key, val of cls.identifier
-  #           this_scope[key] = val
-
-  # # collect @values first
-  # if node.body?.statements?
-  #   for statement in node.body.statements when statement.identifier is 'vardef'
-  #     walkVardef statement, classScope
-
-  # # constructor
-  # if node.ctor?
-  #   constructorScope = new FunctionScope classScope
-  #   constructorScope._this = classScope._this # delegate this scope
-  #   # arguments
-  #   if node.ctor.expression.parameters?
-  #     # vardef exists: constructor :: X, Y, Z
-  #     if constructorScope.getThis('_constructor_')
-  #       preAnnotation = constructorScope.getThis('_constructor_').identifier
-  #       for param, index in node.ctor.expression.parameters when param?
-  #         walk param, constructorScope
-  #         constructorScope.addVar param.data, (preAnnotation.arguments?[index] ? 'Any')
-  #     else
-  #       for param, index in node.ctor.expression.parameters when param?
-  #         walk param, constructorScope
-  #         constructorScope.addVar param.data, (param?.typeAnnotation?.identifier ? 'Any')
-
-  #   # constructor body
-  #   if node.ctor.expression.body?.statements?
-  #     for statement in node.ctor.expression.body.statements
-  #       walk statement, constructorScope
-
-  # # walk
-  # if node.body?.statements?
-  #   for statement in node.body.statements when statement.identifier isnt 'vardef'
-  #     walk statement, classScope
-
-  # if node.nameAssignee?.data
-  #   for fname, val of classScope._this
-  #     this_scope[fname] = val.identifier
-  #   scope.addType node.nameAssignee.data, this_scope
 
 # walkFunction :: Node * Scope * TypeAnnotation? -> ()
 walkFunction = (node, scope, preAnnotation = null) ->
@@ -759,7 +693,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  console.error 'walking node:', node?.className , node?.raw2
+  # console.error 'walking node:', node?.className , node?.raw2
   # debug 'walk', node
   switch
     # undefined(mayby null body)
