@@ -259,39 +259,67 @@ walkOfOp = (node, scope) ->
   return # TODO
 
 walkFor = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
   walk node.target, scope
-
   if node.valAssignee?
-    scope.addVar node.valAssignee.data, (node.valAssignee?.typeAnnotation?.identifier) ? 'Any'
+    # scope.addVar node.valAssignee.data, (node.valAssignee?.typeAnnotation?.identifier) ? 'Any'
+    preAnnotation = node.valAssignee.typeAnnotation
+    walk node.valAssignee, scope
+    # Override annotation if it is implicit Any
+    # if node.target.typeAnnotation?.identifier?.isArray
+    if preAnnotation
+      # TODO: type check
+      node.valAssignee.typeAnnotation = preAnnotation
+    else if node.target.typeAnnotation?.identifier?.isArray
+      targetType = _.clone node.target.typeAnnotation
+      delete targetType.identifier.isArray
+      node.valAssignee.typeAnnotation = targetType
+    else
+      node.valAssignee.typeAnnotation = ImplicitAnyAnnotation
+
+    scope.addVar
+      nodeType: 'variable'
+      identifier:
+        typeRef: node.valAssignee.data
+      typeAnnotation: node.valAssignee.typeAnnotation
 
   if node.keyAssignee?
-    # must be number or string
-    scope.addVar node.keyAssignee.data, (node.keyAssignee?.typeAnnotation?.identifier) ? 'Any'
+    if node instanceof CS.ForIn
+      node.keyAssignee.typeAnnotation =
+        nodeType: 'identifier'
+        identifier:
+          typeRef: 'Int'
 
-  if node.valAssignee?
-    # ForIn
-    if node.target.typeAnnotation?.identifier?.array?
-      if err = scope.checkAcceptableObject(node.valAssignee.typeAnnotation.identifier, node.target.typeAnnotation.identifier.array)
-        err = typeErrorText node.valAssignee.typeAnnotation.identifier, node.target.typeAnnotation.identifier.array
-        return reporter.add_error node, err
-
-    # ForOf
-    else if node.target?.typeAnnotation?.identifier instanceof Object
-      if node.target.typeAnnotation.identifier instanceof Object
-        for nop, identifier of node.target.typeAnnotation.identifier
-          if err = scope.checkAcceptableObject(node.valAssignee.typeAnnotation.identifier, identifier)
-            err = typeErrorText node.valAssignee.typeAnnotation.identifier, identifier
-            return reporter.add_error node, err
-
+      scope.addVar
+        nodeType: 'variable'
+        identifier:
+          typeRef: node.keyAssignee.data
+        typeAnnotation:
+          nodeType: 'identifier'
+          identifier:
+            typeRef: 'Int'
+    else if node instanceof CS.ForOf
+      # TODO: FIX later
+      node.keyAssignee.typeAnnotation =
+        nodeType: 'identifier'
+        identifier:
+          typeRef: 'String'
+      scope.addVar
+        nodeType: 'variable'
+        identifier:
+          typeRef: node.keyAssignee.data
+        typeAnnotation:
+          nodeType: 'identifier'
+          identifier:
+            typeRef: 'String'
   # check body
   walk node.body, scope #=> Block
-  node.typeAnnotation = node.target?.typeAnnotation
 
-  # remove after iter
-  delete scope._vars[node.valAssignee?.data] # WILL FIX
-  delete scope._vars[node.keyAssignee?.data] # WILL FIX
+  arrayType =  _.clone node.body.typeAnnotation
+  if arrayType?.identifier?
+    arrayType.identifier.isArray = true
+    node.typeAnnotation = arrayType
+  else
+    node.typeAnnotation = ImplicitAnyAnnotation
 
 walkClassProtoAssignOp = (node, scope) ->
   # node.typeAnnotation ?= ImplicitAnyAnnotation

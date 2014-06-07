@@ -558,17 +558,31 @@ suite 'TypeChecker', ->
       """
 
   suite 'For', ->
+    test 'for in' , ->
+      list :: Number[] =
+        for i :: Number, n in [1..3]
+          i
+
+    test 'for of' , ->
+      list :: Number[] =
+        for key, val of {a: 1, b: 2}
+          1
+
     # test 'for in' , ->
-    #   list :: Number[] =
+    #   struct Point
+    #     x :: Int
+    #     y :: Int
+
+    #   list :: Point[] =
     #     for i :: Number, n in [1..3]
-    #       nn :: Number  = 3
-    #       nn
-    #   list2 :: Number[] =
-    #     for i :: Number, n in [1..3]
-    #       i
-    #   list3 :: Number[] =
-    #     for i :: Number, n in [1..3]
-    #       n
+    #       {x: 1, y: 2}
+
+    test 'for in' , ->
+      shouldBeTypeError """
+      list :: String[] =
+        for i :: Number, n in [1..3]
+          i
+      """
 
     # test 'for of', ->
     #   list :: Number[] =
