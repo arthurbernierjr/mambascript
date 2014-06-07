@@ -535,12 +535,22 @@ walkMemberAccess = (node, scope) ->
   #     node.typeAnnotation = identifier: 'Any', explicit: false
 
 walkArrayInializer = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
-  walk node.members, scope
+  for member in node.members
+    walk member, scope
 
-  node.typeAnnotation ?=
-    identifier: {array: (node.members?.map (m) -> m.typeAnnotation?.identifier)}
+  [head, tail...] = node.members.map (m) -> m.typeAnnotation
+  ann = _.clone _.reduce tail, ((a, b) ->
+    compareAsParent scope, a, b
+  ), head
+
+  if ann?.identifier?
+    ann.identifier.isArray = true
+  node.typeAnnotation = ann
+
+  # debug 'members', node
+
+  # node.typeAnnotation ?=
+  #   identifier: {array: (node.members?.map (m) -> m.typeAnnotation?.identifier)}
 
 walkRange = (node, scope) ->
   node.typeAnnotation =

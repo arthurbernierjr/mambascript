@@ -479,12 +479,46 @@ suite 'TypeChecker', ->
       nf()
 
   suite 'Array', ->
-    # test 'typed array', ->
-    #   struct Point
-    #     x :: Number
-    #     y :: Number
-    #   p :: Point = x: 3, y: 2
-    #   tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
+    test 'typed array', ->
+      arr :: Int[] = [1, 2, 3]
+
+    test 'typed array', ->
+      shouldBeTypeError """
+      arr :: Int[] = [1, 2.1, 3]
+      """
+
+    test 'typed array', ->
+      arr :: Float[] = [1, 2.1, 3]
+
+    test 'typed array', ->
+      struct Point
+        x :: Number
+        y :: Number
+      p :: Point = x: 3, y: 2
+      tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
+
+    test 'typed array', ->
+      struct S
+        x :: Number
+      tarr :: S[] = [{x: 1, y: 2}, {x: 1}]
+
+    test 'typed array', ->
+      shouldBeTypeError """
+      struct S
+        x :: Number
+        y :: Number
+      tarr :: S[] = [{x: 1, y: 2}, {x: 1}]
+      """
+
+    test 'typed array', ->
+      n :: Int? = 1
+      arr1 :: Int?[] = [1, n, 3]
+
+    test 'typed array', ->
+      shouldBeTypeError """
+      n :: Int? = 1
+      arr1 :: Int[] = [1, n, 3]
+      """
 
   suite 'Range', ->
     test 'Range', ->
