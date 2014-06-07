@@ -99,7 +99,7 @@ x :: X = new X
 x.f 3
 ```
 
-### Class with implemtns
+### Class with implements
 
 ```coffee
 class Point
