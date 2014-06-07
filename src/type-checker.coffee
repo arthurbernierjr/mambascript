@@ -62,16 +62,14 @@ isAcceptableExtends = (scope, left, right) ->
     le.identifier.typeRef is right.identifier.typeRef
 
 # isAcceptablePrimitiveSymbol :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
-isAcceptablePrimitiveSymbol = (scope, left, right, nullable = false) ->
+isAcceptablePrimitiveSymbol = (scope, left, right, nullable = false, isArray = false) ->
   if left.nodeType isnt 'primitiveIdentifier'
     throw 'left is not primitive'
 
   return true if left.identifier.typeRef is 'Any'
-  # type check
-  # if left.identifier.typeRef isnt right?.identifier?.typeRef
   unless isAcceptableExtends(scope, left, right)
     # debug 'isAcceptableExtends', left, right
-    if nullable and right.identifier.typeRef in ['Null', 'Undefined']
+    if nullable and right.identifier.typeRef in ['Null', 'Undefined'] # nullable
       return true
     return false
   # array check
@@ -129,6 +127,23 @@ isAcceptable = (scope, left, right) ->
   if leftAnnotation.nodeType is 'primitiveIdentifier'
     if leftAnnotation.identifier.typeRef is 'Any'
       return true
+
+  # debug 'isAcceptable left', left
+  # debug 'isAcceptable right', right
+
+  if left.identifier and right.identifier and rightAnnotation
+    # leftNullable = left.identifier.nullable
+    leftWholeNullable = left.identifier.wholeNullable
+    if leftWholeNullable and rightAnnotation.identifier.typeRef in ['Undefined', 'Null']
+      return true
+    # debug 'rightAnnotation', left
+
+    isSameArrayFlag = !!left.identifier.isArray is !!right.identifier.isArray or !!left.identifier.isArray is !!rightAnnotation.isArray
+    unless isSameArrayFlag
+      return false
+
+  # debug 'isAcceptable leftAnnotation', leftAnnotation
+  # debug 'isAcceptable rightAnnotation', rightAnnotation
 
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
     return isAcceptableStruct scope, leftAnnotation, rightAnnotation

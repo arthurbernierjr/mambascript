@@ -543,9 +543,12 @@ walkArrayInializer = (node, scope) ->
     identifier: {array: (node.members?.map (m) -> m.typeAnnotation?.identifier)}
 
 walkRange = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
-  return # TODO
-  node.typeAnnotation = identifier : {array: 'Number'}
+  node.typeAnnotation =
+    nodeType: 'identifier'
+    implicit: true
+    identifier:
+      typeRef: 'Int'
+      isArray: true
 
 walkObjectInitializer = (node, scope) ->
   obj = {}

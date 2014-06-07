@@ -487,12 +487,33 @@ suite 'TypeChecker', ->
     #   tarr :: Point[]  = [{x : 3, y: 3}, {x : 3, y: 3}, p]
 
   suite 'Range', ->
-    # test 'Range', ->
-    #   list :: Number[] = [1..10]
-    # test 'throw function return type mismatch', ->
-    #   shouldBeTypeError """
-    #   list :: String[] = [1..10]
-    #   """
+    test 'Range', ->
+      list :: Number[] = [1..10]
+
+    test 'Range', ->
+      list :: Int[] = [1..10]
+
+    test 'Range', ->
+      list :: Int[]? = [1..10]
+
+    test 'Range', ->
+      list :: Int[]? = null
+
+    test 'Range', ->
+      list :: Int?[]? = [1..10]
+
+    test 'Range', ->
+      list :: Int?[]? = null
+
+    test 'Range', ->
+      shouldBeTypeError """
+      list :: Number[] = 1
+      """
+
+    test 'throw function return type mismatch', ->
+      shouldBeTypeError """
+      list :: String[] = [1..10]
+      """
 
   suite 'For', ->
     # test 'for in' , ->
