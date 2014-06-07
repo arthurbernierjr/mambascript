@@ -22,15 +22,14 @@ ImplicitAnyAnnotation =
 compareAsParent = (scope, a, b) ->
   retA = isAcceptable scope, a, b
   retB = isAcceptable scope, b, a
-  if retA and retB
-    a
-  else if retA
-    a
-  else if retB
-    b
-  else
-    ImplicitAnyAnnotation
+  debug 'a', a
+  debug 'b', b
+  console.error 'retA', retA, 'retB', retB
 
+  if retA and retB then b
+  else if retA then a
+  else if retB then b
+  else ImplicitAnyAnnotation
 
 # CS_AST -> Scope
 checkNodes = (cs_ast) ->
@@ -52,7 +51,7 @@ checkNodes = (cs_ast) ->
   return root
 
 walkStruct = (node, scope) ->
-  debug 'node', node
+  # debug 'node', node
   scope.addStructType node
 
 walkVardef = (node, scope) ->
@@ -209,13 +208,16 @@ walkSwitch = (node, scope) ->
     canditates.push c.consequent.typeAnnotation
 
   # else
-  if node.alternate?
+  if node.alternate
     walk node.alternate, scope #=> Block
     canditates.push c.consequent.typeAnnotation
 
   # debug 'walkSwitch', node
   [head, tail...] = canditates
-  ret = _.clone _.reduce tail, ((a, b) -> compareAsParent scope, a, b), head
+  ret = _.clone _.reduce tail, ((a, b) ->
+    compareAsParent scope, a, b
+  ), head
+  # debug 'ret', ret
   if ret.identifier?
     ret.identifier.nullable = not node.alternate?
     node.typeAnnotation = ret ? ImplicitAnyAnnotation
@@ -438,9 +440,7 @@ walkString = (node, scope) ->
 
 walkInt = (node, scope) ->
   node.typeAnnotation ?=
-    implicit: true
-    nodeType: 'primitiveIdentifier'
-    isPrimitive: true
+    nodeType: 'identifier'
     identifier:
       typeRef: 'Int'
 
@@ -453,16 +453,21 @@ walkBool = (node, scope) ->
 
 walkFloat = (node, scope) ->
   node.typeAnnotation ?=
-    implicit: true
-    nodeType: 'primitiveIdentifier'
-    isPrimitive: true
+    nodeType: 'identifier'
     identifier:
       typeRef: 'Float'
-    heritages:
-      extend:
-        identifier:
-          typeRef: 'Int'
-          isArray: false
+
+  # node.typeAnnotation ?=
+  #   implicit: true
+  #   nodeType: 'primitiveIdentifier'
+  #   isPrimitive: true
+  #   identifier:
+  #     typeRef: 'Float'
+  #   heritages:
+  #     extend:
+  #       identifier:
+  #         typeRef: 'Int'
+  #         isArray: false
 
 walkNumbers = (node, scope) ->
   node.typeAnnotation ?=
