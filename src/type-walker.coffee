@@ -20,6 +20,18 @@ ImplicitAnyAnnotation =
 } = require './types'
 
 compareAsParent = (scope, a, b) ->
+  if a.identifier?.typeRef in ['Undefined', 'Null']
+    b = _.clone(b)
+    if b.identifier?
+      b.identifier.nullable = true
+    return b
+
+  if b.identifier?.typeRef in ['Undefined', 'Null']
+    a = _.clone(b)
+    if a.identifier?
+      a.identifier.nullable = true
+    return a
+
   retA = isAcceptable scope, a, b
   retB = isAcceptable scope, b, a
   if retA and retB then b

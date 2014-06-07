@@ -512,12 +512,20 @@ suite 'TypeChecker', ->
 
     test 'typed array', ->
       n :: Int? = 1
-      arr1 :: Int?[] = [1, n, 3]
+      arr :: Int?[] = [1, n, 3]
 
     test 'typed array', ->
       shouldBeTypeError """
       n :: Int? = 1
-      arr1 :: Int[] = [1, n, 3]
+      arr :: Int[] = [1, n, 3]
+      """
+
+    test 'typed array', ->
+      arr :: Int?[] = [1, null, 3]
+
+    test 'typed array', ->
+      shouldBeTypeError """
+      arr :: Int[] = [1, null, 3]
       """
 
   suite 'Range', ->
