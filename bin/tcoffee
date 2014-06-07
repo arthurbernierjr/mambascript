@@ -126,14 +126,8 @@ switch mode
     fpath = argv.execute ?  argv._[0]
     source = fs.readFileSync(fpath).toString()
     js = compileFromSourceToJS(source)
-    console.log js
-    # exec "node -e \"#{js}\"", {
-    #   cwd: process.cwd()
-    #   env: process.env
-    # },  (err, stdout, stderr) =>
-    #   throw err if err
-    #   throw stderr if stderr
-    #   console.log stdout
+    vm = require 'vm'
+    vm.runInThisContext js, fpath
 
   when 'repl'
     repl.start()
