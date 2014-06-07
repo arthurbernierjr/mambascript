@@ -666,11 +666,17 @@ walkFunction = (node, scope, preAnnotation = null) ->
       walk node.body, functionScope
 
     unless preAnnotation
-      node.typeAnnotation.returnType = node.body.typeAnnotation
+      if node.typeAnnotation?
+        node.typeAnnotation.returnType = node.body.typeAnnotation
+
+    node.typeAnnotation ?=
+      implicit: true
+      nodeType: 'functinoType'
+      returnType: null
+      arguments: []
 
     left = node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
     right = node.body.typeAnnotation ?= ImplicitAnyAnnotation
-
     return unless checkTypeAnnotation scope, node, left, right
 
 walkFunctionApplication = (node, scope) ->
