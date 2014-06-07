@@ -349,16 +349,15 @@ block
       return rp(new CS.Block([s].concat(ss.map(function(s){ return s[3]; }))));
     }
 
-
 statement
-  = expression
+  = structdef
+  / expression
   / return
   / continue
   / break
   / throw
   / debugger
 expression = expressionworthy / seqExpression
-
 
 secondaryStatement
   = secondaryExpression
@@ -371,28 +370,9 @@ secondaryStatement
 secondaryExpression = expressionworthy / vardef / assignmentExpression
 secondaryExpressionNoImplicitObjectCall = expressionworthy / assignmentExpressionNoImplicitObjectCall
 
-// TODO: FIX CS.Int hack
-structdef = 'struct' !(_ "=") __ name:TypeNameSymbol _ expr: TypeExpr {
-  var s = rp(new CS.Int(line()))
-  s.dataType = 'struct';
-  s.name = name;
-  s.expr = expr;
-  return s;
-}
-
-// TODO: FIX CS.Int hack
-vardef = name:TypeNameSymbol __ '::' _ expr: TypeExpr !(_ "=") {
-  var s = rp(new CS.Int(line()))
-  s.dataType = 'vardef';
-  s.name = name;
-  s.expr = expr;
-  return s;
-}
-
 // TODO: rename?
 expressionworthy
-  = structdef
-  / functionLiteral
+  = functionLiteral
   / conditional
   / while
   / loop
@@ -402,7 +382,6 @@ expressionworthy
   / switch
   / implicitObjectLiteral
   / class
-
 
 seqExpression
   = left:postfixControlFlowExpression right:(_ ";" TERMINATOR? _ expression)? {
@@ -775,8 +754,8 @@ try
       return r({block: body ? body.block : null});
     }
 
-classImplements = _ IMPLEMENTS __ e:ObjectInitialiserKeys _ es:(_ "," _ ObjectInitialiserKeys)* _ {
-  return [e.data].concat(es.map(function(e){return e[3].data;}));
+classImplements = _ IMPLEMENTS __ e:typeSymbol _ es:(_ "," _ typeSymbol)* _ {
+  return [e].concat(es.map(function(e){return e[3];}));
 }
 
 class
@@ -795,7 +774,7 @@ class
         }
       }
       var n = rp(new CS.Class(name, parent, ctor, body, boundMembers));
-      n.impl = impl;
+      n.impl = impl || null;
       return n;
     }
   extendee = secondaryExpressionNoImplicitObjectCall
@@ -882,13 +861,9 @@ switch
   caseBody = conditionalBody
 
 
-ReturnTypeExpr
-  = typeLiteral
-  / "(" _ tf:TypeFunction _ ")" {return tf;}
-  / TypeNameSymbol
-returnTypeLiteral = _ "::" _ type:ReturnTypeExpr? _ {return type;}
 functionLiteral
-  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)? returnType:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
+  = params:("(" _ (TERMINDENT p:parameterList DEDENT TERMINATOR { return p; } / parameterList)? _ ")" _)?
+    returnType:returnTypeLiteral? arrow:("->" / "=>") body:functionBody? {
       var constructor;
       switch(arrow) {
         case '->': constructor = CS.Function; break;
@@ -896,13 +871,11 @@ functionLiteral
         default: throw new Error('parsed function arrow ("' + arrow + '") not associated with a constructor');
       }
       var ret = rp(new constructor(params && params[2] || [], body || null));
-      ret.annotation = {
-        dataType: {
-          dataType: 'Function',
-          returnType: (returnType ? returnType : 'Any'),
-          arguments: (params && params[2] || []).map(function(i){return i.annotation})
-        }
-       };
+      ret.typeAnnotation = {
+        nodeType: 'functionType',
+        returnType: (returnType || null),
+        arguments: (params && params[2] || []).map(function(i){return i.typeAnnotation || null})
+      };
       return ret;
     }
   functionBody
@@ -1132,83 +1105,6 @@ debugger = DEBUGGER { return rp(new CS.Debugger); }
 undefined = UNDEFINED { return rp(new CS.Undefined); }
 null = NULL { return rp(new CS.Null); }
 
-typeLiteral
-  = "{" members:typeLiteralBody TERMINATOR? _ "}" {
-    var obj = {};
-    members.forEach(function(member){
-      obj[member[0]] = member[1];
-    });
-    return obj;
-  }
-  / !TypeNameSymbol !"(" members:typeLiteralBody {
-    var obj = {};
-    members.forEach(function(member){
-      obj[member[0]] = member[1];
-    });
-    return obj;
-  }
-  typeLiteralBody
-    = TERMINDENT members:typeLiteralMemberList DEDENT { return members; }
-    / _ members:typeLiteralMemberList? { return members || []; }
-  typeLiteralMemberList
-    = e:typeLiteralMember _ es:(arrayLiteralMemberSeparator _ typeLiteralMember _)* ","? {
-        return [e].concat(es.map(function(e){ return e[2]; }));
-      }
-  typeLiteralMember
-    = key:TypeNameSymbol _ "::" _ val: TypeExpr {
-        return [key, val];
-      }
-
-TemplateKeys = e:TypeSymbol _ es:("," _ TypeSymbol)* {
-  return [e].concat(es.map(function(e){ return e[2]; }));
-}
-
-TypeSymbol
-  = e: identifierName es:('.' identifierName)+ {
-    var list = [e].concat(es.map(function(e){return e[1]}));
-    return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
-  }
-  / identifierName
-
-TypeNameSymbol
-  = "(" _ ")" {return 'void';}
-  / "(" _ key:TypeSymbol isArray:"[]"? _ ")" {
-    if(!isArray) return key;
-    else return {array: key}
-  }
-  / "(" _ base:TypeSymbol _ "<" _ templates:TemplateKeys  _ ">" _ ")" {
-    return {
-      _base_: base,
-      _templates_: templates
-    };
-  }
-  / base:TypeSymbol _ "<" _ templates:TemplateKeys _ ">" {
-    return {
-      _base_: base,
-      _templates_: templates
-    };
-  }
-  / key:TypeSymbol isArray:"[]"? {
-    if(!isArray) return key;
-    else return {array: key}
-  }
-
-TypeFunction = args:TypeArgs _ "->" _ returnType:TypeNameSymbol {
-  return {arguments: args, returnType: returnType, dataType: 'Function'};
-}
-TypeArgs
-  = e:TypeNameSymbol _ es:("*" _ TypeNameSymbol _)* {
-    return [e].concat(es.map(function(e){return e[2]}));
-  }
-  / e:TypeNameSymbol {return [e];}
-
-TypeExpr
-  = typeLiteral
-  / TypeFunction
-  / TypeNameSymbol
-
-TypeAnnotation = "::" _ type:TypeExpr {return rp({dataType:type});}
-
 unassignable = ("arguments" / "eval") !identifierPart
 CompoundAssignable
   = memberAccess
@@ -1216,7 +1112,7 @@ CompoundAssignable
 ExistsAssignable = CompoundAssignable
 Assignable
   = memberAccess
-  / !unassignable i:identifier _ annotation:TypeAnnotation? { i.annotation = annotation; return rp(i); }
+  / !unassignable i:identifier _ typeAnnotation:typeAnnotation? { i.typeAnnotation = typeAnnotation || null; return rp(i); }
   / positionalDestructuring
   / namedDestructuring
 
@@ -1343,6 +1239,7 @@ WHILE = $("while" !identifierPart)
 YES = $("yes" !identifierPart)
 IMPLEMENTS = $("implements" !identifierPart)
 SUPER = $("super" !identifierPart)
+STRUCT = $("struct" !identifierPart)
 
 SharedKeywords
   = ("true" / "false" / "null" / "this" / "new" / "delete" / "typeof" /
@@ -1357,7 +1254,7 @@ JSKeywords
 
 CSKeywords
   = ("undefined" / "then" / "unless" / "until" / "loop" / "off" / "by" / "when" /
-  "and" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of") !identifierPart
+  "and" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of" / "struct") !identifierPart
 
 reserved
   = $(macro)
@@ -1374,3 +1271,104 @@ UnicodeDigit = [\u0030-\u0039\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096
 UnicodeConnectorPunctuation = [\u005F\u203F\u2040\u2054\uFE33\uFE34\uFE4D-\uFE4F\uFF3F]
 ZWNJ = "\u200C"
 ZWJ = "\u200D"
+
+
+// TODO: FIX CS.Int hack
+structdef = STRUCT !(_ "=") __ name:typeSymbol _ props: typeExpr {
+  var s = rp(new CS.Int(line()))
+  s.nodeType = 'struct';
+  s.identifier = name;
+  s.typeAnnotation = props;
+  return s;
+}
+
+// TODO: FIX CS.Int hack
+vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
+  var s = rp(new CS.Int(line()))
+  s.nodeType = 'vardef';
+  s.name = name;
+  s.expr = expr;
+  return s;
+}
+
+typeExpr
+  = typeFunction
+  / typeLiteral
+  / typeSymbol
+
+typeLiteral
+  = "{" members:typeLiteralBody TERMINATOR? _ "}" {
+    return {properties:members, nodeType: 'members'};
+  }
+  / !typeSymbol !"(" members:typeLiteralBody {
+    return {properties:members, nodeType: 'members'};
+  }
+  typeLiteralBody
+    = TERMINDENT members:typeLiteralMemberList DEDENT { return members; }
+    / _ members:typeLiteralMemberList? { return members || []; }
+  typeLiteralMemberList
+    = e:typeLiteralMember _ es:(arrayLiteralMemberSeparator _ typeLiteralMember _)* ","? {
+        return [e].concat(es.map(function(e){ return e[2]; }));
+      }
+  typeLiteralMember
+    = symbol:typeSymbol _ "::" _ expr:typeExpr {
+        symbol.typeAnnotation = expr;
+        return symbol
+        // return {identifier:symbol, typeAnnotation: expr, nodeType: 'identifier'};
+      }
+
+returnTypeExpr
+  = typeLiteral
+  / "(" _ tf:typeFunction _ ")" {return tf;}
+  / typeSymbol
+
+assignableTypeIdentifier = identifierName
+
+
+typeIdentifier
+  = e: identifierName es:('.' identifierName)+ {
+    var list = [e].concat(es.map(function(e){return e[1]}));
+    return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
+  }
+  / identifierName
+
+typeSymbol
+  = v:VoidAlias {return {identifier:v, nodeType: 'identifier'}}
+  / "(" _ ret: _typeSymbol _ ")" { return {identifier: ret, nodeType: 'identifier'};}
+  / t:_typeSymbol { return {identifier: t, nodeType: 'identifier'};}
+
+  _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? nullable:'?'? isArray:isArray? wholeNullable:'?'? {
+    var obj = {typeRef: symbol};
+    if(isArray) obj.isArray = true;
+    if(nullable) obj.nullable = true;
+    if(wholeNullable) obj.wholeNullable = true;
+    if(args) obj.typeArguments = (args || []);
+    return obj;
+  }
+  isArray = "[" _ "]" {return true}
+  VoidAlias = "(" _ ")" {return {isArray: false, typeRef: 'Void', typeArguments: []} }
+  typeArgumentLiteral = "<" _ args:typeArguments  _ ">" {
+    return args;
+  }
+  typeArguments = e:typeIdentifier _ es:("," _ typeIdentifier)* {
+    return [e].concat(es.map(function(e){ return e[2]; }));
+  }
+
+typeFunction
+  = args:typeFunctionArguments _ "->" _ returnType:typeExpr {
+    return {arguments: args, returnType: returnType, nodeType: 'functionType'};
+}
+
+typeFunctionArguments
+  = e:typeSymbol _ es:("*" _ typeSymbol _)* {
+    return [e].concat(es.map(function(e){return e[2]}));
+  }
+  / "(" _ e:typeSymbol _ es:("," _ typeSymbol _)* _ ")" {
+    return [e].concat(es.map(function(e){return e[2]}));
+  }
+  / e:typeSymbol {return [e];}
+
+returnTypeLiteral = _ "::" _ type:returnTypeExpr? _ {return type;}
+
+typeAnnotation = "::" _ type:typeExpr {return rp(type);}
+

@@ -145,7 +145,17 @@ envEnrichments_ = (inScope = []) ->
 @envEnrichments = envEnrichments = (node, args...) ->
   if node? then envEnrichments_.apply node, args else []
 
-@debug = (args...) ->
+@debug = (flag, args...) ->
+
   util = require 'util'
-  for i in args
-    console.error util.inspect i, true, null, true
+  {argv} = require('optimist')
+    .alias('d', 'debug')
+
+  if arguments.length > 1
+    if !argv.debug or flag is argv.debug
+      for i in args
+        console.error "#{flag} ------- ["
+        console.error util.inspect i, false, null, true
+        console.error "] ~~~~~~~~~ "
+  else
+    console.error flag

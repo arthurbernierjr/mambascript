@@ -4,3 +4,4 @@ coffee-script-redux-*.tgz
 node_modules
 build
 scratch.*
+check

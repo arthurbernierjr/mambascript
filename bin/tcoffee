@@ -21,12 +21,14 @@ reporter = require '../lib/reporter'
   .alias('b', 'bare')
   .alias('o', 'out')
   .alias('j', 'join')
+  .alias('d', 'debug')
 
 compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
   cs_ast = CoffeeScript.parse source, parseOption ? {
     optimise: no
     raw: true
     inputSource: source
+    sourceMap: true
     literate
   }
   js_ast = CoffeeScript.compile cs_ast, compileOption ? bare: !!argv.bare
@@ -77,6 +79,7 @@ switch mode
         cs_ast = CoffeeScript.parse source, {
           optimise: no
           raw: true
+          sourceMap: true
           inputSource: source
           literate
         }
@@ -123,15 +126,8 @@ switch mode
     fpath = argv.execute ?  argv._[0]
     source = fs.readFileSync(fpath).toString()
     js = compileFromSourceToJS(source)
-    console.log js
-
-    exec "node -e \"#{js}\"", {
-      cwd: process.cwd()
-      env: process.env
-    },  (err, stdout, stderr) =>
-      throw err if err
-      throw stderr if stderr
-      console.log stdout
+    vm = require 'vm'
+    vm.runInThisContext js, fpath
 
   when 'repl'
     repl.start()

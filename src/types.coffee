@@ -1,123 +1,15 @@
-pj = try require 'prettyjson'
-render = (obj) -> pj?.render obj
 {debug} = require './helpers'
-reporter = require './reporter'
 {clone, rewrite} = require './type-helpers'
-reporter = require './reporter'
+_ = require 'lodash'
 
-typeErrorText = (left, right) ->
-  "TypeError: #{JSON.stringify left} expect to #{JSON.stringify right}"
+ImplicitAnyAnnotation =
+  implicit: true
+  isPrimitive: true
+  nodeType: 'primitiveIdentifier'
+  identifier:
+    typeRef: 'Any'
 
-class Type
-  constructor: ->
-
-# ObjectType :: T -> Object
-class ObjectType extends Type
-  # :: String -> ()
-  constructor:(@dataType) ->
-
-# ArrayType :: {array :: T} = array: T
-class ArrayType extends Type
-  constructor:(dataType) ->
-    @array = dataType
-
-# possibilities :: Type[] = []
-class Possibilites extends Array
-  constructor: (arr = []) ->
-    @push i for i in arr
-
-checkAcceptableObject = (left, right, scope) =>
-  # TODO: fix
-  if left?._base_? and left._templates_? then left = left._base_
-
-  # possibilites :: Type[]
-  if right?.possibilities?
-    results = (checkAcceptableObject left, r, scope for r in right.possibilities)
-    return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
-
-  # Any
-  if left is 'Any'
-    return false
-
-  if left?.arguments
-    return if left is undefined or left is 'Any'
-    left.arguments ?= []
-    results = (checkAcceptableObject(l_arg, right.arguments[i], scope) for l_arg, i in left.arguments)
-    return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
-
-    # check return dataType
-    # TODO: Now I will not infer function return dataType
-    if right.returnType isnt 'Any'
-      return checkAcceptableObject(left.returnType, right.returnType, scope)
-    return false
-
-  if left?.array?
-    if right.array instanceof Array
-      results = (checkAcceptableObject left.array, r, scope for r in right.array)
-      return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
-    else
-      return checkAcceptableObject left.array, right.array, scope
-
-  else if right?.array?
-    if left is 'Array' or left is 'Any' or left is undefined
-      return false
-    else
-      return typeErrorText left, right
-
-  else if ((typeof left) is 'string') and ((typeof right) is 'string')
-    cur = scope.getTypeInScope(left)
-    extended_list = [left]
-    while cur._extends_
-      extended_list.push cur._extends_
-      cur = scope.getTypeInScope cur._extends_
-    # TODO: handle object
-    # now only allow primitive
-    if (left is 'Any') or (right is 'Any') or right in extended_list
-      return false
-    else
-      return typeErrorText left, right
-
-  else if ((typeof left) is 'object') and ((typeof right) is 'object')
-    results =
-      for key, lval of left
-        if right[key] is undefined and lval? and not (key in ['returnType', 'type', 'possibilities']) # TODO avoid system values
-          "'#{key}' is not defined on right"
-        else
-          checkAcceptableObject(lval, right[key], scope)
-    return (if results.every((i)-> not i) then false else results.filter((i)-> i).join('\n'))
-  else if (left is undefined) or (right is undefined)
-    return false
-  else
-    return typeErrorText left, right
-
-# Initialize primitive types
-# Number, Boolean, Object, Array, Any
-initializeGlobalTypes = (node) ->
-  # Primitive
-  node.addTypeObject 'String', new TypeSymbol {dataType: 'String'}
-  node.addTypeObject 'Number', new TypeSymbol {dataType: 'Number', _extends_: 'Float'}
-  node.addTypeObject 'Int', new TypeSymbol {dataType: 'Int'}
-  node.addTypeObject 'Float', new TypeSymbol {dataType: 'Float', _extends_: 'Int'}
-  node.addTypeObject 'Boolean', new TypeSymbol {dataType: 'Boolean'}
-  node.addTypeObject 'Object', new TypeSymbol {dataType: 'Object'}
-  node.addTypeObject 'Array', new TypeSymbol {dataType: 'Array'}
-  node.addTypeObject 'Undefined', new TypeSymbol {dataType: 'Undefined'}
-  node.addTypeObject 'Any', new TypeSymbol {dataType: 'Any'}
-
-# Known vars in scope
-class VarSymbol
-  # dataType :: String
-  # explicit :: Boolean
-  constructor: ({@dataType, @explicit}) ->
-    @explicit ?= false
-
-# Known types in scope
-class TypeSymbol
-  # dataType :: String or Object
-  # instanceof :: (Any) -> Boolean
-  constructor: ({@dataType, @instanceof, @_templates_, @_extends_}) ->
-
-# Var and dataType scope as node
+# Var and typeRef scope as node
 class Scope
   # constructor :: (Scope) -> Scope
   constructor: (@parent = null) ->
@@ -127,21 +19,21 @@ class Scope
     @nodes  = [] #=> Scope[]
 
     # Scope vars
-    @_vars  = {} #=> String -> Type
+    @vars  = [] #=> Type[]
 
-    # Scope dataTypes
-    @_types = {} #=> String -> Type
+    # Scope typeRefs
+    @types = [] #=> Type[]
 
     # This scope
-    @_this  = {}
+    @_this  = []
 
     # Module scope
     @_modules  = {}
 
     @_returnables = [] #=> Type[]
 
-  addReturnable: (symbol, dataType) ->
-    @_returnables.push dataType
+  addReturnable: (symbol, typeRef) ->
+    @_returnables.push typeRef
 
   getReturnables: -> @_returnables
 
@@ -165,146 +57,218 @@ class Scope
   getModuleInScope: (name) ->
     @getModule(name) or @parent?.getModuleInScope(name) or undefined
 
-  # addType :: Any * Object * Object -> Type
-  addType: (symbol, dataType, _templates_) ->
-    if symbol?.left?
-      # get namescopes
-      ns = []
-      name = symbol.right
-      cur = symbol.left
-      while true
-        if (typeof cur) is 'string'
-          ns.unshift cur
-          break
-        else
-          ns.unshift cur.right
-          cur = cur.left
-
-      # find or initialize module
-      cur = @
-      for moduleName in ns
-        mod = cur.getModuleInScope(moduleName)
-        unless mod
-          mod = cur.addModule(moduleName)
-        cur = mod
-      cur.addType name, dataType, _templates_
-    else
-      @_types[symbol] = new TypeSymbol {dataType, _templates_}
-
-  addTypeObject: (symbol, type_object) ->
-    @_types[symbol] = type_object
-
-  getType: (symbol) ->
-    if symbol?.left?
-      # get namescopes
-      ns = []
-      name = symbol.right
-      cur = symbol.left
-      while true
-        if (typeof cur) is 'string'
-          ns.unshift cur
-          break
-        else
-          ns.unshift cur.right
-          cur = cur.left
-
-      # find or initialize module
-      cur = @
-      for moduleName in ns
-        mod = cur.getModuleInScope(moduleName)
-        unless mod
-          return null
-        cur = mod
-      cur.getType name
-    else
-      @_types[symbol]
-
-  getTypeInScope: (symbol) ->
-    @getType(symbol) or @parent?.getTypeInScope(symbol) or undefined
-
-  addThis: (symbol, dataType) ->
-    # TODO: Refactor with addVar
-    if dataType?._base_?
-      T = @getType(dataType._base_)
-      return undefined unless T
-      obj = clone T.dataType
-      if T._templates_
-        # TODO: length match
-        rewrite_to = dataType._templates_
-        replacer = {}
-        for t, n in T._templates_
-          replacer[t] = rewrite_to[n]
-        rewrite obj, replacer
-
-      @_this[symbol] = new VarSymbol {dataType:obj}
-    else
-      @_this[symbol] = new VarSymbol {dataType}
-
-  getThis: (symbol) ->
-    @_this[symbol]
-
-  addVar: (symbol, dataType, explicit) ->
-    # TODO: Refactor
-    if dataType?._base_?
-      T = @getType(dataType._base_)
-      return undefined unless T
-      obj = clone T.dataType
-      if T._templates_
-        # TODO: length match
-        rewrite_to = dataType._templates_
-        replacer = {}
-        for t, n in T._templates_
-          replacer[t] = rewrite_to[n]
-        rewrite obj, replacer
-
-      @_vars[symbol] = new VarSymbol {dataType:obj, explicit}
-    else
-      @_vars[symbol] = new VarSymbol {dataType, explicit}
-
-  getVar: (symbol) ->
-    @_vars[symbol]
-
-  getVarInScope: (symbol) ->
-    @getVar(symbol) or @parent?.getVarInScope(symbol) or undefined
-
-  isImplicitVarInScope: (symbol) ->
-    @isImplicitVar(symbol) or @parent?.isImplicitVarInScope(symbol) or undefined
-
-  # Extend symbol to dataType object
-  # ex. {name : String, p : Point} => {name : String, p : { x: Number, y: Number}}
-  extendTypeLiteral: (node) =>
-    if (typeof node) is 'string' or node?.nodeType is 'MemberAccess'
-      Type = @getTypeInScope(node)
-      dataType = Type?.dataType
-      switch typeof dataType
-        when 'object'
-          return @extendTypeLiteral(dataType)
-        when 'string'
-          return dataType
-
-    else if (typeof node) is 'object'
-      # array
-      if node instanceof Array
-        return (@extendTypeLiteral(i) for i in node)
-      # object
+  # resolveNamespace :: TypeRef -> Module
+  resolveNamespace: (ref, autoCreate = false) ->
+    ns = []
+    cur = ref
+    while true
+      if (typeof cur) is 'string'
+        ns.unshift cur
+        break
       else
-        ret = {}
-        for key, val of node
-          ret[key] = @extendTypeLiteral(val)
-        return ret
+        ns.unshift cur.right
+        cur = cur.left
+    # find or initialize module
+    cur = @
+    for moduleName in ns
+      mod = cur.getModuleInScope(moduleName)
+      unless mod
+        if autoCreate
+          mod = cur.addModule(moduleName)
+        else
+          return null
+      cur = mod
+    cur
 
-  # check object literal with extended object
-  checkAcceptableObject: (left, right) ->
-    l = @extendTypeLiteral(left)
-    r = @extendTypeLiteral(right)
-    return checkAcceptableObject(l, r, @)
+  addType: (node) ->
+    @types.push node
+    return node
+
+  addPrimitiveType: (node) ->
+    if node.nodeType isnt 'primitiveIdentifier'
+      throw 'nodeType isnt primitiveIdentifier'
+    @types.push node
+    return node
+
+  addStructType: (structNode) ->
+    if structNode.nodeType isnt 'struct'
+      throw 'node isnt structNode'
+
+    ref = structNode.identifier.identifier.typeRef
+    if _.isString ref
+      mod = @
+      propName = ref
+    else
+      mod = @resolveNamespace ref.left, true
+      propName = ref.right
+
+    node = _.clone structNode
+    node.identifier.typeRef = propName
+    delete node.data
+    delete node.line
+    delete node.offset
+    delete node.column
+    delete node.raw
+    node = {
+      nodeType: 'struct'
+      identifier:
+        typeRef: propName
+      members: node.typeAnnotation
+    }
+    mod.types.push node
+
+  # getTypeByString :: String -> Type
+  getTypeByString: (typeName) ->
+    ret = _.find @types, (i) -> i.identifier.typeRef is typeName
+    return null unless ret?
+    return (if ret.nodeType is 'struct' then ret.members else ret)
+
+  # getTypeByMemberAccess :: TypeRef -> Type
+  getTypeByMemberAccess: (typeRef) ->
+    ns = typeRef.left
+    property = typeRef.right
+
+    mod = @resolveNamespace ns
+    ret = _.find mod.types, (node) =>
+      node.identifier.typeRef is property
+    return (if ret.nodeType is 'struct' then ret.members else ret)
+
+  # getType :: TypeRef -> Type
+  getType: (typeRef) ->
+    # console.error 'checkPoint!3', typeRef
+    if _.isString(typeRef)
+      @getTypeByString(typeRef)
+    else if typeRef?.nodeType is 'MemberAccess'
+      @getTypeByMemberAccess(typeRef)
+
+  # getTypeInScope :: TypeRef -> Type
+  getTypeInScope: (typeRef) ->
+    # console.error 'checkPoint!2'
+    @getType(typeRef) or @parent?.getTypeInScope(typeRef) or null
+
+  # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
+  getTypeByIdentifier: (node) ->
+    switch node?.nodeType
+      when 'members'
+        node
+      when 'primitiveIdentifier'
+        node
+      when 'identifier'
+        @getTypeInScope(node.identifier.typeRef)
+      when 'functionType'
+        ImplicitAnyAnnotation
+      else
+        ImplicitAnyAnnotation
+
+  # addThis :: Type * TypeArgument[] -> ()
+  addThis: (type, args = []) ->
+    # TODO: Refactor with addThis
+    @_this.push type
+
+  getThis: (propName) ->
+    _.find @_this, (v) -> v.identifier.typeRef is propName
+
+  getThisByNode: (node) ->
+    typeName = node.identifier.typeRef
+    @getThis(typeName)?.typeAnnotation
+
+  # addVar :: Type * TypeArgument[] -> ()
+  addVar: (type, args = []) ->
+    # TODO: Apply typeArgument
+    @vars.push type
+
+  # getVar :: String -> ()
+  getVar: (typeName) ->
+    _.find @vars, (v) -> v.identifier.typeRef is typeName
+
+  getVarInScope: (typeName) ->
+    @getVar(typeName) or @parent?.getVarInScope(typeName) or undefined
+
+  getTypeByVarNode: (node) ->
+    typeName = node.identifier.typeRef
+    @getVarInScope(typeName)?.typeAnnotation
+
+  getTypeByVarName: (varName) ->
+    @getVarInScope(varName)?.typeAnnotation
+
+  checkAcceptableObject: (left, right) -> false
 
 class ClassScope extends Scope
+  getConstructorType: ->
+    (_.find @_this, (v) -> v.identifier.typeRef is '_constructor_')?.typeAnnotation
+
 class FunctionScope extends Scope
 
+primitives =
+  AnyType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Any'
+
+  StringType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'String'
+
+  BooleanType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Boolean'
+
+  IntType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Int'
+
+  FloatType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Float'
+    heritages:
+      extend:
+        nodeType: 'identifier'
+        identifier:
+          typeRef: 'Int'
+
+  NumberType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Number'
+    heritages:
+      extend:
+        nodeType: 'identifier'
+        identifier:
+          typeRef: 'Float'
+
+  NullType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Null'
+
+  UndefinedType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Undefined'
+
+initializeGlobalTypes = (node) ->
+  node.addPrimitiveType primitives.AnyType
+  node.addPrimitiveType primitives.StringType
+  node.addPrimitiveType primitives.IntType
+  node.addPrimitiveType primitives.FloatType
+  node.addPrimitiveType primitives.NumberType
+  node.addPrimitiveType primitives.BooleanType
+  node.addPrimitiveType primitives.NullType
+  node.addPrimitiveType primitives.UndefinedType
+
 module.exports = {
-  checkAcceptableObject,
-  initializeGlobalTypes,
-  VarSymbol, TypeSymbol, Scope, ClassScope, FunctionScope
-  ArrayType, ObjectType, Type, Possibilites
+  initializeGlobalTypes, primitives
+  Scope, ClassScope, FunctionScope
 }
