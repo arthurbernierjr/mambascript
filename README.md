@@ -2,52 +2,132 @@ TypedCoffeeScript
 ==================================
 
 [![Build Status](https://drone.io/github.com/mizchi/TypedCoffeeScript/status.png)](https://drone.io/github.com/mizchi/TypedCoffeeScript/latest)
-Superset of CoffeeScript with types
+
+CoffeeScript with Types.
+
+This repository is heavily under development and unstable. See below milestone.
 
 ## Concepts
 
-* Allow to compile all coffee-script
-* Optional type and restrict member access under definition
-* Easy to add type to symbol from the middle of development
-* Easy to replace coffee-script
-* Check type againt cscodegen AST, not in compiler
+* Structual Subtyping
+* Superset of CoffeeScript
+* Easy to replace coffee (pass unannotated coffee)
+* Pessimistic type interfaces
 
-## Problems
+## What is pessimistic type interface?
 
-This repository is heavily under development and dirty codes.
+To pass dynamic type system, TypedCoffeeScript expects symbol to `implicit` node by default. If compiler compares implicit node type and implicit node type and fails, it recover to `implicit` `Any` automatically.
 
-- Take over all coffee-script-redux problems 
-	- imperfect super
-	- object literal parsing
+If you add annotation to symbol, compiler can report errors. (This concept is imperfect at `v0.10`)
 
-## Getting started
+## Getting Started
 
 Install
+
 ```
 $ npm install -g typed-coffee-script
-$ tcoffee -c foo.coffee
+$ tcoffee -c foo.coffee # compile
+$ tcoffee foo.coffee # execute
 ```
+
+## Project Status
+
+### ~0.9
+
+- Implement basic concepts
+
+### v0.10(current version)
+
+- Rewrite internal AST and type interfaces
+- Add new command line interface
+- Refactor
+- Nullable
+- MemberAccess in struct definition
+
+Now I rewrited internal for adding typescript importer.
+
+TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dts-parser "mizchi/dts-parser")
+
+## Milestone
+
+### `v0.11`
+
+Reimplementation of `~v0.9`
+
+- Destructive Assignment
+- Generics
+- TypeArgument
+- Infer fuction return type with `return` in Block
+- Super in class
+- Static
+- Readable warnings
+
+### `v0.12`
+
+- module system
+- typealias
+- TypeScript `*.d.ts` importer
+
+### `v0.13`
+
+- Stable(RC for 1.0)
+- Add more tests.
+- Coverage of types to symbol
+- (Fix CoffeeScriptRedux bugs if I can)
+
+## How to contribute
+
+You can use this compiler without type annotation. All test by `CoffeeScriptRedux` passed.
+
+If you encounter bugs, such as type interface... parser..., please report as github issues or pull request to me. I also welcome new syntax proposal.
+
+I DON'T reccomend to use in production yet.
+
+## Known issues
+
+- Take over all coffee-script-redux problems
+	- imperfect super
+	- object literal parsing in class field
+  - and so on
 
 ## Examples
 
 ### Assigment with type
+
 ```coffee
 n :: Int = 3
 ```
 
-### Pre-defined symbol
+### Pre defined symbol
+
 ```coffee
 x :: Number
 x = 3.14
 ```
 
+### Nullable
+
+```coffee
+x :: Number?
+x = 3.14
+x = null
+```
+
+### Typed Array
+
+```coffee
+list :: Int[] = [1..10]
+listWithNull :: Int?[] = [1, null, 3]
+```
+
+In `v0.10`, imperfect to struct.
+
 ### Struct
 
 ```coffee
-struct Point {
+struct Point
   x :: Number
   y :: Number
-}
 p :: Point = {x: 3, y: 3}
 ```
 
@@ -59,17 +139,58 @@ line :: Point[] = [{x: 3, y: 4}, {x: 8, y: 5}, p]
 
 ### Typed Function
 
-```
-f :: Int -> Int
-f = (n) -> n
+```coffee
+# pre define
+f1 :: Int -> Int
+f1 = (n) -> n
 
-# left side type definition
-fl :: Number -> Point = (n) ->  {x: n, y: n * 2}
-# right side
-fr = (n :: Number) :: Number ->  n * n
+# annotation
+f2 :: Number -> Point = (n) -> x: n, y: n * 2
+
+# multi arguments
+f3 :: (Int, Int) -> Int = (m, n) -> m * n
+
+# another form of arguments
+f4 :: Int * Int -> Int = (m, n) -> m * n
+
+# partial applying
+fc :: Int -> Int -> Int
+fc = (m) -> (n) -> m * n
 ```
 
-### Generics
+### Class with this scope
+
+```coffee
+class X
+  # bound to this
+  num :: Number
+  f   :: Number -> Number
+
+  f: (n) ->
+    @num = n
+
+x :: X = new X
+n :: Number = x.f 3
+```
+
+### Class with implements
+
+```coffee
+class Point
+  x :: Int
+  y :: Int
+
+struct Size
+  width  :: Int
+  height :: Int
+
+class Entity extends Point implements Size
+e :: {x :: Int, width :: Int} = new Entity
+```
+
+### Generics and type arguments
+
+Caution: `v0.10` fail it yet.
 
 ```coffee
 struct Hash<K, V> {
@@ -83,36 +204,6 @@ hash :: Hash<String, Number> = {
 }
 hash.set "a", 1
 num :: Number = hash.get "a"
-```
-
-### Class with this scope
-
-```coffee
-class X
-  # bound to this
-  num :: Number
-  f :: Number -> Number
-  f: (n) ->
-    @num = n
-
-x :: X = new X
-x.f 3
-```
-
-### Class with implements
-
-```coffee
-class Point
-  x :: Int
-  y :: Int
-
-struct Size {
-  width  :: Int
-  height :: Int
-}
-
-class Entity extends Object implements Point, Size
-e :: {x :: Int, width :: Int} = new Entity
 ```
 
 Forked from CoffeeScript II: The Wrath of Khan
