@@ -228,13 +228,15 @@ walkSwitch = (node, scope) ->
     for cond in c.conditions
       walk c, scope #=> Expr
     # console.error c.className
-    walk c.consequent, scope
-    canditates.push c.consequent.typeAnnotation
+    if c.consequent
+      walk c.consequent, scope
+      canditates.push c.consequent.typeAnnotation
 
   # else
   if node.alternate
     walk node.alternate, scope #=> Block
-    canditates.push c.consequent.typeAnnotation
+    if c.alternate?.typeAnnotation?
+      canditates.push c.alternate.typeAnnotation
 
   # debug 'walkSwitch', node
   [head, tail...] = canditates
