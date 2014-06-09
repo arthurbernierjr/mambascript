@@ -107,6 +107,18 @@ isAcceptableFunctionType = (scope, left, right) ->
     ret = isAcceptable scope, leftArg, rightArg
     ret
 
+resolveType = (scope, node) ->
+  if node.nodeType is 'identifier'
+    scope.getTypeByIdentifier(node)
+  else if node.nodeType is 'primitiveIdentifier'
+    node
+  else if node.nodeType is 'members'
+    node
+  else if node.nodeType is 'functionType'
+    node
+  else
+    throw node?.nodeType + " is not registered nodeType"
+
 # isAcceptable :: Types.Scope * TypeAnnotation * TypeAnnotaion -> Boolean
 isAcceptable = (scope, left, right) ->
   # FIXME
@@ -200,5 +212,5 @@ checkTypeAnnotation = (scope, node, left, right) ->
     return false
 
 module.exports = {
-  checkType, checkTypeAnnotation, isAcceptable
+  checkType, checkTypeAnnotation, isAcceptable, resolveType
 }

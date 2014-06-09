@@ -3,7 +3,7 @@ reporter = require './reporter'
 CS = require './nodes'
 _ = require 'lodash'
 
-{isAcceptable, checkType, checkTypeAnnotation} = require './type-checker'
+{isAcceptable, checkType, checkTypeAnnotation, resolveType} = require './type-checker'
 
 ImplicitAnyAnnotation =
   implicit: true
@@ -436,7 +436,7 @@ walkAssignOp = (node, scope) ->
           typeAnnotation: member.typeAnnotation
 
   # Destructive Assignment
-  else if left instanceof CS.ObjectInitialiser or left instanceof CS.ArrayInitialiser
+  else if left instanceof CS.ObjectInitialiser
     if right.typeAnnotation?.identifier?.typeRef is 'Any'
       '' # ignore case
     else
@@ -547,28 +547,12 @@ walkFloat = (node, scope) ->
     identifier:
       typeRef: 'Float'
 
-  # node.typeAnnotation ?=
-  #   implicit: true
-  #   nodeType: 'primitiveIdentifier'
-  #   isPrimitive: true
-  #   identifier:
-  #     typeRef: 'Float'
-  #   heritages:
-  #     extend:
-  #       identifier:
-  #         typeRef: 'Int'
-  #         isArray: false
-
 walkNumbers = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'identifier'
     implicit: true
     identifier:
       typeRef: 'Number'
-    # heritages:
-    #   extend:
-    #     identifier:
-    #       typeRef: 'Float'
 
 walkIdentifier = (node, scope) ->
   typeName = node.data
@@ -734,6 +718,28 @@ walkClass = (node, scope) ->
           prop.nodeType = 'identifier' # hack for type checking
           prop
 
+# TODO: move
+addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
+  if initializerNode instanceof CS.ObjectInitialiser
+    for member in initializerNode.members
+      symbol = member.key.data
+      unless scope.getVar(symbol)
+        # debug 'add symbol', symbol
+        scope.addVar
+          nodeType: 'variable'
+          identifier:
+            typeRef: symbol
+          typeAnnotation: member.typeAnnotation ? ImplicitAnyAnnotation
+  else if initializerNode instanceof CS.ObjectInitialiser
+    for member in initializerNode.members
+      symbol = member.key.data
+      unless scope.getVar(symbol)
+        scope.addVar
+          nodeType: 'variable'
+          identifier:
+            typeRef: symbol
+          typeAnnotation: member.typeAnnotation ? ImplicitAnyAnnotation
+
 # walkFunction :: Node * Scope * TypeAnnotation? -> ()
 walkFunction = (node, scope, preAnnotation = null) ->
   functionScope = new Scope scope
@@ -747,10 +753,8 @@ walkFunction = (node, scope, preAnnotation = null) ->
       annotation.returnType ?= ImplicitAnyAnnotation
       annotation.arguments ?= annotation.arguments?.map (arg) -> arg ? ImplicitAnyAnnotation
       annotation.arguments ?= []
-
       return unless checkTypeAnnotation scope, node,  annotation, preAnnotation
 
-    hasError = false
     node.typeAnnotation = preAnnotation
 
     node.parameters?.map (param, n) ->
@@ -762,7 +766,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
         walk param, functionScope
 
       param.typeAnnotation ?= preAnnotation.arguments?[n] ? ImplicitAnyAnnotation
-      # debug 'parameters', node.parameters
 
       if param instanceof CS.Identifier
         functionScope.addVar
@@ -770,7 +773,17 @@ walkFunction = (node, scope, preAnnotation = null) ->
           identifier:
             typeRef: param.data
           typeAnnotation: param.typeAnnotation
-    if hasError then return
+      # f :: Point -> Int = ({x, y}) -> Int
+      else if param instanceof CS.ObjectInitialiser
+        for member in param.members
+          preAnn = preAnnotation.arguments?[n]
+          if preAnn
+            type =  resolveType scope, preAnn
+            if type.nodeType is 'members'
+              memberAnn =  _.find type.properties, (prop) -> prop.identifier?.typeRef is member.key?.data
+              member.typeAnnotation = memberAnn?.typeAnnotation ? ImplicitAnyAnnotation
+        # debug 'before add', param
+        addValuesByInitializer scope, param
   else
     node.parameters?.map (param, n) ->
       walk param, functionScope
@@ -780,6 +793,10 @@ walkFunction = (node, scope, preAnnotation = null) ->
           identifier:
             typeRef: param.data
           typeAnnotation: param.typeAnnotation ? ImplicitAnyAnnotation
+      else if param instanceof CS.ObjectInitialiser
+        addValuesByInitializer scope, param
+      else if param instanceof CS.ArrayInitialiser
+        addValuesByInitializer scope, param
 
   if node.body?
     if node.body instanceof CS.Function

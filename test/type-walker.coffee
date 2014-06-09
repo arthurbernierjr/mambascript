@@ -387,9 +387,24 @@ suite 'TypeChecker', ->
       """
 
   suite 'Function', ->
-    test 'basic assign', ->
     test 'assign function', ->
       f :: Int -> Int = (n) -> n
+
+    test 'assign function', ->
+      struct A
+        x :: Int
+        y :: Int
+      getX :: A -> Int
+      getX = ({x, y}) -> x
+
+    test 'assign function', ->
+      shouldBeTypeError """
+      struct A
+        x :: Int
+        y :: Int
+      getX :: A -> String
+      getX = ({x, y}) -> x
+      """
 
     test 'assign function', ->
       f :: Int -> Int = (@n) ->
