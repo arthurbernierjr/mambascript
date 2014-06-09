@@ -397,8 +397,20 @@ walkAssignOp = (node, scope) ->
     return # TODO
 
   # Destructive Assignment
-  else if left?.members?
-    return # TODO
+  else if left instanceof CS.ObjectInitialiser
+    if right.typeAnnotation?.identifier?.typeRef is 'Any'
+      '' # ignore case
+    else
+      return unless checkType scope, node, left, right
+
+    for member in left.members
+      symbol = member.key.data
+      unless scope.getVarInScope(symbol)
+        scope.addVar
+          nodeType: 'variable'
+          identifier:
+            typeRef: symbol
+          typeAnnotation: member.typeAnnotation
 
   # Member
   else if left.instanceof CS.MemberAccessOp

@@ -98,15 +98,15 @@ suite 'TypeChecker', ->
       eq a, false
 
   suite 'destructive assignment', ->
-    # test 'destructive assignment', ->
-    #   a :: Int
-    #   {a, b, c} = {a: 3, b:5, c:6}
+    test 'destructive assignment', ->
+      a :: Int
+      {a, b, c} = {a: 3, b:5, c:6}
 
-    # test 'throw destructive assignment', ->
-    #   shouldBeTypeError """
-    #   a :: String
-    #   {a, b, c} = {a: 3, b:5, c:6}
-    #   """
+    test 'throw destructive assignment', ->
+      shouldBeTypeError """
+      a :: String
+      {a, b, c} = {a: 3, b:5, c:6}
+      """
     # test 'destructive assignment', ->
     #   [a, b, c] = [3, 5, 6]
 
