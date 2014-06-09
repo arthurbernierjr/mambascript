@@ -1364,6 +1364,20 @@ suite 'TypeChecker', ->
           value: ''
       """
 
+    test 'generics', ->
+      struct Id<T>
+        list :: T[]
+      obj :: Id<Int> =
+        list: [1..10]
+
+    test 'generics', ->
+      shouldBeTypeError """
+      struct Id<T>
+        list :: T[]
+      obj :: Id<String> =
+        list: [1..10]
+      """
+
   suite "implements", ->
     test 'implements', ->
       struct Size
