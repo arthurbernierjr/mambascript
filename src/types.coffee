@@ -104,6 +104,7 @@ class Scope
 
     node = _.clone structNode
     node.identifier.typeRef = propName
+    node.typeAnnotation.identifier = node.identifier
     delete node.data
     delete node.line
     delete node.offset

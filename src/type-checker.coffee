@@ -8,8 +8,8 @@
 # type TypeRef = String | MemberAccess
 #
 # type Struct exnteds Node
-#   identifier: TypeIdentifier
-#   members: PropertyTypeAnnotaiton
+#   identifier :: TypeIdentifier
+#   members  :: PropertyTypeAnnotaiton
 #
 # struct TypeIdentifier
 #   typeRef :: TypeRef
@@ -24,6 +24,8 @@
 #
 # struct PropertyTypeAnnotation implements TypeAnnotation
 #   properties :: TypeIdentifier[]
+#   nullable :: Boolean
+#   isArray :: Boolean
 
 {debug} = require './helpers'
 reporter = require './reporter'
@@ -97,6 +99,7 @@ isAcceptableFunctionType = (scope, left, right) ->
   left.returnType ?= ImplicitAnyAnnotation
   right.returnType ?= ImplicitAnyAnnotation
   unless isAcceptable(scope, left.returnType, right.returnType)
+    # console.error 'fail at return type check'
     return false
   return _.all left.arguments.map (leftArg, n) ->
     leftArg = leftArg ? ImplicitAnyAnnotation
@@ -132,21 +135,25 @@ isAcceptable = (scope, left, right) ->
     leftWholeNullable = left.identifier.wholeNullable
     if leftWholeNullable and rightAnnotation.identifier.typeRef in ['Undefined', 'Null']
       return true
-    # debug 'rightAnnotation', left
 
     isSameArrayFlag = !!left.identifier.isArray is !!right.identifier.isArray or !!left.identifier.isArray is !!rightAnnotation.isArray
     unless isSameArrayFlag
+      # console.error 'fail at isSameArrayFlag'
       return false
 
-  # debug 'isAcceptable leftAnnotation', leftAnnotation
-  # debug 'isAcceptable rightAnnotation', rightAnnotation
-
-  if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
-    return isAcceptableStruct scope, leftAnnotation, rightAnnotation
+  # debug 'isAcceptableStruct', leftAnnotation, rightAnnotation
+  # if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
+  if leftAnnotation.nodeType is 'members'
+    if rightAnnotation.nodeType is 'members'
+      ret = isAcceptableStruct scope, leftAnnotation, rightAnnotation
+      return ret
+    else
+      return false
   if leftAnnotation.nodeType is rightAnnotation.nodeType is 'primitiveIdentifier'
-    leftNullable = left.identifier.nullable
-    rightNullable = right.identifier.nullable
+    leftNullable = !! left.identifier.nullable
+    rightNullable = !! right.identifier.nullable
     if not leftNullable and rightNullable
+      # console.error 'fail at nullable check'
       return false
     return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation, leftNullable
 

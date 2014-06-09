@@ -568,14 +568,25 @@ suite 'TypeChecker', ->
         for key, val of {a: 1, b: 2}
           1
 
-    # test 'for in' , ->
-    #   struct Point
-    #     x :: Int
-    #     y :: Int
+    test 'for in' , ->
+      struct Point
+        x :: Int
+        y :: Int
 
-    #   list :: Point[] =
-    #     for i :: Number, n in [1..3]
-    #       {x: 1, y: 2}
+      list :: Point[] =
+        for i :: Int, n in [1..3]
+          {x: 1, y: 2}
+
+    test 'for in' , ->
+      shouldBeTypeError """
+      struct Point
+        x :: Int
+        y :: Int
+
+      list :: Point[] =
+        for i :: Int, n in [1..3]
+          i
+      """
 
     test 'for in' , ->
       shouldBeTypeError """
@@ -671,15 +682,18 @@ suite 'TypeChecker', ->
         a :: Number = if true then 3 else ""
       """
 
-    # test.skip 'throw return type mismatch', ->
-    #   shouldBeTypeError """
-    #     arr :: Number[] = ("" for i in [1,2,3])
-    #   """
+    test.skip 'throw return type mismatch', ->
+      shouldBeTypeError """
+        arr :: Number[] = ("" for i in [1,2,3])
+      """
+
+    test.skip 'throw return type mismatch', ->
+      arr :: Number[] = (i for i in [1,2,3])
 
     # test 'throw target mismatch', ->
     #   shouldBeTypeError """
-    #     arr :: Number[] = (i for i :: Number in [1,2,""])
-    #   """
+    #   arr :: Number[] = (i for i :: Number in [1,2,""])
+    # """
 
     # test 'throw target mismatch', ->
     #   shouldBeTypeError """

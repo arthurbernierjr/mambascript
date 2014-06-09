@@ -59,8 +59,7 @@ checkNodes = (cs_ast) ->
   return root
 
 walkStruct = (node, scope) ->
-  # debug 'node', node
-  scope.addStructType node
+  scope.addStructType _.clone node
 
 walkVardef = (node, scope) ->
   # avoid 'constructor' because it's property has special action on EcmaScript
@@ -314,12 +313,12 @@ walkFor = (node, scope) ->
   walk node.body, scope #=> Block
 
   if node.body?
-    arrayType =  _.clone node.body.typeAnnotation
+    bodyType =  _.clone node.body.typeAnnotation
 
-  if arrayType?.identifier?
+  if bodyType?.identifier
     if node.body?
-      arrayType.identifier.isArray = true
-      node.typeAnnotation = arrayType
+      bodyType.identifier.isArray = true
+      node.typeAnnotation = bodyType
     else
       node.typeAnnotation = ImplicitAnyAnnotation
   else
@@ -624,6 +623,9 @@ walkObjectInitializer = (node, scope) ->
     properties: props
     nodeType: 'members'
     implicit: true
+    identifier:
+      typeRef: '[object]'
+
     heritages: # TODO: check scheme later
       extend:
         implicit: true
