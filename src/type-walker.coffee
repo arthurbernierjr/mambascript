@@ -70,23 +70,29 @@ walkVardef = (node, scope) ->
     if symbol is 'constructor'
       symbol = '_constructor_'
 
-    unless scope.getThis symbol
+    unless val = scope.getThis symbol
       scope.addThis
         nodeType: 'variable'
         identifier:
           typeRef: symbol
         typeAnnotation: node.expr
     else
-      reporter.add_error node, 'double bind: '+ symbol
+      if val.typeAnnotation.implicit and val.typeAnnotation.identifier.typeRef is 'Any'
+        val.typeAnnotation = node.expr
+      else
+        reporter.add_error node, 'double bind: '+ symbol
   else
-    unless scope.getVar symbol
+    unless val = scope.getVar symbol
       scope.addVar
         nodeType: 'variable'
         identifier:
           typeRef: symbol
         typeAnnotation: node.expr
     else
-      reporter.add_error node, 'double bind: '+ symbol
+      if val.typeAnnotation.implicit and val.typeAnnotation.identifier.typeRef is 'Any'
+        val.typeAnnotation = node.expr
+      else
+        reporter.add_error node, 'double bind: '+ symbol
 
 walkProgram = (node, scope) ->
   walk node.body.statements, scope

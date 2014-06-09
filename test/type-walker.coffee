@@ -57,6 +57,16 @@ suite 'TypeChecker', ->
       a :: Number -> Number
       a = (n) -> n
 
+    test 'assign to implicit any', ->
+      a = global
+      a :: {toString :: Any}
+
+    test 'assign to implicit any', ->
+      shouldBeError """
+      a = global
+      a :: {toString :: Any}
+      a :: Int
+      """
 
     test 'apply float to int', ->
       shouldBeTypeError """
@@ -843,14 +853,15 @@ suite 'TypeChecker', ->
         return 1
       """
 
-    # test 'throw function return type mismatch', ->
-    #   f2 :: () -> Int = ->
-    #     return 3
-    # test 'throw function return type mismatch', ->
-    #   shouldBeTypeError """
-    #   f2 :: () -> Number = ->
-    #     return ""
-    #   """
+    test 'function return type', ->
+      f2 :: () -> Int = ->
+        return 3
+
+    test 'throw function return type mismatch', ->
+      shouldBeTypeError """
+      f2 :: () -> Number = ->
+        return ""
+      """
 
   suite 'Switch', ->
     test 'Switch', ->
