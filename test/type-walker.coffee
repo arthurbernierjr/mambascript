@@ -349,15 +349,15 @@ suite 'TypeChecker', ->
       f :: Number -> Number = (n :: Number) :: String ->  n * n
       """
 
-    # test 'typed function mismatching application', ->
-    #   shouldBeTypeError """
-    #   f :: Number -> Number = 3
-    #   """
+    test 'typed function mismatching application', ->
+      shouldBeTypeError """
+      f :: Number -> Number = 3
+      """
 
-    # test 'typed function mismatching application', ->
-    #   shouldBeTypeError """
-    #   f :: Number -> Number = {}
-    #   """
+    test 'typed function mismatching application', ->
+      shouldBeTypeError """
+      f :: Number -> Number = {}
+      """
 
     test 'throw function return type mismatch', ->
       shouldBeTypeError """

@@ -149,16 +149,22 @@ isAcceptable = (scope, left, right) ->
       return ret
     else
       return false
-  if leftAnnotation.nodeType is rightAnnotation.nodeType is 'primitiveIdentifier'
-    leftNullable = !! left.identifier.nullable
-    rightNullable = !! right.identifier.nullable
-    if not leftNullable and rightNullable
-      # console.error 'fail at nullable check'
+  if leftAnnotation.nodeType is 'primitiveIdentifier'
+    if rightAnnotation.nodeType is 'primitiveIdentifier'
+      leftNullable = !! left.identifier.nullable
+      rightNullable = !! right.identifier.nullable
+      if not leftNullable and rightNullable
+        # console.error 'fail at nullable check'
+        return false
+      return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation, leftNullable
+    else
       return false
-    return isAcceptablePrimitiveSymbol scope, leftAnnotation, rightAnnotation, leftNullable
 
-  if leftAnnotation.nodeType is rightAnnotation.nodeType is 'functionType'
-    return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
+  if leftAnnotation.nodeType is 'functionType'
+    if rightAnnotation.nodeType is 'functionType'
+      return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
+    else
+      return false
   true # FIXME: pass all unknow pattern
 
 typeErrorText = (left, right) ->
