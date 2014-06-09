@@ -163,6 +163,8 @@ isAcceptable = (scope, left, right) ->
   if leftAnnotation.nodeType is 'functionType'
     if rightAnnotation.nodeType is 'functionType'
       return isAcceptableFunctionType scope, leftAnnotation, rightAnnotation
+    else if leftAnnotation?.returnType?.implicit
+      return true
     else
       return false
   true # FIXME: pass all unknow pattern

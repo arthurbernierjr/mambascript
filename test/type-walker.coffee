@@ -440,12 +440,6 @@ suite 'TypeChecker', ->
       f = (n) -> (m, str) -> n * m
       f(1)(2, 'hey!')
 
-  suite 'Nullable', ->
-    # test 'cant catch undefined', ->
-    #   shouldBeTypeError """
-    #   x :: Number = global?.require
-    #   """
-
   suite 'BinOps', ->
     test 'BinOps Num', ->
       a :: Number = (3 + 3 * 6) / 2
@@ -578,6 +572,38 @@ suite 'TypeChecker', ->
           {x: 1, y: 2}
 
     test 'for in' , ->
+      list :: Int?[] =
+        for i in [1..10]
+          if true
+            1
+          else
+            null
+
+    test 'for in' , ->
+      list :: Int?[] =
+        for i in [1..10]
+          if true
+            1
+
+    test 'for in' , ->
+      list :: Int[] =
+        for i in [1..10]
+          if true
+            1
+          else
+            2
+
+    test 'for in' , ->
+      shouldBeTypeError """
+      list :: Int?[] =
+        for i in [1..10]
+          if true
+            1
+          else
+            ''
+      """
+
+    test 'for in' , ->
       shouldBeTypeError """
       struct Point
         x :: Int
@@ -690,10 +716,10 @@ suite 'TypeChecker', ->
     test.skip 'throw return type mismatch', ->
       arr :: Number[] = (i for i in [1,2,3])
 
-    # test 'throw target mismatch', ->
-    #   shouldBeTypeError """
-    #   arr :: Number[] = (i for i :: Number in [1,2,""])
-    # """
+    test 'throw target mismatch', ->
+      shouldBeTypeError """
+      arr :: Number[] = (i for i in [1,2,""])
+    """
 
     # test 'throw target mismatch', ->
     #   shouldBeTypeError """
