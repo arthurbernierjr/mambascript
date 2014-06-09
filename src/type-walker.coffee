@@ -573,6 +573,7 @@ walkThis = (node, scope) ->
   # debug 'walkThis members', scope._this
   node.typeAnnotation =
     nodeType: 'members'
+    implicit: true
     identifier:
       typeRef: '[this]'
     properties: scope._this
