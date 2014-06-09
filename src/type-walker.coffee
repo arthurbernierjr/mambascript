@@ -22,14 +22,15 @@ ImplicitAnyAnnotation =
 compareAsParent = (scope, a, b) ->
   if a?.identifier?.typeRef in ['Undefined', 'Null']
     b = _.cloneDeep(b)
-    if b.identifier?
+    if b?.identifier?
       b.identifier.nullable = true
     return b
 
   if b?.identifier?.typeRef in ['Undefined', 'Null']
     a = _.cloneDeep(a)
-    if a.identifier?
-      a.identifier.nullable = true
+    if a?
+      if a.identifier?
+        a.identifier.nullable = true
     return a
 
   retA = isAcceptable scope, a, b
@@ -105,12 +106,15 @@ walkBlock = (node, scope) ->
   # debug 'walkBlock', node.statements
   returnables = scope.getReturnables()
 
-  if _.last node.statements
+  if _.last(node.statements)?.typeAnnotation
     returnables.push (_.last node.statements).typeAnnotation
 
   [head, tail...] = returnables
   ann = _.cloneDeep _.reduce tail, ((a, b) ->
-    compareAsParent scope, a, b
+    if a and b
+      compareAsParent scope, a, b
+    else
+      ImplicitAnyAnnotation
   ), head
   node.typeAnnotation = ann
 
@@ -228,13 +232,15 @@ walkSwitch = (node, scope) ->
     for cond in c.conditions
       walk c, scope #=> Expr
     # console.error c.className
-    walk c.consequent, scope
-    canditates.push c.consequent.typeAnnotation
+    if c.consequent
+      walk c.consequent, scope
+      canditates.push c.consequent.typeAnnotation
 
   # else
   if node.alternate
     walk node.alternate, scope #=> Block
-    canditates.push c.consequent.typeAnnotation
+    if c.alternate?.typeAnnotation?
+      canditates.push c.alternate.typeAnnotation
 
   # debug 'walkSwitch', node
   [head, tail...] = canditates
@@ -567,6 +573,7 @@ walkThis = (node, scope) ->
   # debug 'walkThis members', scope._this
   node.typeAnnotation =
     nodeType: 'members'
+    implicit: true
     identifier:
       typeRef: '[this]'
     properties: scope._this
