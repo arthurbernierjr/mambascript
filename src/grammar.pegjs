@@ -588,12 +588,12 @@ leftHandSideExpressionNoImplicitObjectCall = callExpressionNoImplicitObjectCall 
     / secondaryExpressionNoImplicitObjectCall
 
 callExpression
-  = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList?{
+  = SUPER accesses:callExpressionAccesses? typeArgs:typeArgumentLiteral? secondaryArgs:secondaryArgumentList?{
       if(accesses)
         return rp(new CS.Super(accesses[0].operands[0]));
       return rp(new CS.Super(secondaryArgs || [] ));
     }
-  / fn:memberExpression accesses:callExpressionAccesses? secondaryArgs:("?"? secondaryArgumentList)? {
+  / fn:memberExpression accesses:callExpressionAccesses? typeArgs:typeArgumentLiteral? secondaryArgs:("?"? secondaryArgumentList)? {
       if(accesses) fn = createMemberExpression(fn, accesses);
       var soaked, secondaryCtor;
       if(secondaryArgs) {
@@ -601,6 +601,7 @@ callExpression
         secondaryCtor = soaked ? CS.SoakedFunctionApplication : CS.FunctionApplication;
         fn = rp(new secondaryCtor(fn, secondaryArgs[1]));
       }
+      fn.typeArguments = typeArgs;
       return fn;
     }
   callExpressionAccesses
@@ -1324,7 +1325,6 @@ returnTypeExpr
 
 assignableTypeIdentifier = identifierName
 
-
 typeIdentifier
   = e: identifierName es:('.' identifierName)+ {
     var list = [e].concat(es.map(function(e){return e[1]}));
@@ -1355,12 +1355,18 @@ typeSymbol
   }
 
 typeFunction
-  = args:typeFunctionArguments _ "->" _ returnType:typeExpr {
+  = "(" _ tf:_typeFunction _ ")" {return tf;}
+  / _typeFunction
+
+  _typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeExpr {
     return {arguments: args, returnType: returnType, nodeType: 'functionType'};
-}
+  }
 
 typeFunctionArguments
-  = e:typeSymbol _ es:("*" _ typeSymbol _)* {
+  = e:typeSymbol _ es:("*" _ typeFunction _)* {
+    return [e].concat(es.map(function(e){return e[2]}));
+  }
+  / e:typeSymbol _ es:("*" _ typeSymbol _)* {
     return [e].concat(es.map(function(e){return e[2]}));
   }
   / "(" _ e:typeSymbol _ es:("," _ typeSymbol _)* _ ")" {
