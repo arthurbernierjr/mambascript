@@ -36,17 +36,21 @@ $ tcoffee foo.coffee # execute
 
 - Implement basic concepts
 
-### v0.10(current version)
+### `v0.10`(current version)
 
 - Rewrite internal AST and type interfaces
 - Add new command line interface
 - Refactor
 - Nullable
-- MemberAccess in struct definition
 
 Now I rewrited internal for adding typescript importer.
 
 TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dts-parser "mizchi/dts-parser")
+
+- `v0.10.1`
+	- MemberAccess in struct definition
+	- Infer fuction return type with `return` in Block
+	- Destructive Assignment
 
 ## Milestone
 
@@ -54,18 +58,17 @@ TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dt
 
 Reimplementation of `~v0.9`
 
-- Destructive Assignment
 - Generics
 - TypeArgument
-- Infer fuction return type with `return` in Block
 - Super in class
-- Static
+- Class static member type interface
 - Readable warnings
 
 ### `v0.12`
 
 - module system
 - typealias
+  - such as `typealias Bar = Foo<T>[]`
 - TypeScript `*.d.ts` importer
 
 ### `v0.13`
