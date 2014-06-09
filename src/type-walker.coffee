@@ -21,13 +21,13 @@ ImplicitAnyAnnotation =
 
 compareAsParent = (scope, a, b) ->
   if a?.identifier?.typeRef in ['Undefined', 'Null']
-    b = _.clone(b)
+    b = _.cloneDeep(b)
     if b.identifier?
       b.identifier.nullable = true
     return b
 
   if b?.identifier?.typeRef in ['Undefined', 'Null']
-    a = _.clone(a)
+    a = _.cloneDeep(a)
     if a.identifier?
       a.identifier.nullable = true
     return a
@@ -59,7 +59,7 @@ checkNodes = (cs_ast) ->
   return root
 
 walkStruct = (node, scope) ->
-  scope.addStructType _.clone node
+  scope.addStructType _.cloneDeep node
 
 walkVardef = (node, scope) ->
   # avoid 'constructor' because it's property has special action on EcmaScript
@@ -94,15 +94,18 @@ walkProgram = (node, scope) ->
 
 walkBlock = (node, scope) ->
   walk node.statements, scope
+  # debug 'walkBlock', node.statements
+  debug 'returnables', scope._returnables
   last_typeAnnotation = (node.statements[node.statements.length-1])?.typeAnnotation
+
   node.typeAnnotation = last_typeAnnotation
 
 walkReturn = (node, scope) ->
-  return # TODO
   walk node.expression, scope
-  if node.expression?.typeAnnotation?.identifier?
-    scope.addReturnable node.expression.typeAnnotation.identifier
+  if node.expression?.typeAnnotation?
     node.typeAnnotation = node.expression.typeAnnotation
+    scope.addReturnable node.typeAnnotation
+  debug 'walkReturn', node
 
 walkBinOp = (node, scope) ->
   walk node.left, scope
@@ -193,7 +196,7 @@ walkConditional = (node, scope) ->
     parentType = compareAsParent scope, consequentAnnotation, alternateAnnotation
     node.typeAnnotation = parentType
   else if consequentAnnotation and not alternateAnnotation
-    ret = _.clone consequentAnnotation
+    ret = _.cloneDeep consequentAnnotation
     if ret.identifier?
       ret.identifier.nullable = true
     node.typeAnnotation = ret
@@ -222,7 +225,7 @@ walkSwitch = (node, scope) ->
 
   # debug 'walkSwitch', node
   [head, tail...] = canditates
-  ret = _.clone _.reduce tail, ((a, b) ->
+  ret = _.cloneDeep _.reduce tail, ((a, b) ->
     compareAsParent scope, a, b
   ), head
   if ret?
@@ -268,7 +271,7 @@ walkFor = (node, scope) ->
       # TODO: type check
       node.valAssignee.typeAnnotation = preAnnotation
     else if node.target.typeAnnotation?.identifier?.isArray
-      targetType = _.clone node.target.typeAnnotation
+      targetType = _.cloneDeep node.target.typeAnnotation
       delete targetType.identifier.isArray
       node.valAssignee.typeAnnotation = targetType
     else
@@ -313,7 +316,7 @@ walkFor = (node, scope) ->
   walk node.body, scope #=> Block
 
   if node.body?
-    bodyType =  _.clone node.body.typeAnnotation
+    bodyType =  _.cloneDeep node.body.typeAnnotation
 
   if bodyType?.identifier
     if node.body?
@@ -404,7 +407,7 @@ walkAssignOp = (node, scope) ->
             checkType scope, node, lprop, rprop
       else if right.typeAnnotation?.identifier?.isArray
         for lprop, n in left.members
-          rpropAnn = _.clone right.typeAnnotation
+          rpropAnn = _.cloneDeep right.typeAnnotation
           delete rpropAnn.identifier.isArray
           if lprop and rpropAnn # FIXME: right may be null
             # checkType scope, node, lprop, rprop
@@ -617,7 +620,7 @@ walkArrayInializer = (node, scope) ->
     walk member, scope
 
   [head, tail...] = node.members.map (m) -> m.typeAnnotation
-  ann = _.clone _.reduce tail, ((a, b) ->
+  ann = _.cloneDeep _.reduce tail, ((a, b) ->
     compareAsParent scope, a, b
   ), head
 
@@ -681,7 +684,7 @@ walkClass = (node, scope) ->
       parentAnnotation = scope.getTypeInScope(impl.identifier.typeRef) # TODO: member access
       if parentAnnotation
         parentAnnotation.properties.map (prop) ->
-          classScope.addThis _.clone(prop)
+          classScope.addThis _.cloneDeep(prop)
 
   # has parent class?
   if node.parent?
@@ -689,7 +692,7 @@ walkClass = (node, scope) ->
     parentAnnotation = scope.getTypeInScope(node.parent.data)
     if parentAnnotation
       parentAnnotation.properties.map (prop) ->
-        classScope.addThis _.clone(prop)
+        classScope.addThis _.cloneDeep(prop)
   # collect @values first
   if node.body?.statements?
     for statement in node.body.statements when statement.nodeType is 'vardef'
@@ -712,7 +715,7 @@ walkClass = (node, scope) ->
         typeRef: node.nameAssignee.data
       members:
         nodeType: 'members'
-        properties: _.map _.clone(classScope._this), (prop) ->
+        properties: _.map _.cloneDeep(classScope._this), (prop) ->
           prop.nodeType = 'identifier' # hack for type checking
           prop
 
@@ -725,7 +728,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
   if preAnnotation?
     # if node.typeAnnotation?.identifier?.typeRef is 'Any'
     if node.typeAnnotation?
-      annotation = _.clone node.typeAnnotation
+      annotation = _.cloneDeep node.typeAnnotation
       annotation.returnType ?= ImplicitAnyAnnotation
       annotation.arguments ?= annotation.arguments?.map (arg) -> arg ? ImplicitAnyAnnotation
       annotation.arguments ?= []

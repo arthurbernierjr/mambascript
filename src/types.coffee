@@ -32,7 +32,7 @@ class Scope
 
     @_returnables = [] #=> Type[]
 
-  addReturnable: (symbol, typeRef) ->
+  addReturnable: (typeRef) ->
     @_returnables.push typeRef
 
   getReturnables: -> @_returnables
