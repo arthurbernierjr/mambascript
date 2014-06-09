@@ -393,11 +393,34 @@ walkAssignOp = (node, scope) ->
     walk right, scope
 
   # Array initializer
-  if left.instanceof CS.ArrayInitialiser
-    return # TODO
+  if left instanceof CS.ArrayInitialiser
+    if right.typeAnnotation?.identifier?.typeRef is 'Any'
+      '' # ignore case
+    else
+      if right instanceof CS.ArrayInitialiser
+        for lprop, n in left.members
+          rprop = right?.members?[n]
+          if lprop and rprop # FIXME: right may be null
+            checkType scope, node, lprop, rprop
+      else if right.typeAnnotation?.identifier?.isArray
+        for lprop, n in left.members
+          rpropAnn = _.clone right.typeAnnotation
+          delete rpropAnn.identifier.isArray
+          if lprop and rpropAnn # FIXME: right may be null
+            # checkType scope, node, lprop, rprop
+            checkTypeAnnotation scope, node, lprop.typeAnnotation, rpropAnn
+
+    for member in left.members
+      symbol = member.data
+      unless scope.getVarInScope(symbol)
+        scope.addVar
+          nodeType: 'variable'
+          identifier:
+            typeRef: symbol
+          typeAnnotation: member.typeAnnotation
 
   # Destructive Assignment
-  else if left instanceof CS.ObjectInitialiser
+  else if left instanceof CS.ObjectInitialiser or left instanceof CS.ArrayInitialiser
     if right.typeAnnotation?.identifier?.typeRef is 'Any'
       '' # ignore case
     else

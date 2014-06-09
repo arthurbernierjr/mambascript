@@ -107,14 +107,81 @@ suite 'TypeChecker', ->
       a :: String
       {a, b, c} = {a: 3, b:5, c:6}
       """
-    # test 'destructive assignment', ->
-    #   [a, b, c] = [3, 5, 6]
 
-    # test 'destructive assignment', ->
-    #   shouldBeTypeError """
-    #   a :: String
-    #   [a, b, c] = [3, 5, 6]
-    #   """
+    test 'destructive assignment', ->
+      a :: Int
+      b :: String
+      c :: Int
+      {a, b, c} = {a: 3, b: '', c: 1}
+
+    test 'destructive assignment', ->
+      struct Point
+        x :: Int
+        y :: Int
+      p :: Point = {x: 1, y: 2}
+
+      x :: Int
+      y :: Int
+      {x, y} = p
+
+    test 'destructive assignment', ->
+      shouldBeTypeError """
+      struct Point
+        x :: Int
+        y :: Int
+      p :: Point = {x: 1, y: 2}
+
+      x :: Int
+      y :: String
+      {x, y} = p
+      """
+
+
+
+    test 'destructive assignment', ->
+      shouldBeTypeError """
+      a :: Int
+      b :: String
+      c :: Int
+      {a, b, c} = {a: 3, b: 1, c: 1}
+      """
+
+    test 'destructive assignment', ->
+      a :: Int
+      [a, b, c] = [1, 2, 3]
+
+    test 'destructive assignment', ->
+      shouldBeTypeError """
+      a :: Int
+      {a, b, c} = [1, 2, 3]
+      """
+
+    test 'destructive assignment', ->
+      shouldBeTypeError """
+      a :: String
+      [a, b, c] = [3, 5, 6]
+      """
+
+    test 'destructive assignment', ->
+      shouldBeTypeError """
+      a :: Int
+      b :: String
+      [a, b, c] = [3, 5, 6]
+      """
+
+    test 'destructive assignment', ->
+      list :: Int[] = [1..10]
+      a :: Int
+      [a, b] = list
+
+    test 'destructive assignment', ->
+      shouldBeTypeError """
+      list :: Int[] = [1..10]
+      a :: Int
+      b :: String
+
+      [a, b] = list
+      """
 
 
   suite 'Struct', ->
