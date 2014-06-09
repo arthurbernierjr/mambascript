@@ -94,18 +94,25 @@ walkProgram = (node, scope) ->
 
 walkBlock = (node, scope) ->
   walk node.statements, scope
-  # debug 'walkBlock', node.statements
-  debug 'returnables', scope._returnables
   last_typeAnnotation = (node.statements[node.statements.length-1])?.typeAnnotation
 
-  node.typeAnnotation = last_typeAnnotation
+  # debug 'walkBlock', node.statements
+  returnables = scope.getReturnables()
+
+  if _.last node.statements
+    returnables.push (_.last node.statements).typeAnnotation
+
+  [head, tail...] = returnables
+  ann = _.cloneDeep _.reduce tail, ((a, b) ->
+    compareAsParent scope, a, b
+  ), head
+  node.typeAnnotation = ann
 
 walkReturn = (node, scope) ->
   walk node.expression, scope
   if node.expression?.typeAnnotation?
     node.typeAnnotation = node.expression.typeAnnotation
     scope.addReturnable node.typeAnnotation
-  debug 'walkReturn', node
 
 walkBinOp = (node, scope) ->
   walk node.left, scope

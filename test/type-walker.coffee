@@ -796,6 +796,42 @@ suite 'TypeChecker', ->
     #   """
 
   suite 'Return', ->
+    test 'return', ->
+      f :: Int -> Int = ->
+        if true
+          return 3
+        if false
+          return 2
+        return 1
+
+    test 'return', ->
+      f :: Int -> Int? = ->
+        if true
+          return null
+        if false
+          return null
+        return 1
+
+    test 'return', ->
+      shouldBeTypeError """
+      f :: Int -> Int = ->
+        if true
+          return ''
+        if true
+          return ''
+        return 1
+      """
+
+    test 'return', ->
+      shouldBeTypeError """
+      f :: Int -> Int = ->
+        if true
+          return null
+        if false
+          return null
+        return 1
+      """
+
     # test 'throw function return type mismatch', ->
     #   f2 :: () -> Int = ->
     #     return 3
