@@ -558,15 +558,15 @@ suite 'TypeChecker', ->
       """
 
   suite 'For', ->
-    # test 'for in' , ->
-    #   list :: Number[] =
-    #     for i :: Number, n in [1..3]
-    #       i
+    test 'for in' , ->
+      list :: Number[] =
+        for i :: Number, n in [1..3]
+          i
 
-    # test 'for of' , ->
-    #   list :: Number[] =
-    #     for key, val of {a: 1, b: 2}
-    #       1
+    test 'for of' , ->
+      list :: Number[] =
+        for key, val of {a: 1, b: 2}
+          1
 
     # test 'for in' , ->
     #   struct Point
@@ -577,17 +577,17 @@ suite 'TypeChecker', ->
     #     for i :: Number, n in [1..3]
     #       {x: 1, y: 2}
 
-    # test 'for in' , ->
-    #   shouldBeTypeError """
-    #   list :: String[] =
-    #     for i :: Number, n in [1..3]
-    #       i
-    #   """
+    test 'for in' , ->
+      shouldBeTypeError """
+      list :: String[] =
+        for i :: Number, n in [1..3]
+          i
+      """
 
-    # test 'for of', ->
-    #   list :: Number[] =
-    #     for key :: String, val :: Number of {x: 77, y: 6}
-    #       val
+    test 'for of', ->
+      list :: Number[] =
+        for key :: String, val :: Number of {x: 77, y: 6}
+          val
 
   suite 'if', ->
     test 'if expr', ->

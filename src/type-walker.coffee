@@ -313,9 +313,11 @@ walkFor = (node, scope) ->
   # check body
   walk node.body, scope #=> Block
 
+  if node.body?
+    arrayType =  _.clone node.body.typeAnnotation
+
   if arrayType?.identifier?
     if node.body?
-      arrayType =  _.clone node.body.typeAnnotation
       arrayType.identifier.isArray = true
       node.typeAnnotation = arrayType
     else
