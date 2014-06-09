@@ -98,21 +98,25 @@ isAcceptableStruct = (scope, left, right) ->
 isAcceptableFunctionType = (scope, left, right) ->
   left.returnType ?= ImplicitAnyAnnotation
   right.returnType ?= ImplicitAnyAnnotation
-  unless isAcceptable(scope, left.returnType, right.returnType)
-    # console.error 'fail at return type check'
-    return false
-  return _.all left.arguments.map (leftArg, n) ->
+
+  passArgs = _.all left.arguments.map (leftArg, n) ->
     leftArg = leftArg ? ImplicitAnyAnnotation
     rightArg = right.arguments[n] ? ImplicitAnyAnnotation
-    ret = isAcceptable scope, leftArg, rightArg
-    ret
+    isAcceptable scope, leftArg, rightArg
+
+  return false unless passArgs
+
+  if right.returnType?.identifier?.typeRef is 'Void'
+    return true
+  isAcceptable(scope, left.returnType, right.returnType)
 
 resolveType = (scope, node) ->
+  # debug 'resolveType', scope.name, node
   if node.nodeType is 'identifier'
     ret = scope.getTypeByIdentifier(node)
     unless ret
       util = require 'util'
-      throw util.inspect(node.identifier.typeRef) + ' is not defined'
+      throw 'Type: '+ util.inspect(node.identifier.typeRef) + ' is not defined'
     ret
   else if node.nodeType is 'primitiveIdentifier'
     node
@@ -165,6 +169,8 @@ isAcceptable = (scope, left, right) ->
       return false
   if leftAnnotation.nodeType is 'primitiveIdentifier'
     if rightAnnotation.nodeType is 'primitiveIdentifier'
+      if leftAnnotation.identifier.typeRef is 'Void'
+        return true
       leftNullable = !! left.identifier.nullable
       rightNullable = !! right.identifier.nullable
       if not leftNullable and rightNullable

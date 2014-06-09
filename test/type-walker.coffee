@@ -25,7 +25,6 @@ suite 'TypeChecker', ->
     global._root_.vars = []
     global._root_.types = []
     global._root_._this = []
-
     initializeGlobalTypes(global._root_)
     reporter.clean()
 
@@ -192,7 +191,6 @@ suite 'TypeChecker', ->
 
       [a, b] = list
       """
-
 
   suite 'Struct', ->
     test 'object assign', ->
@@ -589,7 +587,7 @@ suite 'TypeChecker', ->
       nf()
 
     test 'void keyword', ->
-      nf :: () -> void = -> setTimeout (->), 100
+      nf :: () -> Void = -> setTimeout (->), 100
       nf()
 
   suite 'Array', ->

@@ -56,11 +56,12 @@ checkNodes = (cs_ast) ->
     initializeGlobalTypes(root)
 
   walk cs_ast, root
-  debug 'root', cs_ast
+  # debug 'root', cs_ast
   return root
 
 walkStruct = (node, scope) ->
   scope.addStructType _.cloneDeep node
+  node.typeAnnotation = ImplicitAnyAnnotation
 
 walkVardef = (node, scope) ->
   # avoid 'constructor' because it's property has special action on EcmaScript
@@ -669,13 +670,12 @@ walkObjectInitializer = (node, scope) ->
     implicit: true
     identifier:
       typeRef: '[object]'
-
-    heritages: # TODO: check scheme later
-      extend:
-        implicit: true
-        nodeType: 'identifier'
-        identifier:
-          typeRef: 'Object'
+    # heritages: # TODO: check scheme later
+    #   extend:
+    #     implicit: true
+    #     nodeType: 'identifier'
+    #     identifier:
+    #       typeRef: 'Object'
 
 walkClass = (node, scope) ->
   classScope = new ClassScope scope
@@ -715,15 +715,12 @@ walkClass = (node, scope) ->
 
   if node.nameAssignee?.data
     scope.addType
-      nodeType: 'struct'
-      newable: true
+      nodeType: 'members'
       identifier:
         typeRef: node.nameAssignee.data
-      members:
-        nodeType: 'members'
-        properties: _.map _.cloneDeep(classScope._this), (prop) ->
-          prop.nodeType = 'identifier' # hack for type checking
-          prop
+      properties: _.map _.cloneDeep(classScope._this), (prop) ->
+        prop.nodeType = 'identifier' # hack for type checking
+        prop
 
 # TODO: move
 addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->

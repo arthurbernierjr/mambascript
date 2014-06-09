@@ -109,9 +109,10 @@ class Scope
 
   # getTypeByString :: String -> Type
   getTypeByString: (typeName) ->
-    ret = _.find @types, (i) -> i.identifier.typeRef is typeName
-    return null unless ret?
-    return (if ret.nodeType is 'struct' then ret.members else ret)
+    _.find @types, (i, n) ->
+      unless i.identifier
+        debug 'no name', i
+      i.identifier.typeRef is typeName
 
   # getTypeByMemberAccess :: TypeRef -> Type
   getTypeByMemberAccess: (typeRef) ->
@@ -125,7 +126,6 @@ class Scope
 
   # getType :: TypeRef -> Type
   getType: (typeRef) ->
-    # console.error 'checkPoint!3', typeRef
     if _.isString(typeRef)
       @getTypeByString(typeRef)
     else if typeRef?.nodeType is 'MemberAccess'
@@ -133,8 +133,8 @@ class Scope
 
   # getTypeInScope :: TypeRef -> Type
   getTypeInScope: (typeRef) ->
-    # console.error 'checkPoint!2'
-    @getType(typeRef) or @parent?.getTypeInScope(typeRef) or null
+    ret = @getType(typeRef) or @parent?.getTypeInScope(typeRef) or null
+    ret
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByIdentifier: (node) ->
@@ -248,6 +248,12 @@ primitives =
     identifier:
       typeRef: 'Undefined'
 
+  VoidType:
+    nodeType: 'primitiveIdentifier'
+    isPrimitive: true
+    identifier:
+      typeRef: 'Void'
+
 initializeGlobalTypes = (node) ->
   node.addPrimitiveType primitives.AnyType
   node.addPrimitiveType primitives.StringType
@@ -257,6 +263,7 @@ initializeGlobalTypes = (node) ->
   node.addPrimitiveType primitives.BooleanType
   node.addPrimitiveType primitives.NullType
   node.addPrimitiveType primitives.UndefinedType
+  node.addPrimitiveType primitives.VoidType
 
 module.exports = {
   initializeGlobalTypes, primitives
