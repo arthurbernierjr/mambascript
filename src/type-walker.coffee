@@ -27,7 +27,7 @@ compareAsParent = (scope, a, b) ->
     return b
 
   if b?.identifier?.typeRef in ['Undefined', 'Null']
-    a = _.clone(b)
+    a = _.clone(a)
     if a.identifier?
       a.identifier.nullable = true
     return a
