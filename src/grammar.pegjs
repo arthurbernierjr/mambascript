@@ -1277,8 +1277,8 @@ ZWJ = "\u200D"
 structdef = STRUCT !(_ "=") __ name:typeSymbol _ props: typeExpr {
   var s = rp(new CS.Int(line()))
   s.nodeType = 'struct';
-  s.identifier = name;
-  s.typeAnnotation = props;
+  s.name = name;
+  s.expr = props;
   return s;
 }
 

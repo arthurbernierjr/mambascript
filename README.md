@@ -51,6 +51,8 @@ TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dt
 	- MemberAccess in struct definition
 	- Infer fuction return type with `return` in Block
 	- Destructive Assignment
+- `v0.10.2`
+  - self hosting
 
 ## Milestone
 

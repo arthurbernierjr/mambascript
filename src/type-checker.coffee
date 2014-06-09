@@ -109,7 +109,11 @@ isAcceptableFunctionType = (scope, left, right) ->
 
 resolveType = (scope, node) ->
   if node.nodeType is 'identifier'
-    scope.getTypeByIdentifier(node)
+    ret = scope.getTypeByIdentifier(node)
+    unless ret
+      util = require 'util'
+      throw util.inspect(node.identifier.typeRef) + ' is not defined'
+    ret
   else if node.nodeType is 'primitiveIdentifier'
     node
   else if node.nodeType is 'members'
@@ -124,16 +128,14 @@ isAcceptable = (scope, left, right) ->
   # FIXME
   return true if not left? or not right?
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
-    if node.nodeType is 'identifier'
-      scope.getTypeByIdentifier(node)
-    else if node.nodeType is 'primitiveIdentifier'
-      node
-    else if node.nodeType is 'members'
-      node
-    else if node.nodeType is 'functionType'
-      node
-    else
-      throw node?.nodeType + " is not registered nodeType"
+    resolveType(scope, node)
+
+  # debug 'left', leftAnnotation
+  # debug 'right', rightAnnotation
+
+  # typeArguments
+  if leftAnnotation.identifier?.identifier?.typeArguments?.length
+    console.error leftAnnotation.identifier.identifier.typeArguments
 
   # Grasp if left is any
   return true if not leftAnnotation? or not rightAnnotation? # FIXME

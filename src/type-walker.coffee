@@ -55,8 +55,8 @@ checkNodes = (cs_ast) ->
     #   root.addVar i, 'Any', true
     initializeGlobalTypes(root)
 
-  # debug 'root', cs_ast
   walk cs_ast, root
+  debug 'root', cs_ast
   return root
 
 walkStruct = (node, scope) ->

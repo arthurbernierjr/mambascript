@@ -94,7 +94,7 @@ class Scope
     if structNode.nodeType isnt 'struct'
       throw 'node isnt structNode'
 
-    ref = structNode.identifier.identifier.typeRef
+    ref = structNode.name.identifier.typeRef
     if _.isString ref
       mod = @
       propName = ref
@@ -102,21 +102,10 @@ class Scope
       mod = @resolveNamespace ref.left, true
       propName = ref.right
 
-    node = _.clone structNode
-    node.identifier.typeRef = propName
-    node.typeAnnotation.identifier = node.identifier
-    delete node.data
-    delete node.line
-    delete node.offset
-    delete node.column
-    delete node.raw
-    node = {
-      nodeType: 'struct'
-      identifier:
-        typeRef: propName
-      members: node.typeAnnotation
-    }
-    mod.types.push node
+    ann = _.clone structNode.expr
+    ann.identifier = structNode.name.identifier
+    ann.identifier.typeRef = propName
+    mod.types.push ann
 
   # getTypeByString :: String -> Type
   getTypeByString: (typeName) ->
