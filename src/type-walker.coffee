@@ -720,11 +720,10 @@ walkClass = (node, scope) ->
 
 # TODO: move
 addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
-  if initializerNode instanceof CS.ObjectInitialiser
+  if initializerNode instanceof CS.ArrayInitialiser
     for member in initializerNode.members
-      symbol = member.key.data
+      symbol = member.data
       unless scope.getVar(symbol)
-        # debug 'add symbol', symbol
         scope.addVar
           nodeType: 'variable'
           identifier:
@@ -760,7 +759,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
     node.parameters?.map (param, n) ->
       if param.typeAnnotation?
         return unless checkTypeAnnotation scope, node, preAnnotation.arguments[n], param.typeAnnotation
-
       # FIXME: we should always walk param
       if param instanceof CS.MemberAccessOp
         walk param, functionScope
@@ -773,17 +771,34 @@ walkFunction = (node, scope, preAnnotation = null) ->
           identifier:
             typeRef: param.data
           typeAnnotation: param.typeAnnotation
+
+      # getX :: Int[] -> Int = ([x, y]) -> x
+      else if param instanceof CS.ArrayInitialiser
+        preAnn = preAnnotation.arguments?[n]
+        if preAnn
+          for member in param.members
+            type =  _.cloneDeep resolveType scope, preAnn
+            type.identifier.isArRay = false
+            if type.nodeType is 'primitiveIdentifier'
+              t = _.cloneDeep preAnn
+              delete t.identifier.isArray
+              member.typeAnnotation = t
+            else
+              member.typeAnnotation = type ? ImplicitAnyAnnotation
+
+        addValuesByInitializer scope, param
       # f :: Point -> Int = ({x, y}) -> Int
       else if param instanceof CS.ObjectInitialiser
-        for member in param.members
-          preAnn = preAnnotation.arguments?[n]
-          if preAnn
+        preAnn = preAnnotation.arguments?[n]
+        if preAnn
+          for member in param.members
             type =  resolveType scope, preAnn
             if type.nodeType is 'members'
               memberAnn =  _.find type.properties, (prop) -> prop.identifier?.typeRef is member.key?.data
               member.typeAnnotation = memberAnn?.typeAnnotation ? ImplicitAnyAnnotation
         # debug 'before add', param
         addValuesByInitializer scope, param
+
   else
     node.parameters?.map (param, n) ->
       walk param, functionScope

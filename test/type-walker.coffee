@@ -407,6 +407,23 @@ suite 'TypeChecker', ->
       """
 
     test 'assign function', ->
+      getX :: Int[] -> Int
+      getX = ([x, y]) -> x
+      getX [1, 2]
+
+    test 'assign function', ->
+      shouldBeTypeError """
+      getX :: Int[] -> String
+      getX = ([x, y]) -> x
+      """
+
+    test 'assign function', ->
+      shouldBeTypeError """
+      getX :: String[] -> Int
+      getX = ([x, y]) -> x
+      """
+
+    test 'assign function', ->
       f :: Int -> Int = (@n) ->
         n :: Int = 1
         n
