@@ -381,6 +381,17 @@ suite 'TypeChecker', ->
     test 'assign function', ->
       f :: Int -> Int = (n) -> n
 
+    test 'assign function', ->
+      f :: Int -> Int = (@n) ->
+        n :: Int = 1
+        n
+
+    test 'assign function', ->
+      shouldBeTypeError """
+      f :: Int -> Int = (@n) ->
+        n
+      """
+
     test 'typed function', ->
       f :: Number -> Number = (n :: Number) :: Number ->  n * n
 
@@ -995,16 +1006,28 @@ suite 'TypeChecker', ->
           bar: ->
             @foo = 3
 
-      # test 'receive this', ->
-      #   class X
-      #     x :: Int
-      #     f: (@x) -> 3
+      test 'receive this', ->
+        class X
+          x :: Int
+          f: (@x) -> 3
 
-      # test 'receive this with pre-defined function', ->
-      #   class X
-      #     x :: Int
-      #     f :: Int -> Int
-      #     f: (@x) -> 3
+      test 'receive this', ->
+        class X
+          x :: Int
+          f :: Int -> Int
+          f: (@x) -> 3
+        x = new X
+        x.f 3
+
+      test 'receive this', ->
+        shouldBeTypeError """
+        class X
+          x :: Int
+          f :: Int -> Int
+          f: (@x) -> 3
+        x = new X
+        x.f ""
+        """
 
       # test 'throw destructive assignment', ->
       #   shouldBeTypeError """

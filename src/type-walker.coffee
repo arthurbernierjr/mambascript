@@ -577,6 +577,8 @@ walkThis = (node, scope) ->
   # debug 'walkThis members', scope._this
   node.typeAnnotation =
     nodeType: 'members'
+    identifier:
+      typeRef: '[this]'
     properties: scope._this
 
 walkDynamicMemberAccessOp = (node, scope) ->
@@ -748,20 +750,30 @@ walkFunction = (node, scope, preAnnotation = null) ->
     node.parameters?.map (param, n) ->
       if param.typeAnnotation?
         return unless checkTypeAnnotation scope, node, preAnnotation.arguments[n], param.typeAnnotation
+
+      # FIXME: we should always walk param
+      if param instanceof CS.MemberAccessOp
+        walk param, functionScope
+
       param.typeAnnotation ?= preAnnotation.arguments?[n] ? ImplicitAnyAnnotation
-      functionScope.addVar
-        nodeType: 'variable'
-        identifier:
-          typeRef: param.data
-        typeAnnotation: param.typeAnnotation
+      # debug 'parameters', node.parameters
+
+      if param instanceof CS.Identifier
+        functionScope.addVar
+          nodeType: 'variable'
+          identifier:
+            typeRef: param.data
+          typeAnnotation: param.typeAnnotation
     if hasError then return
   else
     node.parameters?.map (param, n) ->
-      functionScope.addVar
-        nodeType: 'variable'
-        identifier:
-          typeRef: param.data
-        typeAnnotation: param.typeAnnotation ? ImplicitAnyAnnotation
+      walk param, functionScope
+      if param instanceof CS.Identifier
+        functionScope.addVar
+          nodeType: 'variable'
+          identifier:
+            typeRef: param.data
+          typeAnnotation: param.typeAnnotation ? ImplicitAnyAnnotation
 
   if node.body?
     if node.body instanceof CS.Function
