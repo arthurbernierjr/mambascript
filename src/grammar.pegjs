@@ -1350,7 +1350,7 @@ typeSymbol
   typeArgumentLiteral = "<" _ args:typeArguments  _ ">" {
     return args;
   }
-  typeArguments = e:typeIdentifier _ es:("," _ typeIdentifier)* {
+  typeArguments = e:typeSymbol _ es:("," _ typeSymbol)* {
     return [e].concat(es.map(function(e){ return e[2]; }));
   }
 

@@ -1236,63 +1236,133 @@ suite 'TypeChecker', ->
       """
 
   suite 'Generics', ->
-    # test 'generics', ->
-    #   struct Singleton<T> {
-    #     getInstance :: () -> T
-    #   }
-    #   origin :: Singleton<Number> = {
-    #     getInstance: -> 3
-    #   }
-    #   s :: Numbertgra = origin.getInstance()
+    test 'generics', ->
+      struct Id<A>
+        id :: A
+      obj :: Id<Int> = {id: 1}
 
-    # test 'throw generics', ->
-    #   shouldBeTypeError """
-    #     struct Singleton<T> {
-    #       getInstance :: () -> T
-    #     }
-    #     origin :: Singleton<Number> = getInstance: -> ""
-    #     s :: String = origin.getInstance()
-    #   """
+    test 'generics', ->
+      struct Entity.Id<A, B>
+        id :: A
+        content :: B
+      obj1 :: Entity.Id<Int, String> = {id: 1, content: ''}
 
-    # test 'generics hash', ->
-    #   struct Hash<K, V> {
-    #     get :: K -> V
-    #     set :: K * V -> ()
-    #   }
-    #   hash :: Hash<String, Number> = {
-    #     get: (key) -> @[key]
-    #     set: (key, val) -> @[key] = val
-    #   }
+    test 'generics', ->
+      shouldBeTypeError """
+      struct Entity.Id<A, B>
+        id :: A
+        content :: B
+      obj1 :: Id<Int> = {id: 1}
+      """
 
-    #   hash.set "a", 1
-    #   num :: Number = hash.get "a"
+    test 'generics', ->
+      shouldBeError """
+      struct Id<A, B>
+        id      :: A
+        content :: B
+      obj1 :: Id<Int, String> = {id: '', content: ''}
+      """
 
-    # test 'throw generics hash', ->
-    #   shouldBeTypeError """
-    #   struct Hash<K, V> {
-    #     get :: K -> V
-    #     set :: K * V -> ()
-    #   }
-    #   hash :: Hash<String, Number> = {
-    #     get: (key) -> val
-    #     set: (key, val) -> @[key] = val
-    #   }
-    #   hash.set "a", 1
-    #   hash.get 3
-    #   """
+    test 'generics', ->
+      struct Id<A, B>
+        nested ::
+          a :: A
+          b :: B
 
-    # test 'throw generics hash', ->
-    #   shouldBeTypeError """
-    #   struct Hash<K, V> {
-    #     get :: K -> V
-    #     set :: K * V -> ()
-    #   }
-    #   hash :: Hash<String, Number> = {
-    #     get: (key) -> val
-    #     set: (key, val) -> @[key] = val
-    #   }
-    #   hash.set 5, 1
-    #   """
+      obj :: Id<Int, String> =
+        nested:
+          a: 1
+          b: ''
+
+    test 'generics', ->
+      shouldBeTypeError """
+      struct Id<A, B>
+        nested ::
+          a :: A
+          b :: B
+
+      obj :: Id<Int, String> =
+        nested:
+          a: 1
+          b: 1
+      """
+
+    test 'generics', ->
+      struct Point
+        x :: Int
+        y :: Int
+      struct Id<A>
+        nested ::
+          p :: A
+      obj :: Id<Point> =
+        nested:
+          p:
+            x: 1
+            y: 2
+
+    test 'generics', ->
+      shouldBeTypeError """
+      struct Point
+        x :: Int
+        y :: Int
+      struct Id<A>
+        nested ::
+          p :: A
+      obj :: Id<Point> =
+        nested:
+          p:
+            x: ''
+            y: 2
+      """
+
+    test 'generics', ->
+      struct Value<T, U>
+        value :: T
+      struct Id<A, B>
+        id :: Value<A, B>
+      obj :: Id<Int, String> =
+        id:
+          value: 1
+
+    test 'generics', ->
+      struct Value<T, U>
+        value :: U
+      struct Id<A, B>
+        id :: Value<A, B>
+      obj :: Id<Int, String> =
+        id:
+          value: ''
+
+    test 'generics', ->
+      shouldBeTypeError """
+      struct Value<T, U>
+        value :: U
+      struct Id<A, B>
+        id :: Value<A, B>
+      obj :: Id<Int, String> =
+        id:
+          value: 1
+      """
+
+    test 'generics', ->
+      struct Value<T>
+        value :: T
+      struct Id<A>
+        id :: A
+      obj :: Id<Value<Int>> =
+        id:
+          value: 1
+
+    test 'generics', ->
+      shouldBeTypeError """
+      struct Value<T>
+        value :: T
+      struct Id<A>
+        id :: A
+      obj :: Id<Value<Int>> =
+        id:
+          value: ''
+      """
 
   suite "implements", ->
     test 'implements', ->

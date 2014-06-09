@@ -51,12 +51,10 @@ checkNodes = (cs_ast) ->
   else
     g._root_ = root = new Scope
     root.name = 'root'
-    # for i in ['global', 'exports', 'module']
-    #   root.addVar i, 'Any', true
     initializeGlobalTypes(root)
 
-  walk cs_ast, root
   # debug 'root', cs_ast
+  walk cs_ast, root
   return root
 
 walkStruct = (node, scope) ->

@@ -28,6 +28,7 @@
 #   isArray :: Boolean
 
 {debug} = require './helpers'
+util = require 'util'
 reporter = require './reporter'
 CS = require './nodes'
 _ = require 'lodash'
@@ -110,12 +111,69 @@ isAcceptableFunctionType = (scope, left, right) ->
     return true
   isAcceptable(scope, left.returnType, right.returnType)
 
+rewriteTypeWithArg = (scope, node, from, to) ->
+  if node.nodeType is 'identifier'
+    node.typeAnnotation
+
+  else if node.nodeType is 'members'
+    for prop in node.properties
+      switch prop.typeAnnotation.nodeType
+        when 'identifier'
+          # debug 'prop', prop
+          if prop.typeAnnotation?.identifier?.typeArguments?.length
+            typeArgs =
+              for i, n in prop.typeAnnotation.identifier.typeArguments
+                resolved = resolveType(scope, i)
+                resolved.typeAnnotation
+            ann = scope.getTypeByIdentifier prop.typeAnnotation
+            if ann
+              extendTypeWithArguments scope, ann, typeArgs
+
+          if prop.typeAnnotation.identifier?.typeRef is from.identifier.typeRef
+            prop.typeAnnotation.identifier.typeRef = to.identifier.typeRef
+        when 'members'
+          rewriteTypeWithArg scope, prop.typeAnnotation, from, to
+
+extendTypeWithArguments = (scope, node, givenArgs) ->
+  # console.error '//////////////////////////////////////////////'
+  # console.error 'extend', node.identifier.typeRef, givenArgs.map (arg) -> arg.identifier.typeRef
+  typeScope = new Scope scope
+  # debug 'node.identifier.typeArguments', node.identifier.typeArguments
+  # debug 'givenArgs', givenArgs
+  for arg, n in node.identifier.typeArguments
+    givenArg = givenArgs[n]
+    if givenArg?.identifier?.typeArguments?.length
+      typeArgs = givenArg.identifier.typeArguments
+      ann = scope.getTypeByIdentifier givenArg
+      if ann
+        ret = extendTypeWithArguments scope, ann, typeArgs
+    a =
+      nodeType: 'identifier'
+      identifier:
+        typeRef: arg.identifier.typeRef
+      typeAnnotation:
+        nodeType: 'identifier'
+        identifier:
+          typeRef: givenArg.identifier.typeRef
+    typeScope.addType a
+
+  # for i in typeScope.types
+  #   console.error '--p--', i.identifier.typeRef, i.typeAnnotation
+  # register typeArguments
+  for arg, n in node.identifier.typeArguments
+    givenArg = givenArgs[n]
+    rewriteTypeWithArg typeScope, node, arg, givenArg
+
+  # debug 'rewrited', node
+  node
+
 resolveType = (scope, node) ->
-  # debug 'resolveType', scope.name, node
   if node.nodeType is 'identifier'
     ret = scope.getTypeByIdentifier(node)
+    if node.identifier?.typeArguments?.length
+      ret = extendTypeWithArguments scope, _.cloneDeep(ret), node.identifier.typeArguments
+
     unless ret
-      util = require 'util'
       throw 'Type: '+ util.inspect(node.identifier.typeRef) + ' is not defined'
     ret
   else if node.nodeType is 'primitiveIdentifier'
