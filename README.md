@@ -32,9 +32,18 @@ $ tcoffee foo.coffee # execute
 
 ## Project Status
 
-### `~v0.9`
+### `v0.11`
 
-- Implement basic concepts
+Reimplementation of `~v0.9`
+
+- Generics
+- TypeArgument
+
+#### wip
+
+- Super in class
+- Class static member type interface
+- Readable warnings
 
 ### `v0.10`(current version)
 
@@ -54,17 +63,11 @@ TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dt
 - `v0.10.2`
   - self hosting
 
+### `~v0.9`
+
+- Implement basic concepts
+
 ## Milestone
-
-### `v0.11`
-
-Reimplementation of `~v0.9`
-
-- Generics
-- TypeArgument
-- Super in class
-- Class static member type interface
-- Readable warnings
 
 ### `v0.12`
 
