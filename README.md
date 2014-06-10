@@ -32,7 +32,7 @@ $ tcoffee foo.coffee # execute
 
 ## Project Status
 
-### `v0.11`
+### `v0.11`(current version)
 
 Reimplementation of `~v0.9`
 
@@ -45,7 +45,7 @@ Reimplementation of `~v0.9`
 - Class static member type interface
 - Readable warnings
 
-### `v0.10`(current version)
+### `v0.10`
 
 - Rewrite internal AST and type interfaces
 - Add new command line interface
