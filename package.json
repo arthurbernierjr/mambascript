@@ -1,7 +1,7 @@
 {
   "name": "typed-coffee-script",
   "author": "mizchi",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "homepage": "https://github.com/mizchi/TypedCoffeeScript",
   "bugs": "https://github.com/mizchi/TypedCoffeeScript/issues",
   "description": "Unfancy JavaScript with Types",
