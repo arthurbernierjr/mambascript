@@ -107,12 +107,11 @@ walkProgram = (node, scope) ->
 
 walkBlock = (node, scope) ->
   walk node.statements, scope
-  last_typeAnnotation = (node.statements[node.statements.length-1])?.typeAnnotation
-
   returnables = scope.getReturnables()
 
   if _.last(node.statements)?.typeAnnotation
-    returnables.push (_.last node.statements).typeAnnotation
+    lastAnn = (_.last node.statements).typeAnnotation
+    returnables.push lastAnn
 
   [head, tail...] = returnables
   ann = _.cloneDeep _.reduce tail, ((a, b) ->
@@ -258,28 +257,29 @@ walkSwitch = (node, scope) ->
     node.typeAnnotation = ImplicitAnyAnnotation
 
 walkNewOp = (node, scope) ->
-  type = scope.getTypeInScope node.ctor.data
+  ctor = node.ctor?.ctor ? node.ctor
+  args = node.ctor?.arguments ? node.arguments
+  ann = scope.getTypeInScope ctor.data
 
-  # debug 'NewOp type before', type
-  if node.ctor.typeArguments?.length
-    givenArgs = node.ctor.typeArguments
-    type = extendTypeWithArguments scope, _.cloneDeep(type), givenArgs
+  # override types
+  if ctor.typeArguments?.length
+    givenArgs = ctor.typeArguments
+    ann = extendTypeWithArguments scope, _.cloneDeep(ann), givenArgs
 
-  # debug 'NewOp type rewriten', type
-
-  if type
-    ctorAnnotation = _.find type.properties, (i) ->
+  if ann
+    ctorAnnotation = _.find ann.properties, (i) ->
       i.identifier?.typeRef is '_constructor_'
 
-  for arg, n in node.arguments
+  # debug 'walkNewOp', ctorAnnotation
+  # argument type check
+  for arg, n in args
     walk arg, scope
-
     left = ctorAnnotation?.typeAnnotation?.arguments?[n]
     right = arg?.typeAnnotation
     if left and right
       checkTypeAnnotation scope, node, left, right
 
-  node.typeAnnotation = type ? ImplicitAnyAnnotation
+  node.typeAnnotation = ann ? ImplicitAnyAnnotation
 
 walkOfOp = (node, scope) ->
   node.typeAnnotation ?= ImplicitAnyAnnotation
@@ -371,7 +371,6 @@ walkClassProtoAssignOp = (node, scope) ->
           typeRef: symbol
         typeAnnotation: annotation
     walkFunction right, scope, annotation
-    # debug 'CS.Function', annotation
   else
     annotation =
       nodeType: 'variable'
@@ -828,12 +827,25 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
     left = node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
     right = node.body.typeAnnotation ?= ImplicitAnyAnnotation
+    # debug 'walkFunction l', left
+    # debug 'walkFunction r', right
+    # debug 'walkFunction body', node.body
     return unless checkTypeAnnotation scope, node, left, right
 
 walkFunctionApplication = (node, scope) ->
-  for arg in node.arguments
-    walk arg, scope
   walk node.function, scope
+
+  for arg, n in node.arguments
+    walk arg, scope
+
+    # preAnn = node.function.typeAnnotation?.arguments?[n]
+    # debug 'preAnn', preAnn
+    # if arg instanceof CS.Function and preAnn
+    #   walkFunction arg, scope, preAnn
+    # else
+    #   walk arg, scope
+
+
   type = scope.getVarInScope node.function.data
   if type?.identifier?.typeArguments?.length
     typeScope = new Scope scope
@@ -859,6 +871,20 @@ walkFunctionApplication = (node, scope) ->
   for arg, n in node.arguments
     left = node.function.typeAnnotation?.arguments?[n]
     right = arg?.typeAnnotation
+
+    if arg instanceof CS.Function
+      if node.function.typeAnnotation?.identifier?.typeRef isnt 'Any'
+        preAnn = node.function.typeAnnotation?.arguments?[n]
+        if preAnn
+          # walk arg again to build annotation by new arguments
+          for param, i in arg.parameters
+            a = preAnn.arguments[i]
+            param.typeAnnotation = preAnn.arguments[i]
+          delete arg.typeAnnotation
+          delete arg.body.typeAnnotation
+          walkFunction arg, scope, preAnn
+          right = preAnn
+
     if left and right
       checkTypeAnnotation scope, node, left, right
 
@@ -866,7 +892,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  console.error 'walking node:', node?.className , node?.raw
+  # console.error 'walking node:', node?.className , node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)

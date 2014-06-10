@@ -587,21 +587,13 @@ leftHandSideExpressionNoImplicitObjectCall = callExpressionNoImplicitObjectCall 
     = spreadNoImplicitObjectCall
     / secondaryExpressionNoImplicitObjectCall
 
-memberExpressionWithArgs
-  = exp:memberExpression "<" _ e:typeExpr _ es:(typeSplitter _ typeExpr)* ">" {
-    exp.typeArguments = [e].concat(es.map(function(e){return e[2]}));
-    return exp;
-  }
-  / memberExpression
-
 callExpression
   = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList?{
       if(accesses)
         return rp(new CS.Super(accesses[0].operands[0]));
       return rp(new CS.Super(secondaryArgs || [] ));
     }
-  / fn:memberExpressionWithArgs accesses:callExpressionAccesses? secondaryArgs:("?"? secondaryArgumentList)? {
-      var typeArgs = fn.typeArguments
+  / fn:memberExpression accesses:callExpressionAccesses? secondaryArgs:("?"? secondaryArgumentList)? {
       if(accesses) fn = createMemberExpression(fn, accesses);
       var soaked, secondaryCtor;
       if(secondaryArgs) {
@@ -609,8 +601,6 @@ callExpression
         secondaryCtor = soaked ? CS.SoakedFunctionApplication : CS.FunctionApplication;
         fn = rp(new secondaryCtor(fn, secondaryArgs[1]));
       }
-      // fn.typeArguments = typeArgs;
-      // fn.typeArguments = typeArgs;
       return fn;
     }
   callExpressionAccesses
@@ -646,18 +636,25 @@ newExpressionNoImplicitObjectCall
 
 memberExpression
   = e:
-    ( e:primaryExpression typeArgs:classTypeArguments?  {e.typeArguments = typeArgs; return e;}
-    / NEW __ e:memberExpression  typeArgs:classTypeArguments? args:argumentList {
-      var ret = new CS.NewOp(e, args.operands[0])
-      ret.typeArguments = typeArgs;
-      return rp(new CS.NewOp(ret));
-    }
+    (
+      e:primaryExpression typeArgs:classTypeArguments? {
+        e.typeArguments = typeArgs || null;
+        return e;
+      }
+      / NEW __ e:memberExpression  typeArgs:classTypeArguments? args:argumentList {
+        var ret = new CS.NewOp(e, args.operands[0])
+        ret.typeArguments = typeArgs || null;
+        return rp(ret);
+      }
     ) accesses:MemberAccessOps* {
       return createMemberExpression(e, accesses || []);
     }
   / NEW __ e:memberExpression  typeArgs:classTypeArguments? args:secondaryArgumentList {
-      return rp(new CS.NewOp(e, args));
+      var ret = rp(new CS.NewOp(e, args));
+      ret.typeArguments = typeArgs || null;
+      return ret;
     }
+
   memberAccess
     = e:
       ( e:primaryExpression typeArgs:classTypeArguments? {return e;}

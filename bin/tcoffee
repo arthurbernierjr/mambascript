@@ -25,7 +25,7 @@ reporter = require '../lib/reporter'
 
 compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
   cs_ast = CoffeeScript.parse source, parseOption ? {
-    optimise: no
+    optimise: yes
     raw: true
     inputSource: source
     sourceMap: true

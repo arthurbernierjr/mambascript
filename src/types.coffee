@@ -13,6 +13,8 @@ ImplicitAnyAnnotation =
 class Scope
   # constructor :: (Scope) -> Scope
   constructor: (@parent = null) ->
+    @id = _.uniqueId()
+
     @parent?.nodes.push this
 
     @name = ''
@@ -35,7 +37,7 @@ class Scope
   addReturnable: (typeRef) ->
     @_returnables.push typeRef
 
-  getReturnables: -> @_returnables
+  getReturnables: -> _.cloneDeep @_returnables
 
   getRoot: ->
     return @ unless @parent
@@ -110,8 +112,6 @@ class Scope
   # getTypeByString :: String -> Type
   getTypeByString: (typeName) ->
     _.find @types, (i, n) ->
-      unless i.identifier
-        debug 'no name', i
       i.identifier.typeRef is typeName
 
   # getTypeByMemberAccess :: TypeRef -> Type

@@ -71,7 +71,6 @@ isAcceptablePrimitiveSymbol = (scope, left, right, nullable = false, isArray = f
 
   return true if left.identifier.typeRef is 'Any'
   unless isAcceptableExtends(scope, left, right)
-    # debug 'isAcceptableExtends', left, right
     if nullable and right.identifier.typeRef in ['Null', 'Undefined'] # nullable
       return true
     return false
@@ -100,6 +99,9 @@ isAcceptableFunctionType = (scope, left, right) ->
   left.returnType ?= ImplicitAnyAnnotation
   right.returnType ?= ImplicitAnyAnnotation
 
+  # debug 'isAcceptable functionType l', left
+  # debug 'isAcceptable functionType r', right
+
   passArgs = _.all left.arguments.map (leftArg, n) ->
     leftArg = leftArg ? ImplicitAnyAnnotation
     rightArg = right.arguments[n] ? ImplicitAnyAnnotation
@@ -108,6 +110,8 @@ isAcceptableFunctionType = (scope, left, right) ->
   return false unless passArgs
 
   if right.returnType?.identifier?.typeRef is 'Void'
+    return true
+  if left.returnType?.identifier?.typeRef is 'Void'
     return true
   isAcceptable(scope, left.returnType, right.returnType)
 
@@ -119,7 +123,7 @@ rewriteTypeWithArg = (scope, node, from, to) ->
         for i, n in node.identifier.typeArguments
           resolved = resolveType(scope, i)
           resolved.typeAnnotation
-      ann = scope.getTypeByIdentifier from.typeAnnotation # Check
+      ann = scope.getTypeByIdentifier from.typeAnnotation # Check later
       if ann
         extendTypeWithArguments scope, ann, typeArgs
 
@@ -129,8 +133,12 @@ rewriteTypeWithArg = (scope, node, from, to) ->
   else if node.nodeType is 'members'
     for prop in node.properties
       switch prop.typeAnnotation.nodeType
+        when 'functionType'
+          rewriteTypeWithArg scope, prop.typeAnnotation.returnType, from, to
+          for arg in prop.typeAnnotation.arguments
+            rewriteTypeWithArg scope, arg, from, to
+          # debug 'functionType rewriten', prop.typeAnnotation
         when 'identifier'
-          # debug 'prop', prop
           if prop.typeAnnotation?.identifier?.typeArguments?.length
             typeArgs =
               for i, n in prop.typeAnnotation.identifier.typeArguments
@@ -147,22 +155,27 @@ rewriteTypeWithArg = (scope, node, from, to) ->
 
 extendFunctionType = (scope, node) ->
   # return type
-  rType = scope.getTypeByString(node.returnType.identifier.typeRef)
-  rFrom = node.returnType
-  rTo = rType.typeAnnotation
-  rewriteTypeWithArg scope, node.returnType, rFrom, rTo
+  rType = scope.getTypeInScope(node.returnType.identifier.typeRef)
+  if rType.nodeType is 'identifier'
+    rFrom = node.returnType
+    rTo = rType.typeAnnotation
+    rewriteTypeWithArg scope, node.returnType, rFrom, rTo
 
   for arg in node.arguments
     if arg.nodeType is 'identifier'
-      type = scope.getTypeByString(arg.identifier.typeRef)
-      from = _.cloneDeep arg
-      to = _.cloneDeep type.typeAnnotation
-      rewriteTypeWithArg scope, arg, from, to
+      type = scope.getTypeInScope(arg.identifier.typeRef)
+      # ignore other type
+      if type.nodeType is 'identifier'
+        from = _.cloneDeep arg
+        to = _.cloneDeep type.typeAnnotation
+        rewriteTypeWithArg scope, arg, from, to
     else if arg.nodeType is 'functionType'
       extendFunctionType scope, arg
   return node
 
 extendTypeWithArguments = (scope, node, givenArgs) ->
+  # debug 'ex node', node
+  # debug 'ex given', givenArgs
   typeScope = new Scope scope
   if node.identifier?.typeArguments?.length
     for arg, n in node.identifier.typeArguments
@@ -192,8 +205,9 @@ resolveType = (scope, node) ->
     ret = scope.getTypeByIdentifier(node)
     if node.identifier?.typeArguments?.length
       ret = extendTypeWithArguments scope, _.cloneDeep(ret), node.identifier.typeArguments
-
     unless ret
+      if node.nodeType is 'identifier' # TODO: consider nested type arguments
+        return node
       throw 'Type: '+ util.inspect(node.identifier.typeRef) + ' is not defined'
     ret
   else if node.nodeType is 'primitiveIdentifier'

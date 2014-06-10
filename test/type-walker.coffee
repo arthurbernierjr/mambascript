@@ -1378,16 +1378,6 @@ suite 'TypeChecker', ->
         list: [1..10]
       """
 
-    # test 'generics', ->
-    #   map<T * U> :: T[] * (T -> U) -> U[]
-    #   list :: String[] = map<Int, String> [1..10], (i :: Int) -> ''
-
-    # test 'generics', ->
-    #   shouldBeTypeError """
-    #   map<T * U> :: T[] * (T -> U) -> U[]
-    #   list :: Int[] = map<Int, String> [1..10], (i :: Int) -> ''
-    #   """
-
     test 'generics', ->
       class C<A>
         a :: A
@@ -1462,6 +1452,100 @@ suite 'TypeChecker', ->
       c = new C<String, String>
       num :: Int = c.a
       str :: String = c.a
+      """
+
+    test 'generics', ->
+      class C<A>
+        f :: Int -> Int
+        constructor :: A -> ()
+        constructor: (a) ->
+      c = new C<Int>(1)
+
+    test 'generics', ->
+      class C<A>
+        constructor :: A -> ()
+        constructor: () ->
+      c = new C<Int>()
+
+    test 'generics', ->
+      class C<A>
+        constructor :: A -> ()
+        constructor: () ->
+      c = new C<Int>
+
+    test 'generics', ->
+      class C<A>
+        f :: Int -> Int
+        constructor :: A -> ()
+      c = new C<Int>(1)
+
+    test 'generics', ->
+      shouldBeTypeError """
+      class C<A>
+        constructor :: A -> ()
+        constructor: (a) ->
+      c = new C<Int>('')
+      """
+
+    test 'generics', ->
+      shouldBeTypeError """
+      class C<A>
+        f :: Int -> Int
+        constructor :: A -> ()
+        constructor: (a) ->
+      c = new C<Int>('')
+      """
+
+    test 'generics', ->
+      class C<A, B>
+        b :: B
+        f :: Int -> B
+        f: (n) -> @b
+        constructor :: A -> ()
+      c = new C<Int, String>(1)
+      n :: String = c.f 3
+
+    test 'funciton with type argumnets', ->
+      parseInt<T> :: String -> T
+      n :: Int = parseInt<Int> '3'
+
+    test 'funciton with type argumnets', ->
+      parseInt<T> :: T -> Int
+      n :: Int = parseInt<String> '3'
+
+    test 'funciton with type argumnets', ->
+      map<T, U> :: T[] * (T -> U) -> U[]
+      map = (list, fn) ->
+        for i in list
+          fn(i)
+
+    test 'funciton with type argumnets', ->
+      shouldBeTypeError """
+      map<T, U> :: T[] * (T -> U) -> U[]
+      map = (list, fn) ->
+        1 for i in list
+      """
+
+    test 'funciton with type argumnets', ->
+      map<T, U> :: T[] * (T -> U) -> U[]
+      map = (list, fn) ->
+        fn(i) for i in list
+      list :: String[] = map<Int, String> [1..10], (i) -> ''
+
+    test 'funciton with type argumnets', ->
+      shouldBeTypeError """
+      map<T, U> :: T[] * (T -> U) -> U[]
+      map = (list, fn) ->
+        fn(i) for i in list
+      list :: String[] = map<Int, String> [1..10], (i) -> i
+      """
+
+    test 'funciton with type argumnets', ->
+      shouldBeTypeError """
+      map<T, U> :: T[] * (T -> U) -> U[]
+      map = (list, fn) ->
+        fn(i) for i in list
+      list :: Int[] = map<Int, String> [1..10], (i) -> ''
       """
 
   suite "implements", ->

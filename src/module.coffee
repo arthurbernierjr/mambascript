@@ -38,12 +38,11 @@ CoffeeScript =
       parsed = Parser.parse preprocessed,
         raw: options.raw
         inputSource: options.inputSource
-
       # type check
       TypeWalker.checkNodes(parsed)
       if reporter.has_errors()
         throw new TypeError reporter.report()
-      if options.optimise then Optimiser.optimise parsed else parsed
+      return (if options.optimise then Optimiser.optimise parsed else parsed)
     catch e
       throw e.message if e instanceof TypeError
       throw e unless e instanceof Parser.SyntaxError
