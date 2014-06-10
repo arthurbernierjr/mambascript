@@ -1335,7 +1335,7 @@ typeIdentifier
 typeSymbol
   = v:VoidAlias {return {identifier:v, nodeType: 'identifier'}}
   / "(" _ ret: _typeSymbol _ ")" { return {identifier: ret, nodeType: 'identifier'};}
-  / t:_typeSymbol { return {identifier: t, nodeType: 'identifier'};}
+  / !"=" t:_typeSymbol { return {identifier: t, nodeType: 'identifier'};}
 
   _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? nullable:'?'? isArray:isArray? wholeNullable:'?'? {
     var obj = {typeRef: symbol};
@@ -1358,7 +1358,7 @@ typeFunction
   = "(" _ tf:_typeFunction _ ")" {return tf;}
   / _typeFunction
 
-  _typeFunction = args:typeFunctionArguments _ "->" _ returnType:typeExpr {
+  _typeFunction = args:typeFunctionArguments _ !"=" "->" _ returnType:typeExpr {
     return {arguments: args, returnType: returnType, nodeType: 'functionType'};
   }
 

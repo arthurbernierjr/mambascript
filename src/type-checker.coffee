@@ -113,7 +113,26 @@ isAcceptableFunctionType = (scope, left, right) ->
 
 rewriteTypeWithArg = (scope, node, from, to) ->
   if node.nodeType is 'identifier'
-    node.typeAnnotation
+    # debug 'rewrite identifier', node
+    # debug 'rewrite from', from
+    # debug 'rewrite to', to
+    # node.typeAnnotation
+
+    # TODO: type arguments
+    if node.identifier?.typeArguments?.length
+      typeArgs =
+        for i, n in node.identifier.typeArguments
+          resolved = resolveType(scope, i)
+          resolved.typeAnnotation
+      ann = scope.getTypeByIdentifier prop.typeAnnotation
+      if ann
+        extendTypeWithArguments scope, ann, typeArgs
+
+    if node.identifier?.typeRef is from.identifier.typeRef
+      node.identifier.typeRef = to.identifier.typeRef
+
+    # console.error 'node identifier', node.identifier
+    # console.error 'from identifier', from.identifier
 
   else if node.nodeType is 'members'
     for prop in node.properties
@@ -134,10 +153,30 @@ rewriteTypeWithArg = (scope, node, from, to) ->
         when 'members'
           rewriteTypeWithArg scope, prop.typeAnnotation, from, to
 
+# rewriteFunctionType = (scope, node) ->
+#   debug 'rewriteFunctionType', node
+
+extendFunctionType = (scope, node) ->
+  # return type
+  rType = scope.getTypeByString(node.returnType.identifier.typeRef)
+  rFrom = node.returnType
+  rTo = rType.typeAnnotation
+  rewriteTypeWithArg scope, node.returnType, rFrom, rTo
+
+  for arg in node.arguments
+    if arg.nodeType is 'identifier'
+      type = scope.getTypeByString(arg.identifier.typeRef)
+      from = _.cloneDeep arg
+      to = _.cloneDeep type.typeAnnotation
+      rewriteTypeWithArg scope, arg, from, to
+    else if arg.nodeType is 'functionType'
+      extendFunctionType scope, arg
+  return node
+
 extendTypeWithArguments = (scope, node, givenArgs) ->
+  typeScope = new Scope scope
   # console.error '//////////////////////////////////////////////'
   # console.error 'extend', node.identifier.typeRef, givenArgs.map (arg) -> arg.identifier.typeRef
-  typeScope = new Scope scope
   # debug 'node.identifier.typeArguments', node.identifier.typeArguments
   # debug 'givenArgs', givenArgs
   for arg, n in node.identifier.typeArguments
@@ -278,5 +317,5 @@ checkTypeAnnotation = (scope, node, left, right) ->
     return false
 
 module.exports = {
-  checkType, checkTypeAnnotation, isAcceptable, resolveType
+  checkType, checkTypeAnnotation, isAcceptable, resolveType, extendTypeWithArguments, extendFunctionType
 }

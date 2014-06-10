@@ -3,7 +3,14 @@ reporter = require './reporter'
 CS = require './nodes'
 _ = require 'lodash'
 
-{isAcceptable, checkType, checkTypeAnnotation, resolveType} = require './type-checker'
+{
+  isAcceptable,
+  checkType,
+  checkTypeAnnotation,
+  resolveType,
+  extendTypeWithArguments,
+  extendFunctionType
+} = require './type-checker'
 
 ImplicitAnyAnnotation =
   implicit: true
@@ -62,11 +69,9 @@ walkStruct = (node, scope) ->
   node.typeAnnotation = ImplicitAnyAnnotation
 
 walkVardef = (node, scope) ->
-  # avoid 'constructor' because it's property has special action on EcmaScript
   symbol = node.name.identifier.typeRef
-  # debug 'classScope', symbol
-
   if scope instanceof ClassScope
+    # avoid 'constructor' because it's property has special action on EcmaScript
     if symbol is 'constructor'
       symbol = '_constructor_'
 
@@ -75,6 +80,7 @@ walkVardef = (node, scope) ->
         nodeType: 'variable'
         identifier:
           typeRef: symbol
+          typeArguments: node.name?.identifier?.typeArguments
         typeAnnotation: node.expr
     else
       if val.typeAnnotation.implicit and val.typeAnnotation.identifier.typeRef is 'Any'
@@ -87,6 +93,7 @@ walkVardef = (node, scope) ->
         nodeType: 'variable'
         identifier:
           typeRef: symbol
+          typeArguments: node.name?.identifier?.typeArguments
         typeAnnotation: node.expr
     else
       if val.typeAnnotation.implicit and val.typeAnnotation.identifier.typeRef is 'Any'
@@ -839,6 +846,27 @@ walkFunctionApplication = (node, scope) ->
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
+  # debug 'walkFunctionApplication', node
+  # console.error '~~ adata ---', node.function.data
+  type = scope.getVarInScope node.function.data
+  if type?.identifier?.typeArguments?.length
+    typeScope = new Scope scope
+    typeArguments = node.typeArguments
+    for arg, n in type.identifier?.typeArguments
+      givenArg = typeArguments?[n]
+      # debug 'arg', arg
+      # debug 'givenArs', givenArg
+      typeScope.addType
+        nodeType: 'identifier'
+        identifier:
+          typeRef: arg.identifier.typeRef
+        typeAnnotation:
+          nodeType: 'identifier'
+          identifier:
+            typeRef: givenArg.identifier.typeRef
+
+    node.function.typeAnnotation = extendFunctionType typeScope, _.cloneDeep(node.function.typeAnnotation)
+    # debug 'walkFunctionApplication', node.function.typeAnnotation
 
   if node.function.typeAnnotation?.nodeType is 'functionType'
     node.typeAnnotation = node.function.typeAnnotation.returnType ? ImplicitAnyAnnotation
