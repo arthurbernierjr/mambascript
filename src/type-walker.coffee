@@ -109,7 +109,6 @@ walkBlock = (node, scope) ->
   walk node.statements, scope
   last_typeAnnotation = (node.statements[node.statements.length-1])?.typeAnnotation
 
-  # debug 'walkBlock', node.statements
   returnables = scope.getReturnables()
 
   if _.last(node.statements)?.typeAnnotation
@@ -225,7 +224,6 @@ walkConditional = (node, scope) ->
     node.typeAnnotation = ret
   else
     node.typeAnnotation = ImplicitAnyAnnotation
-  # debug 'Conditional', node
 
 walkSwitch = (node, scope) ->
   if node.expression
@@ -248,7 +246,6 @@ walkSwitch = (node, scope) ->
     if c.alternate?.typeAnnotation?
       canditates.push c.alternate.typeAnnotation
 
-  # debug 'walkSwitch', node
   [head, tail...] = canditates
   ret = _.cloneDeep _.reduce tail, ((a, b) ->
     compareAsParent scope, a, b
@@ -273,9 +270,6 @@ walkNewOp = (node, scope) ->
 
     left = ctorAnnotation?.typeAnnotation?.arguments?[n]
     right = arg?.typeAnnotation
-    # debug 'walk left', left
-    # debug 'walk right', right
-
     if left and right
       checkTypeAnnotation scope, node, left, right
 
@@ -360,8 +354,6 @@ walkClassProtoAssignOp = (node, scope) ->
   right = node.expression
   symbol = left.data
 
-  # walk left, scope
-  # debug 'left',
   if (right.instanceof CS.Function) and scope.getThis(symbol)
     annotation = scope.getThis(symbol)?.typeAnnotation
     # register before walk. for recursive call
@@ -373,6 +365,7 @@ walkClassProtoAssignOp = (node, scope) ->
           typeRef: symbol
         typeAnnotation: annotation
     walkFunction right, scope, annotation
+    # debug 'CS.Function', annotation
   else
     annotation =
       nodeType: 'variable'
@@ -384,17 +377,6 @@ walkClassProtoAssignOp = (node, scope) ->
 
     if right.typeAnnotation
       annotation.typeAnnotation = right.typeAnnotation
-
-  # symbol = left.data
-
-  # if right.typeAnnotation?
-  #   scope.addThis symbol, right.typeAnnotation.identifier
-
-  # console.error left.className
-  # debug 'proto left', left
-  # console.error right.className
-  # debug 'proto right', right
-
 
 walkCompoundAssignOp = (node, scope) ->
   node.typeAnnotation ?= ImplicitAnyAnnotation
@@ -575,8 +557,6 @@ walkIdentifier = (node, scope) ->
     node.typeAnnotation ?= ImplicitAnyAnnotation
 
 walkThis = (node, scope) ->
-  # debug 'walkThis', node
-  # debug 'walkThis members', scope._this
   node.typeAnnotation =
     nodeType: 'members'
     implicit: true
@@ -597,7 +577,6 @@ walkProtoMemberAccessOp = (node, scope) ->
   return # TODO
 
 walkMemberAccess = (node, scope) ->
-  # debug 'walkMemberAccess', node.expression.className
   if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
 
@@ -640,11 +619,6 @@ walkArrayInializer = (node, scope) ->
     ann.identifier.isArray = true
   node.typeAnnotation = ann
 
-  # debug 'members', node
-
-  # node.typeAnnotation ?=
-  #   identifier: {array: (node.members?.map (m) -> m.typeAnnotation?.identifier)}
-
 walkRange = (node, scope) ->
   node.typeAnnotation =
     nodeType: 'identifier'
@@ -675,12 +649,6 @@ walkObjectInitializer = (node, scope) ->
     implicit: true
     identifier:
       typeRef: '[object]'
-    # heritages: # TODO: check scheme later
-    #   extend:
-    #     implicit: true
-    #     nodeType: 'identifier'
-    #     identifier:
-    #       typeRef: 'Object'
 
 walkClass = (node, scope) ->
   classScope = new ClassScope scope
@@ -688,9 +656,21 @@ walkClass = (node, scope) ->
   if node.nameAssignee?.data
     classScope.name = node.nameAssignee?.data
 
+  # resolve at new
+  if node.typeArguments?.length
+    for arg in node.typeArguments
+      classScope.addType
+        nodeType: 'identifier'
+        identifier:
+          typeRef: arg.identifier.typeRef
+        # typeAnnotation:
+        #   unresolved: true
+        #   nodeType: 'identifier'
+        #   identifier:
+        #     typeRef: arg.identifier.typeRef
+
   # has parent class?
   if node.impl?.length
-    # debug 'walkClass impl!', node
     for impl in node.impl
       parentAnnotation = scope.getTypeInScope(impl.identifier.typeRef) # TODO: member access
       if parentAnnotation
@@ -719,13 +699,16 @@ walkClass = (node, scope) ->
       walk statement, classScope
 
   if node.nameAssignee?.data
-    scope.addType
+    type =
       nodeType: 'members'
+      newable: true
       identifier:
         typeRef: node.nameAssignee.data
+        typeArguments: node.typeArguments ? []
       properties: _.map _.cloneDeep(classScope._this), (prop) ->
         prop.nodeType = 'identifier' # hack for type checking
         prop
+    scope.addType type
 
 # TODO: move
 addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
@@ -805,7 +788,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
             if type.nodeType is 'members'
               memberAnn =  _.find type.properties, (prop) -> prop.identifier?.typeRef is member.key?.data
               member.typeAnnotation = memberAnn?.typeAnnotation ? ImplicitAnyAnnotation
-        # debug 'before add', param
         addValuesByInitializer scope, param
 
   else
@@ -843,20 +825,15 @@ walkFunction = (node, scope, preAnnotation = null) ->
     return unless checkTypeAnnotation scope, node, left, right
 
 walkFunctionApplication = (node, scope) ->
-  # debug 'FunctionApplication', node
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
-  # debug 'walkFunctionApplication', node
-  # console.error '~~ adata ---', node.function.data
   type = scope.getVarInScope node.function.data
   if type?.identifier?.typeArguments?.length
     typeScope = new Scope scope
     typeArguments = node.function.typeArguments
     for arg, n in type.identifier?.typeArguments
       givenArg = typeArguments?[n]
-      # debug 'arg', arg
-      # debug 'givenArs', givenArg
       typeScope.addType
         nodeType: 'identifier'
         identifier:
@@ -867,7 +844,6 @@ walkFunctionApplication = (node, scope) ->
             typeRef: givenArg.identifier.typeRef
 
     node.function.typeAnnotation = extendFunctionType typeScope, _.cloneDeep(node.function.typeAnnotation)
-    # debug 'walkFunctionApplication', node.function.typeAnnotation
 
   if node.function.typeAnnotation?.nodeType is 'functionType'
     node.typeAnnotation = node.function.typeAnnotation.returnType ? ImplicitAnyAnnotation
@@ -884,7 +860,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  # console.error 'walking node:', node?.className , node?.raw2
+  console.error 'walking node:', node?.className , node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)

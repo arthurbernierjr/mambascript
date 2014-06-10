@@ -214,6 +214,8 @@ resolveType = (scope, node) ->
 
 # isAcceptable :: Types.Scope * TypeAnnotation * TypeAnnotaion -> Boolean
 isAcceptable = (scope, left, right) ->
+  # debug 'acc left', left
+  # debug 'acc right', right
   # FIXME
   return true if not left? or not right?
   [leftAnnotation, rightAnnotation] = [left, right].map (node) =>
@@ -244,9 +246,16 @@ isAcceptable = (scope, left, right) ->
       # console.error 'fail at isSameArrayFlag'
       return false
 
-  # debug 'isAcceptableStruct', leftAnnotation, rightAnnotation
-  # if leftAnnotation.nodeType is rightAnnotation.nodeType is 'members'
-  if leftAnnotation.nodeType is 'members'
+  # ex type parameter class C<A>
+  if leftAnnotation.nodeType is 'identifier'
+    if leftAnnotation.identifier.typeRef is rightAnnotation.identifier.typeRef
+      return true
+    else
+      return false
+    # if rightAnnotation.nodeType is 'primitiveIdentifier'
+    #   return false
+
+  else if leftAnnotation.nodeType is 'members'
     if rightAnnotation.nodeType is 'members'
       ret = isAcceptableStruct scope, leftAnnotation, rightAnnotation
       return ret
