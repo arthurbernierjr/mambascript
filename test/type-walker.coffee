@@ -1388,6 +1388,82 @@ suite 'TypeChecker', ->
     #   list :: Int[] = map<Int, String> [1..10], (i :: Int) -> ''
     #   """
 
+    test 'generics', ->
+      class C<A>
+        a :: A
+
+    test 'generics', ->
+      class C<A>
+        f :: A -> A
+
+    test 'generics', ->
+      class C<A>
+        a :: A
+        f :: A -> A
+        f: (a) -> a
+
+    test 'generics', ->
+      shouldBeTypeError """
+      class C<A>
+        f :: A -> A
+        f: (a) -> 1
+      """
+
+    test 'generics', ->
+      class C<A>
+        a :: A
+        f :: A -> A
+        f: (a) -> @a
+
+    test 'generics', ->
+      class C<A, B>
+        b :: B
+        f :: A -> B
+        f: (a) -> @b
+
+    test 'generics', ->
+      shouldBeTypeError """
+      class C<A, B>
+        b :: B
+        f :: A -> A
+        f: (a) -> @b
+      """
+
+    test 'generics', ->
+      shouldBeTypeError """
+      class C<A, B>
+        f :: B -> A
+        f: (b) -> b
+      """
+
+    test 'generics', ->
+      class C<A, B>
+        a :: A
+        b :: B
+      c = new C<Int, String>
+      num :: Int = c.a
+      str :: String = c.b
+
+    test 'generics', ->
+      shouldBeTypeError """
+      class C<A, B>
+        a :: A
+        b :: B
+      c = new C<Int, String>
+      num :: Int = c.a
+      str :: String = c.a
+      """
+
+    test 'generics', ->
+      shouldBeTypeError """
+      class C<A, B>
+        a :: A
+        b :: B
+      c = new C<String, String>
+      num :: Int = c.a
+      str :: String = c.a
+      """
+
   suite "implements", ->
     test 'implements', ->
       struct Size

@@ -113,11 +113,6 @@ isAcceptableFunctionType = (scope, left, right) ->
 
 rewriteTypeWithArg = (scope, node, from, to) ->
   if node.nodeType is 'identifier'
-    # debug 'rewrite identifier', node
-    # debug 'rewrite from', from
-    # debug 'rewrite to', to
-    # node.typeAnnotation
-
     # TODO: type arguments
     if node.identifier?.typeArguments?.length
       typeArgs =
@@ -130,9 +125,6 @@ rewriteTypeWithArg = (scope, node, from, to) ->
 
     if node.identifier?.typeRef is from.identifier.typeRef
       node.identifier.typeRef = to.identifier.typeRef
-
-    # console.error 'node identifier', node.identifier
-    # console.error 'from identifier', from.identifier
 
   else if node.nodeType is 'members'
     for prop in node.properties
@@ -189,6 +181,7 @@ extendTypeWithArguments = (scope, node, givenArgs) ->
           identifier:
             typeRef: givenArg.identifier.typeRef
       typeScope.addType a
+
     for arg, n in node.identifier.typeArguments
       givenArg = givenArgs[n]
       rewriteTypeWithArg typeScope, node, arg, givenArg

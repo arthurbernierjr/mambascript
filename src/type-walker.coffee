@@ -257,9 +257,15 @@ walkSwitch = (node, scope) ->
   else
     node.typeAnnotation = ImplicitAnyAnnotation
 
-
 walkNewOp = (node, scope) ->
   type = scope.getTypeInScope node.ctor.data
+
+  # debug 'NewOp type before', type
+  if node.ctor.typeArguments?.length
+    givenArgs = node.ctor.typeArguments
+    type = extendTypeWithArguments scope, _.cloneDeep(type), givenArgs
+
+  # debug 'NewOp type rewriten', type
 
   if type
     ctorAnnotation = _.find type.properties, (i) ->

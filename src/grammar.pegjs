@@ -646,17 +646,21 @@ newExpressionNoImplicitObjectCall
 
 memberExpression
   = e:
-    ( primaryExpression
-    / NEW __ e:memberExpression args:argumentList { return rp(new CS.NewOp(e, args.operands[0])); }
+    ( e:primaryExpression typeArgs:classTypeArguments?  {e.typeArguments = typeArgs; return e;}
+    / NEW __ e:memberExpression  typeArgs:classTypeArguments? args:argumentList {
+      var ret = new CS.NewOp(e, args.operands[0])
+      ret.typeArguments = typeArgs;
+      return rp(new CS.NewOp(ret));
+    }
     ) accesses:MemberAccessOps* {
       return createMemberExpression(e, accesses || []);
     }
-  / NEW __ e:memberExpression args:secondaryArgumentList {
+  / NEW __ e:memberExpression  typeArgs:classTypeArguments? args:secondaryArgumentList {
       return rp(new CS.NewOp(e, args));
     }
   memberAccess
     = e:
-      ( primaryExpression
+      ( e:primaryExpression typeArgs:classTypeArguments? {return e;}
       / NEW __ e:memberExpression args:argumentList { return rp(new CS.NewOp(e, args.operands[0])); }
       ) accesses:(argumentList MemberAccessOps / MemberAccessOps)+ {
         var acc = foldl(function(memo, a){ return memo.concat(a); }, [], accesses);
