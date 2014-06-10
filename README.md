@@ -200,7 +200,7 @@ e :: {x :: Int, width :: Int} = new Entity
 
 ```coffee
 
-# struct 
+# struct
 struct Value<T, U>
 	value :: U
 struct Id<A, B>
@@ -221,7 +221,7 @@ class Class<A>
   f :: Int -> Int
   constructor :: A -> ()
   constructor: (a) ->
-c = new C<Int>(1)
+c = new Class<Int>(1)
 
 ```
 
