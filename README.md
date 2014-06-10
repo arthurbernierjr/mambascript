@@ -38,6 +38,7 @@ Reimplementation of `~v0.9`
 
 - Generics
 - TypeArgument
+- Fix examples
 
 #### wip
 
