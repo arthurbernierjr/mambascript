@@ -587,13 +587,21 @@ leftHandSideExpressionNoImplicitObjectCall = callExpressionNoImplicitObjectCall 
     = spreadNoImplicitObjectCall
     / secondaryExpressionNoImplicitObjectCall
 
+memberExpressionWithArgs
+  = exp:memberExpression "<" _ e:typeExpr _ es:(typeSplitter _ typeExpr)* ">" {
+    exp.typeArguments = [e].concat(es.map(function(e){return e[2]}));
+    return exp;
+  }
+  / memberExpression
+
 callExpression
-  = SUPER accesses:callExpressionAccesses? typeArgs:typeArgumentLiteral? secondaryArgs:secondaryArgumentList?{
+  = SUPER accesses:callExpressionAccesses? secondaryArgs:secondaryArgumentList?{
       if(accesses)
         return rp(new CS.Super(accesses[0].operands[0]));
       return rp(new CS.Super(secondaryArgs || [] ));
     }
-  / fn:memberExpression accesses:callExpressionAccesses? typeArgs:typeArgumentLiteral? secondaryArgs:("?"? secondaryArgumentList)? {
+  / fn:memberExpressionWithArgs accesses:callExpressionAccesses? secondaryArgs:("?"? secondaryArgumentList)? {
+      var typeArgs = fn.typeArguments
       if(accesses) fn = createMemberExpression(fn, accesses);
       var soaked, secondaryCtor;
       if(secondaryArgs) {
@@ -601,7 +609,8 @@ callExpression
         secondaryCtor = soaked ? CS.SoakedFunctionApplication : CS.FunctionApplication;
         fn = rp(new secondaryCtor(fn, secondaryArgs[1]));
       }
-      fn.typeArguments = typeArgs;
+      // fn.typeArguments = typeArgs;
+      // fn.typeArguments = typeArgs;
       return fn;
     }
   callExpressionAccesses
@@ -755,7 +764,7 @@ try
       return r({block: body ? body.block : null});
     }
 
-classImplements = _ IMPLEMENTS __ e:typeSymbol _ es:(_ "," _ typeSymbol)* _ {
+classImplements = _ IMPLEMENTS __ e:typeIdentifier _ es:(_ "," _ typeIdentifier)* _ {
   return [e].concat(es.map(function(e){return e[3];}));
 }
 
@@ -1275,7 +1284,7 @@ ZWJ = "\u200D"
 
 
 // TODO: FIX CS.Int hack
-structdef = STRUCT !(_ "=") __ name:typeSymbol _ props: typeExpr {
+structdef = STRUCT !(_ "=") __ name:typeIdentifier _ props: typeExpr {
   var s = rp(new CS.Int(line()))
   s.nodeType = 'struct';
   s.name = name;
@@ -1284,8 +1293,8 @@ structdef = STRUCT !(_ "=") __ name:typeSymbol _ props: typeExpr {
 }
 
 // TODO: FIX CS.Int hack
-vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
-  var s = rp(new CS.Int(line()))
+vardef = !expressionworthy name:typeIdentifier __ '::' _ expr: typeExpr !(_ "=") {
+  var s = rp(new CS.Int(0))
   s.nodeType = 'vardef';
   s.name = name;
   s.expr = expr;
@@ -1293,15 +1302,17 @@ vardef = !expressionworthy name:typeSymbol __ '::' _ expr: typeExpr !(_ "=") {
 }
 
 typeExpr
-  = typeFunction
+  //= "(" _ typeFunction _ ")"
+  = primaryTypeFunction
+  / typeFunction
   / typeLiteral
-  / typeSymbol
+  / typeIdentifier
 
 typeLiteral
   = "{" members:typeLiteralBody TERMINATOR? _ "}" {
     return {properties:members, nodeType: 'members'};
   }
-  / !typeSymbol !"(" members:typeLiteralBody {
+  / !typeIdentifier !"(" members:typeLiteralBody {
     return {properties:members, nodeType: 'members'};
   }
   typeLiteralBody
@@ -1312,7 +1323,7 @@ typeLiteral
         return [e].concat(es.map(function(e){ return e[2]; }));
       }
   typeLiteralMember
-    = symbol:typeSymbol _ "::" _ expr:typeExpr {
+    = symbol:typeIdentifier _ "::" _ expr:typeExpr {
         symbol.typeAnnotation = expr;
         return symbol
         // return {identifier:symbol, typeAnnotation: expr, nodeType: 'identifier'};
@@ -1321,23 +1332,23 @@ typeLiteral
 returnTypeExpr
   = typeLiteral
   / "(" _ tf:typeFunction _ ")" {return tf;}
-  / typeSymbol
+  / typeIdentifier
 
 assignableTypeIdentifier = identifierName
 
-typeIdentifier
+typeRef
   = e: identifierName es:('.' identifierName)+ {
     var list = [e].concat(es.map(function(e){return e[1]}));
     return list.reduce(function(node, v){ return {left: node, right: v, nodeType: 'MemberAccess'} }, list.shift())
   }
   / identifierName
 
-typeSymbol
+typeIdentifier
   = v:VoidAlias {return {identifier:v, nodeType: 'identifier'}}
-  / "(" _ ret: _typeSymbol _ ")" { return {identifier: ret, nodeType: 'identifier'};}
-  / !"=" t:_typeSymbol { return {identifier: t, nodeType: 'identifier'};}
+  / "(" _ ret: _typeIdentifier _ ")" { return {identifier: ret, nodeType: 'identifier'};}
+  / t:_typeIdentifier { return {identifier: t, nodeType: 'identifier'};}
 
-  _typeSymbol = symbol:typeIdentifier args: typeArgumentLiteral? nullable:'?'? isArray:isArray? wholeNullable:'?'? {
+  _typeIdentifier = symbol:typeRef args: typeArgumentLiteral? nullable:'?'? isArray:isArray? wholeNullable:'?'? {
     var obj = {typeRef: symbol};
     if(isArray) obj.isArray = true;
     if(nullable) obj.nullable = true;
@@ -1350,31 +1361,30 @@ typeSymbol
   typeArgumentLiteral = "<" _ args:typeArguments  _ ">" {
     return args;
   }
-  typeArguments = e:typeSymbol _ es:("," _ typeSymbol)* {
+  typeArguments = e:typeIdentifier _ es:("," _ typeIdentifier)* {
     return [e].concat(es.map(function(e){ return e[2]; }));
   }
 
 typeFunction
-  = "(" _ tf:_typeFunction _ ")" {return tf;}
-  / _typeFunction
-
-  _typeFunction = args:typeFunctionArguments _ !"=" "->" _ returnType:typeExpr {
+  = args:typeFunctionArguments _ "->" _ returnType:typeExpr {
     return {arguments: args, returnType: returnType, nodeType: 'functionType'};
-  }
+}
+
+primaryTypeFunction
+  = "(" _ e:typeFunction _ ")"{ return e; }
+    // return {arguments: args, returnType: returnType, nodeType: 'functionType'};
 
 typeFunctionArguments
-  = e:typeSymbol _ es:("*" _ typeFunction _)* {
+  = e:typeIdentifier _ es:("*" _ returnTypeExpr _)* {
     return [e].concat(es.map(function(e){return e[2]}));
   }
-  / e:typeSymbol _ es:("*" _ typeSymbol _)* {
+  / "(" _ e:typeIdentifier _ es:("," _ returnTypeExpr _)* _ ")" {
     return [e].concat(es.map(function(e){return e[2]}));
   }
-  / "(" _ e:typeSymbol _ es:("," _ typeSymbol _)* _ ")" {
-    return [e].concat(es.map(function(e){return e[2]}));
-  }
-  / e:typeSymbol {return [e];}
+  / e:typeIdentifier {return [e];}
 
 returnTypeLiteral = _ "::" _ type:returnTypeExpr? _ {return type;}
 
 typeAnnotation = "::" _ type:typeExpr {return rp(type);}
 
+typeSplitter = "," / "*"

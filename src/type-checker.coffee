@@ -124,7 +124,7 @@ rewriteTypeWithArg = (scope, node, from, to) ->
         for i, n in node.identifier.typeArguments
           resolved = resolveType(scope, i)
           resolved.typeAnnotation
-      ann = scope.getTypeByIdentifier prop.typeAnnotation
+      ann = scope.getTypeByIdentifier from.typeAnnotation # Check
       if ann
         extendTypeWithArguments scope, ann, typeArgs
 
@@ -153,9 +153,6 @@ rewriteTypeWithArg = (scope, node, from, to) ->
         when 'members'
           rewriteTypeWithArg scope, prop.typeAnnotation, from, to
 
-# rewriteFunctionType = (scope, node) ->
-#   debug 'rewriteFunctionType', node
-
 extendFunctionType = (scope, node) ->
   # return type
   rType = scope.getTypeByString(node.returnType.identifier.typeRef)
@@ -175,35 +172,26 @@ extendFunctionType = (scope, node) ->
 
 extendTypeWithArguments = (scope, node, givenArgs) ->
   typeScope = new Scope scope
-  # console.error '//////////////////////////////////////////////'
-  # console.error 'extend', node.identifier.typeRef, givenArgs.map (arg) -> arg.identifier.typeRef
-  # debug 'node.identifier.typeArguments', node.identifier.typeArguments
-  # debug 'givenArgs', givenArgs
-  for arg, n in node.identifier.typeArguments
-    givenArg = givenArgs[n]
-    if givenArg?.identifier?.typeArguments?.length
-      typeArgs = givenArg.identifier.typeArguments
-      ann = scope.getTypeByIdentifier givenArg
-      if ann
-        ret = extendTypeWithArguments scope, ann, typeArgs
-    a =
-      nodeType: 'identifier'
-      identifier:
-        typeRef: arg.identifier.typeRef
-      typeAnnotation:
+  if node.identifier?.typeArguments?.length
+    for arg, n in node.identifier.typeArguments
+      givenArg = givenArgs[n]
+      if givenArg?.identifier?.typeArguments?.length
+        typeArgs = givenArg.identifier.typeArguments
+        ann = scope.getTypeByIdentifier givenArg
+        if ann
+          ret = extendTypeWithArguments scope, ann, typeArgs
+      a =
         nodeType: 'identifier'
         identifier:
-          typeRef: givenArg.identifier.typeRef
-    typeScope.addType a
-
-  # for i in typeScope.types
-  #   console.error '--p--', i.identifier.typeRef, i.typeAnnotation
-  # register typeArguments
-  for arg, n in node.identifier.typeArguments
-    givenArg = givenArgs[n]
-    rewriteTypeWithArg typeScope, node, arg, givenArg
-
-  # debug 'rewrited', node
+          typeRef: arg.identifier.typeRef
+        typeAnnotation:
+          nodeType: 'identifier'
+          identifier:
+            typeRef: givenArg.identifier.typeRef
+      typeScope.addType a
+    for arg, n in node.identifier.typeArguments
+      givenArg = givenArgs[n]
+      rewriteTypeWithArg typeScope, node, arg, givenArg
   node
 
 resolveType = (scope, node) ->

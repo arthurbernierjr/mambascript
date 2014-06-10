@@ -843,6 +843,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
     return unless checkTypeAnnotation scope, node, left, right
 
 walkFunctionApplication = (node, scope) ->
+  # debug 'FunctionApplication', node
   for arg in node.arguments
     walk arg, scope
   walk node.function, scope
@@ -851,7 +852,7 @@ walkFunctionApplication = (node, scope) ->
   type = scope.getVarInScope node.function.data
   if type?.identifier?.typeArguments?.length
     typeScope = new Scope scope
-    typeArguments = node.typeArguments
+    typeArguments = node.function.typeArguments
     for arg, n in type.identifier?.typeArguments
       givenArg = typeArguments?[n]
       # debug 'arg', arg
