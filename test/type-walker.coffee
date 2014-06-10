@@ -1378,6 +1378,16 @@ suite 'TypeChecker', ->
         list: [1..10]
       """
 
+    # test 'generics', ->
+    #   map<T * U> :: T[] * (T -> U) -> U[]
+    #   list :: String[] = map<Int, String> [1..10], (i :: Int) -> ''
+
+    # test 'generics', ->
+    #   shouldBeTypeError """
+    #   map<T * U> :: T[] * (T -> U) -> U[]
+    #   list :: Int[] = map<Int, String> [1..10], (i :: Int) -> ''
+    #   """
+
   suite "implements", ->
     test 'implements', ->
       struct Size

@@ -768,8 +768,11 @@ classImplements = _ IMPLEMENTS __ e:typeIdentifier _ es:(_ "," _ typeIdentifier)
   return [e].concat(es.map(function(e){return e[3];}));
 }
 
+classTypeArguments = "<" _ e:typeExpr _ es:(typeSplitter _ typeExpr _)* _ ">" {
+  return [e].concat(es.map(function(e){return e[2];}));
+}
 class
-  = CLASS name:(_ Assignable)? parent:(_ EXTENDS _ extendee)? impl:classImplements? body:classBody {
+  = CLASS name:(_ Assignable)? typeArgs:classTypeArguments? parent:(_ EXTENDS _ extendee)? impl:classImplements? body:classBody {
       var ctor = null;
       name = name ? name[1] : null;
       parent = parent ? parent[3] : null;
@@ -785,6 +788,7 @@ class
       }
       var n = rp(new CS.Class(name, parent, ctor, body, boundMembers));
       n.impl = impl || null;
+      n.typeArguments = typeArgs || [];
       return n;
     }
   extendee = secondaryExpressionNoImplicitObjectCall
