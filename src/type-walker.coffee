@@ -29,6 +29,7 @@ createIdentifier = (node) ->
   if node instanceof CS.Identifier
     typeRef: node.data
   else if node instanceof CS.MemberAccessOp
+    throw 'stop by member access'
     # TODO: convert
     typeRef: 'member'
   else if _.isString node
@@ -235,7 +236,7 @@ walkSwitch = (node, scope) ->
 walkNewOp = (node, scope) ->
   ctor = node.ctor?.ctor ? node.ctor
   args = node.ctor?.arguments ? node.arguments
-  ann = scope.getTypeInScope ctor.data
+  ann = scope.getTypeByIdentifier createIdentifier(ctor)
 
   # override types
   if ctor.typeArguments?.length
@@ -636,7 +637,7 @@ walkClass = (node, scope) ->
   # has parent class?
   if node.implementArguments?.length
     for implArg in node.implementArguments
-      parentAnnotation = scope.getTypeInScope(implArg.identifier.typeRef) # TODO: member access
+      parentAnnotation = scope.getTypeByIdentifier(implArg.identifier) # TODO: member access
       if parentAnnotation?.properties?.length
         parentAnnotation?.properties?.map (prop) ->
           classScope.addThis _.cloneDeep(prop)
@@ -651,7 +652,7 @@ walkClass = (node, scope) ->
         for prop in parentStaticAnnotation.typeAnnotation.properties
           staticAnn.properties.push _.cloneDeep(prop)
 
-    parentAnnotation = scope.getTypeInScope(node.parent.data)
+    parentAnnotation = scope.getTypeByIdentifier(createIdentifier node.parent)
     if parentAnnotation
       parentAnnotation.properties.map (prop) ->
         classScope.addThis _.cloneDeep(prop)
