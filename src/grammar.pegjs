@@ -1289,11 +1289,12 @@ ZWJ = "\u200D"
 
 
 // TODO: FIX CS.Int hack
-structdef = STRUCT !(_ "=") __ name:typeIdentifier _ props: typeBlock {
+structdef = STRUCT !(_ "=") __ name:typeIdentifier _ impl:classImplements? _ props: typeBlock {
   var s = rp(new CS.Int(0));
   s.nodeType = 'struct';
   s.name = name;
   s.expr = props;
+  s.impl = impl;
   return s;
 }
 
