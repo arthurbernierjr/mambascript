@@ -18,32 +18,36 @@ This repository is heavily under development and unstable. See below milestone.
 
 To pass dynamic type system, TypedCoffeeScript expects symbol to `implicit` node by default. If compiler compares implicit node type and implicit node type and fails, it recover to `implicit` `Any` automatically.
 
-If you add annotation to symbol, compiler can report errors. (This concept is imperfect at `v0.10`)
-
 ## Getting Started
 
-Install
+Install and run!
 
 ```
 $ npm install -g typed-coffee-script
-$ tcoffee -c foo.coffee # compile
-$ tcoffee foo.coffee # execute
+$ tcoffee -c foo.typed.coffee # compile
+$ tcoffee foo.typed.coffee # execute
+$ tcoffee # repl
 ```
+
+### Extensions you should know about TypedCoffeeScript
+
+- `.tcoffee` and `.typed.coffee` are compiled by TypedCoffeeScript compiler.
+- Compiler uses jashkenas/coffeescript in `require('./foo.coffee')` by default.
+- if you want to compile `.coffee` with TypedCoffeeScript, add `--self` option.
 
 ## Project Status
 
 ### `v0.11`(current version)
 
-Reimplementation of `~v0.9`
-
 - Generics
 - TypeArgument
 - Fix examples
-- Readable warnings
+- Recognise extensions in require
+- Runnable by `tcoffee foo.typed.coffee` that has `require`
 
 #### wip
 
-- Super in class
+- Infer super arguments in class
 - Class static member type interface
 
 ### `v0.10`
