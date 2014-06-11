@@ -37,6 +37,11 @@ $ tcoffee # repl
 
 ## Project Status
 
+Current biggest issues is implementation of typescript d.ts importer.
+
+TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dts-parser "mizchi/dts-parser")
+
+
 ### `v0.11`(current version)
 
 - Generics
@@ -44,11 +49,8 @@ $ tcoffee # repl
 - Fix examples
 - Recognise extensions in require
 - Runnable by `tcoffee foo.typed.coffee` that has `require`
-
-#### wip
-
-- Infer super arguments in class
 - Class static member type interface
+- Struct with implements
 
 ### `v0.10`
 
@@ -56,17 +58,10 @@ $ tcoffee # repl
 - Add new command line interface
 - Refactor
 - Nullable
-
-Now I rewrited internal for adding typescript importer.
-
-TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dts-parser "mizchi/dts-parser")
-
-- `v0.10.1`
-	- MemberAccess in struct definition
-	- Infer fuction return type with `return` in Block
-	- Destructive Assignment
-- `v0.10.2`
-  - self hosting
+- MemberAccess in struct definition
+- Infer fuction return type with `return` in Block
+- Destructive Assignment
+- self hosting
 
 ### `~v0.9`
 
@@ -77,15 +72,17 @@ TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dt
 ### `v0.12`
 
 - module system
-- typealias
-  - such as `typealias Bar = Foo<T>[]`
+- robust namespace resolver
+- typealias such as `typealias Bar = Foo<T>[]`
 - TypeScript `*.d.ts` importer
 
 ### `v0.13`
 
-- Stable(RC for 1.0)
+- Be stable!(RC for 1.0)
 - Add more tests.
 - Coverage of types to symbol
+- Annotate module.exports by top level `@exportFunction :: Int -> Int`
+- Infer super arguments in class
 - (Fix CoffeeScriptRedux bugs if I can)
 
 ## How to contribute
@@ -139,9 +136,14 @@ In `v0.10`, imperfect to struct.
 
 ```coffee
 struct Point
+  @name :: String
   x :: Number
   y :: Number
 p :: Point = {x: 3, y: 3}
+name :: String = Point.name
+
+struct Point3d implements Point
+  z :: Number
 ```
 
 ### Typed Array
@@ -204,15 +206,14 @@ e :: {x :: Int, width :: Int} = new Entity
 ### Generics and type arguments
 
 ```coffee
-
 # struct
 struct Value<T, U>
 	value :: U
 struct Id<A, B>
 	id :: Value<A, B>
 obj :: Id<Int, String> =
-	id:
-		value: ''
+  id:
+    value: 'value'
 
 # function type arguments
 map<T, U> :: T[] * (T -> U) -> U[]
@@ -227,7 +228,6 @@ class Class<A>
   constructor :: A -> ()
   constructor: (a) ->
 c = new Class<Int>(1)
-
 ```
 
 Forked from CoffeeScript II: The Wrath of Khan
