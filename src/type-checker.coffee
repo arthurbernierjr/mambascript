@@ -39,7 +39,7 @@ correctExtends = (scope, annotation) ->
   extendList = [annotation]
   cur = annotation
   while cur?.heritages?.extend?
-    next = scope.getTypeByIdentifier cur.heritages.extend
+    next = scope.getTypeByNode cur.heritages.extend
     if next
       extendList.push next
       cur = next

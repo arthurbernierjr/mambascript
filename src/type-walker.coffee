@@ -121,7 +121,7 @@ walkBinOp = (node, scope) ->
       return ImplicitAny
 
     if node.nodeType is 'identifier'
-      scope.getTypeByIdentifier(node)
+      scope.getTypeByNode(node)
     else if node.nodeType is 'primitiveIdentifier'
       node
     else if node.nodeType is 'members'
@@ -541,7 +541,7 @@ walkMemberAccess = (node, scope) ->
   if node.instanceof CS.MemberAccessOp
     walk node.expression, scope
 
-  type = scope.getTypeByIdentifier(node.expression.typeAnnotation)
+  type = scope.getTypeByNode(node.expression.typeAnnotation)
 
   if type
     member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName

@@ -129,7 +129,7 @@ class Scope
     ret
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
-  getTypeByIdentifier: (node) ->
+  getTypeByNode: (node) ->
     switch node?.nodeType
       when 'members'
         node

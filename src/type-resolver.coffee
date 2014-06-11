@@ -9,7 +9,7 @@ rewriteType = (scope, node, from, to) ->
         for i, n in node.identifier.typeArguments
           resolved = resolveType(scope, i)
           resolved.typeAnnotation
-      ann = scope.getTypeByIdentifier from.typeAnnotation # Check later
+      ann = scope.getTypeByNode from.typeAnnotation # Check later
       if ann
         extendType scope, ann, typeArgs
     if node.identifier?.typeRef is from.identifier.typeRef
@@ -29,7 +29,7 @@ rewriteType = (scope, node, from, to) ->
               for i, n in prop.typeAnnotation.identifier.typeArguments
                 resolved = resolveType(scope, i)
                 resolved.typeAnnotation
-            ann = scope.getTypeByIdentifier prop.typeAnnotation
+            ann = scope.getTypeByNode prop.typeAnnotation
             if ann
               extendType scope, ann, typeArgs
 
@@ -64,7 +64,7 @@ extendMembers = (scope, node, givenArgs) ->
 
       if givenArg?.identifier?.typeArguments?.length
         typeArgs = givenArg.identifier.typeArguments
-        if ann = scope.getTypeByIdentifier givenArg
+        if ann = scope.getTypeByNode givenArg
           extendType scope, ann, typeArgs
 
       typeScope.addType
@@ -87,7 +87,7 @@ extendType = (scope, node, givenArgs) ->
 
 resolveType = (scope, node) ->
   if node.nodeType is 'identifier'
-    ret = scope.getTypeByIdentifier(node)
+    ret = scope.getTypeByNode(node)
     if node.identifier?.typeArguments?.length
       ret = extendType scope, _.cloneDeep(ret), node.identifier.typeArguments
     unless ret
