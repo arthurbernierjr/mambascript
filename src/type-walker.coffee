@@ -3,30 +3,10 @@ reporter = require './reporter'
 CS = require './nodes'
 _ = require 'lodash'
 
-{
-  isAcceptable,
-  checkType,
-  checkTypeAnnotation,
-  resolveType,
-  extendType
-} = require './type-checker'
-
-{
-  resolveType,
-  extendType
-} = require './type-resolver'
-
-{
-  Scope,
-  ClassScope,
-  FunctionScope
-} = require './type-scope'
-
-{
-  initializeGlobalTypes,
-  ImplicitAny
-} = require './types'
-
+{checkType, checkTypeAnnotation }      = require './type-checker'
+{resolveType, extendType }             = require './type-resolver'
+{Scope, ClassScope, FunctionScope }    = require './type-scope'
+{initializeGlobalTypes, ImplicitAny }  = require './types'
 
 # CS_AST -> Scope
 checkNodes = (cs_ast) ->

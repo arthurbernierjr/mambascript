@@ -6,6 +6,7 @@ ImplicitAnyAnnotation =
   identifier:
     typeRef: 'Any'
 
+
 # Var and typeRef scope as node
 class Scope
   # constructor :: (Scope) -> Scope
@@ -197,9 +198,8 @@ class Scope
 
     if b?.identifier?.typeRef in ['Undefined', 'Null']
       a = _.cloneDeep(a)
-      if a?
-        if a.identifier?
-          a.identifier.nullable = true
+      if a?.identifier?
+        a.identifier.nullable = true
       return a
 
     retA = isAcceptable @, a, b
