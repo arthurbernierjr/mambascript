@@ -979,6 +979,18 @@ suite 'TypeChecker', ->
         name :: Int
       """
 
+    test 'define class', ->
+      class A
+        @name :: String
+      s :: String = A.name
+
+    test 'define class', ->
+      shouldBeError """
+      class A
+        @name :: String
+      s :: Int = A.name
+      """
+
     suite 'constructor', ->
       test 'define class with pre defined arugments', ->
         class A

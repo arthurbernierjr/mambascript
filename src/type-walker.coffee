@@ -37,12 +37,14 @@ walkVardef = (node, scope) ->
       symbol = '_constructor_'
 
     unless val = scope.getThis symbol
-      scope.addThis
-        nodeType: 'variable'
-        identifier:
-          typeRef: symbol
-          typeArguments: node.name?.identifier?.typeArguments
-        typeAnnotation: node.expr
+      # debug 'walkVardef', node
+      unless node.isStatic
+        scope.addThis
+          nodeType: 'variable'
+          identifier:
+            typeRef: symbol
+            typeArguments: node.name?.identifier?.typeArguments
+          typeAnnotation: node.expr
     else
       if val.typeAnnotation.implicit and val.typeAnnotation.identifier.typeRef is 'Any'
         val.typeAnnotation = node.expr
@@ -607,8 +609,16 @@ walkObjectInitializer = (node, scope) ->
 walkClass = (node, scope) ->
   classScope = new ClassScope scope
   # Add props to this_socpe by extends and implements
-  if node.nameAssignee?.data
-    classScope.name = node.nameAssignee?.data
+  symbol = node.nameAssignee?.data ? '_class' + _.uniqueId()
+
+  staticAnn =
+    properties: []
+    nodeType: 'members'
+    implicit: true
+    identifier:
+      typeRef: symbol
+
+  classScope.name = symbol
 
   # resolve at new
   if node.typeArguments?.length
@@ -625,6 +635,7 @@ walkClass = (node, scope) ->
 
   # has parent class?
   if node.impl?.length
+    # TODO: static extend
     for impl in node.impl
       parentAnnotation = scope.getTypeInScope(impl.identifier.typeRef) # TODO: member access
       if parentAnnotation
@@ -638,10 +649,33 @@ walkClass = (node, scope) ->
     if parentAnnotation
       parentAnnotation.properties.map (prop) ->
         classScope.addThis _.cloneDeep(prop)
-  # collect @values first
+
+  # collect @values first for recursive
   if node.body?.statements?
     for statement in node.body.statements when statement.nodeType is 'vardef'
-      walkVardef statement, classScope
+      if statement.isStatic
+        staticAnn.properties.push
+          nodeType: 'variable'
+          identifier: _.cloneDeep statement.name.identifier
+          typeAnnotation: _.cloneDeep statement.expr
+      else
+        walkVardef statement, classScope
+
+  scope.addVar
+    nodeType: 'variable'
+    identifier:
+      typeRef: symbol
+    typeAnnotation: staticAnn
+
+  scope.addType
+    nodeType: 'members'
+    newable: true
+    identifier:
+      typeRef: symbol
+      typeArguments: node.typeArguments ? []
+    properties: _.map _.cloneDeep(classScope._this), (prop) ->
+      prop.nodeType = 'identifier' # hack for type checking
+      prop
 
   # constructor
   if node.ctor?
@@ -651,18 +685,6 @@ walkClass = (node, scope) ->
   if node.body instanceof CS.Block
     for statement in node.body.statements when statement.nodeType isnt 'vardef'
       walk statement, classScope
-
-  if node.nameAssignee?.data
-    type =
-      nodeType: 'members'
-      newable: true
-      identifier:
-        typeRef: node.nameAssignee.data
-        typeArguments: node.typeArguments ? []
-      properties: _.map _.cloneDeep(classScope._this), (prop) ->
-        prop.nodeType = 'identifier' # hack for type checking
-        prop
-    scope.addType type
 
 # TODO: move
 addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->

@@ -1298,11 +1298,12 @@ structdef = STRUCT !(_ "=") __ name:typeIdentifier _ props: typeBlock {
 }
 
 // TODO: FIX CS.Int hack
-vardef = !expressionworthy name:typeIdentifier __ '::' _ expr: typeExpr !(_ "=") {
+vardef = !expressionworthy isStatic:'@'? name:typeIdentifier __ '::' _ expr: typeExpr !(_ "=") {
   var s = rp(new CS.Int(0))
   s.nodeType = 'vardef';
   s.name = name;
   s.expr = expr;
+  s.isStatic = !!isStatic;
   return s;
 }
 
