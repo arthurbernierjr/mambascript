@@ -21,7 +21,7 @@ compileWithOriginalCoffee = (module, filename, opts = {}) ->
   OriginalCoffee = require 'coffee-script'
 
   input = fs.readFileSync filename, 'utf8'
-  js = CoffeeScript.compile input, opts
+  js = OriginalCoffee.compile input, opts
   runModule module, js, null, filename
 
 require.extensions['.typed.coffee'] = (module, filename) ->
