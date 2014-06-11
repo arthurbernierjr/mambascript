@@ -37,10 +37,10 @@ mergeStruct = (left, list) ->
 
 walkStruct = (node, scope) ->
   s = _.cloneDeep node
-  if node.impl?.length
+  if node.implementArguments?.length
     extendList =
-      for impl in node.impl
-        scope.getTypeInScope impl.identifier.typeRef
+      for implArg in node.implementArguments
+        scope.getTypeInScope implArg.identifier.typeRef
     s.expr = mergeStruct node.expr, extendList
 
   scope.addStructType s
@@ -651,9 +651,9 @@ walkClass = (node, scope) ->
         #     typeRef: arg.identifier.typeRef
 
   # has parent class?
-  if node.impl?.length
-    for impl in node.impl
-      parentAnnotation = scope.getTypeInScope(impl.identifier.typeRef) # TODO: member access
+  if node.implementArguments?.length
+    for implArg in node.implementArguments
+      parentAnnotation = scope.getTypeInScope(implArg.identifier.typeRef) # TODO: member access
       if parentAnnotation?.properties?.length
         parentAnnotation?.properties?.map (prop) ->
           classScope.addThis _.cloneDeep(prop)

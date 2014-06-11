@@ -765,7 +765,7 @@ try
       return r({block: body ? body.block : null});
     }
 
-classImplements = _ IMPLEMENTS __ e:typeIdentifier _ es:(_ "," _ typeIdentifier)* _ {
+implementArguments = _ IMPLEMENTS __ e:typeIdentifier _ es:(_ "," _ typeIdentifier)* _ {
   return [e].concat(es.map(function(e){return e[3];}));
 }
 
@@ -773,7 +773,7 @@ classTypeArguments = "<" _ e:typeExpr _ es:(typeSplitter _ typeExpr _)* _ ">" {
   return [e].concat(es.map(function(e){return e[2];}));
 }
 class
-  = CLASS name:(_ Assignable)? typeArgs:classTypeArguments? parent:(_ EXTENDS _ extendee)? impl:classImplements? body:classBody {
+  = CLASS name:(_ Assignable)? typeArgs:classTypeArguments? parent:(_ EXTENDS _ extendee)? implementArguments:implementArguments? body:classBody {
       var ctor = null;
       name = name ? name[1] : null;
       parent = parent ? parent[3] : null;
@@ -788,7 +788,7 @@ class
         }
       }
       var n = rp(new CS.Class(name, parent, ctor, body, boundMembers));
-      n.impl = impl || null;
+      n.implementArguments = implementArguments || null;
       n.typeArguments = typeArgs || [];
       return n;
     }
@@ -1289,12 +1289,12 @@ ZWJ = "\u200D"
 
 
 // TODO: FIX CS.Int hack
-structdef = STRUCT !(_ "=") __ name:typeIdentifier _ impl:classImplements? _ props: typeBlock {
+structdef = STRUCT !(_ "=") __ name:typeIdentifier _ implementArguments:implementArguments? _ props: typeBlock {
   var s = rp(new CS.Int(0));
   s.nodeType = 'struct';
   s.name = name;
   s.expr = props;
-  s.impl = impl || null;
+  s.implementArguments = implementArguments || null;
   return s;
 }
 
