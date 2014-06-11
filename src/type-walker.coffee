@@ -8,8 +8,7 @@ _ = require 'lodash'
   checkType,
   checkTypeAnnotation,
   resolveType,
-  extendType,
-  extendFunctionType
+  extendType
 } = require './type-checker'
 
 ImplicitAnyAnnotation =
@@ -828,7 +827,7 @@ walkFunctionApplication = (node, scope) ->
           identifier:
             typeRef: givenArg.identifier.typeRef
 
-    node.function.typeAnnotation = extendFunctionType typeScope, _.cloneDeep(node.function.typeAnnotation)
+    node.function.typeAnnotation = extendType typeScope, _.cloneDeep(node.function.typeAnnotation)
 
   if node.function.typeAnnotation?.nodeType is 'functionType'
     node.typeAnnotation = node.function.typeAnnotation.returnType ? ImplicitAnyAnnotation
