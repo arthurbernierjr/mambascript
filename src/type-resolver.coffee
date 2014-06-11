@@ -69,12 +69,10 @@ extendMembers = (scope, node, givenArgs) ->
 
       typeScope.addType
         nodeType: 'identifier'
-        identifier:
-          typeRef: arg.identifier.typeRef
+        identifier: _.cloneDeep arg.identifier
         typeAnnotation:
           nodeType: 'identifier'
-          identifier:
-            typeRef: givenArg.identifier.typeRef
+          identifier: _.cloneDeep givenArg.identifier
 
   for arg, n in node.identifier.typeArguments
     givenArg = givenArgs[n]

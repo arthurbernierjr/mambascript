@@ -1131,7 +1131,6 @@ Assignable
   / positionalDestructuring
   / namedDestructuring
 
-
 positionalDestructuring
   = "[" members:positionalDestructuringBody  TERMINATOR? _ "]" {
       return rp(new CS.ArrayInitialiser(members));
