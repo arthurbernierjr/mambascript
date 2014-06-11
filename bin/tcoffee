@@ -116,15 +116,14 @@ switch mode
 
       outpath =
         if argv.out
-          path.join(argv.out or '', (path.basename fpath).replace '.coffee', '.js')
+          name = path.basename(fpath).replace('.typed.coffee', '.js').replace('.coffee', '.js')
+          path.join (argv.out or ''), name
         else
-          path.join(fpath.replace '.coffee', '.js')
+          path.basename(fpath).replace('.typed.coffee', '.js').replace('.coffee', '.js')
       codes.push new Code
         from: fpath
         to: outpath
         code: code
-
-    reporter.dump global._root_
 
     # if argv.join and argv.browserify # TODO
     if argv.join
