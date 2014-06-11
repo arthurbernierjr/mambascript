@@ -32,20 +32,7 @@ util = require 'util'
 reporter = require './reporter'
 CS = require './nodes'
 _ = require 'lodash'
-
-ImplicitAnyAnnotation =
-  implicit: true
-  isPrimitive: true
-  nodeType: 'primitiveIdentifier'
-  identifier:
-    typeRef: 'Any'
-
-{
-  initializeGlobalTypes,
-  Scope,
-  ClassScope,
-  FunctionScope
-} = require './types'
+{ImplicitAny} = require './types'
 
 # correctExtends :: Scope * TypeAnnotation -> TypeAnnotation[]
 correctExtends = (scope, annotation) ->
@@ -96,15 +83,15 @@ isAcceptableStruct = (scope, left, right) ->
 
 # isAcceptableFunction :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
 isAcceptableFunctionType = (scope, left, right) ->
-  left.returnType ?= ImplicitAnyAnnotation
-  right.returnType ?= ImplicitAnyAnnotation
+  left.returnType ?= ImplicitAny
+  right.returnType ?= ImplicitAny
 
   # debug 'isAcceptable functionType l', left
   # debug 'isAcceptable functionType r', right
 
   passArgs = _.all left.arguments.map (leftArg, n) ->
-    leftArg = leftArg ? ImplicitAnyAnnotation
-    rightArg = right.arguments[n] ? ImplicitAnyAnnotation
+    leftArg = leftArg ? ImplicitAny
+    rightArg = right.arguments[n] ? ImplicitAny
     isAcceptable scope, leftArg, rightArg
 
   return false unless passArgs

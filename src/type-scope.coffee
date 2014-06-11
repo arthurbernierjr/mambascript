@@ -1,11 +1,5 @@
 _ = require 'lodash'
-ImplicitAnyAnnotation =
-  implicit: true
-  isPrimitive: true
-  nodeType: 'primitiveIdentifier'
-  identifier:
-    typeRef: 'Any'
-
+{ImplicitAny} = require './types'
 
 # Var and typeRef scope as node
 class Scope
@@ -144,9 +138,9 @@ class Scope
       when 'identifier'
         @getTypeInScope(node.identifier.typeRef)
       when 'functionType'
-        ImplicitAnyAnnotation
+        ImplicitAny
       else
-        ImplicitAnyAnnotation
+        ImplicitAny
 
   # addThis :: Type * TypeArgument[] -> ()
   addThis: (type, args = []) ->
@@ -207,7 +201,7 @@ class Scope
     if retA and retB then b
     else if retA then a
     else if retB then b
-    else ImplicitAnyAnnotation
+    else ImplicitAny
 
 class ClassScope extends Scope
   getConstructorType: ->
