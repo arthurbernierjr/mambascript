@@ -16,12 +16,15 @@ reporter = require '../lib/reporter'
   .boolean('compile')
   .boolean('bare')
   .boolean('scope')
+  .boolean('self')
   .alias('c', 'compile')
   .alias('e', 'execute')
   .alias('b', 'bare')
   .alias('o', 'out')
   .alias('j', 'join')
   .alias('d', 'debug')
+
+{runMain} = require '../lib/run'
 
 compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
   cs_ast = CoffeeScript.parse source, parseOption ? {
@@ -33,6 +36,18 @@ compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
   }
   js_ast = CoffeeScript.compile cs_ast, compileOption ? bare: !!argv.bare
   escodegen.generate js_ast
+
+run = (fname, source, {parseOption, compileOption} = {}) ->
+  cs_ast = CoffeeScript.parse source, parseOption ? {
+    optimise: yes
+    raw: true
+    inputSource: source
+    sourceMap: true
+    literate
+  }
+  js_ast = CoffeeScript.compile cs_ast, compileOption ? bare: !!argv.bare
+  js = escodegen.generate js_ast
+  runMain source, js, js_ast, fname
 
 mode = switch
   when argv.c or argv.compile then 'compile'
@@ -125,9 +140,10 @@ switch mode
   when 'execute'
     fpath = argv.execute ?  argv._[0]
     source = fs.readFileSync(fpath).toString()
-    js = compileFromSourceToJS(source)
-    vm = require 'vm'
-    vm.runInThisContext js, fpath
+    run fpath, source
+    # js = compileFromSourceToJS(source)
+    # vm = require 'vm'
+    # vm.runInThisContext js, fpath
 
   when 'repl'
     repl.start()
