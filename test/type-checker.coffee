@@ -1,7 +1,7 @@
 {
-  initializeGlobalTypes,
-  Scope
+  initializeGlobalTypes
 } = require '../lib/types'
+{Scope} = require '../lib/type-scope'
 
 {isAcceptable} = require '../lib/type-checker'
 

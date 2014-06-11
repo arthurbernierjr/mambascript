@@ -1,4 +1,5 @@
 _ = require 'lodash'
+{Scope, ClassScope, FunctionScope }    = require './type-scope'
 
 rewriteType = (scope, node, from, to) ->
   if node.nodeType is 'identifier'
