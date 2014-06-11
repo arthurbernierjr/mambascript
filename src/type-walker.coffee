@@ -25,7 +25,7 @@ checkNodes = (cs_ast) ->
   walk cs_ast, root
   return root
 
-createReference = (node) ->
+createIdentifier = (node) ->
   if node instanceof CS.Identifier
     typeRef: node.data
   else if node instanceof CS.MemberAccessOp
@@ -94,7 +94,7 @@ walkVardef = (node, scope) ->
 walkProgram = (node, scope) ->
   walk node.body.statements, scope
   node.typeAnnotation =
-    identifier: createReference('Program')
+    identifier: createIdentifier('Program')
 
 walkBlock = (node, scope) ->
   walk node.statements, scope
@@ -140,36 +140,36 @@ walkBinOp = (node, scope) ->
       node.typeAnnotation =
         implicit: true
         nodeType: 'primitiveIdentifier'
-        identifier: createReference('String')
+        identifier: createIdentifier('String')
 
     else if leftRef is 'Int' and rightRef is 'Int'
       node.typeAnnotation =
         implicit: true
         nodeType: 'primitiveIdentifier'
-        identifier: createReference('Int')
+        identifier: createIdentifier('Int')
 
     else if leftRef in ['Int', 'Float'] and rightRef in ['Int', 'Float']
       node.typeAnnotation =
         implicit: true
         nodeType: 'primitiveIdentifier'
-        identifier: createReference('Float')
+        identifier: createIdentifier('Float')
     else if leftRef in ['Int', 'Float', 'Number'] and rightRef in ['Int', 'Float', 'Number']
       node.typeAnnotation =
         implicit: true
         nodeType: 'primitiveIdentifier'
-        identifier: createReference('Number')
+        identifier: createIdentifier('Number')
     else if leftRef is rightRef is 'Any'
       # TODO: Number or String
       if node instanceof CS.PlusOp
         node.typeAnnotation =
           implicit: true
           nodeType: 'primitiveIdentifier'
-          identifier: createReference('Any')
+          identifier: createIdentifier('Any')
       else
         node.typeAnnotation =
           implicit: true
           nodeType: 'primitiveIdentifier'
-          identifier: createReference('Number')
+          identifier: createIdentifier('Number')
     else
       # FIXME
       node.typeAnnotation ?= ImplicitAny
@@ -280,32 +280,32 @@ walkFor = (node, scope) ->
 
     scope.addVar
       nodeType: 'variable'
-      identifier: createReference(node.valAssignee)
+      identifier: createIdentifier(node.valAssignee)
       typeAnnotation: node.valAssignee.typeAnnotation
 
   if node.keyAssignee?
     if node instanceof CS.ForIn
       node.keyAssignee.typeAnnotation =
         nodeType: 'identifier'
-        identifier: createReference('Int')
+        identifier: createIdentifier('Int')
 
       scope.addVar
         nodeType: 'variable'
-        identifier: createReference(node.keyAssignee)
+        identifier: createIdentifier(node.keyAssignee)
         typeAnnotation:
           nodeType: 'identifier'
-          identifier: createReference('Int')
+          identifier: createIdentifier('Int')
     else if node instanceof CS.ForOf
       # TODO: FIX later
       node.keyAssignee.typeAnnotation =
         nodeType: 'identifier'
-        identifier: createReference('String')
+        identifier: createIdentifier('String')
       scope.addVar
         nodeType: 'variable'
-        identifier: createReference(node.keyAssignee)
+        identifier: createIdentifier(node.keyAssignee)
         typeAnnotation:
           nodeType: 'identifier'
-          identifier: createReference('String')
+          identifier: createIdentifier('String')
   # check body
   walk node.body, scope #=> Block
 
@@ -336,13 +336,13 @@ walkClassProtoAssignOp = (node, scope) ->
       left.typeAnnotation = annotation
       scope.addThis
         nodeType: 'variable'
-        identifier: createReference(left)
+        identifier: createIdentifier(left)
         typeAnnotation: annotation
     walkFunction right, scope, annotation
   else
     annotation =
       nodeType: 'variable'
-      identifier: createReference(left)
+      identifier: createIdentifier(left)
       typeAnnotation: null
     scope.addThis annotation
     walk right, scope
@@ -397,7 +397,7 @@ walkAssignOp = (node, scope) ->
       unless scope.getVarInScope(symbol)
         scope.addVar
           nodeType: 'variable'
-          identifier: createReference(left)
+          identifier: createIdentifier(left)
           typeAnnotation: member.typeAnnotation
 
   # Destructive Assignment
@@ -409,12 +409,12 @@ walkAssignOp = (node, scope) ->
 
     for member in left.members
       symbol = member.key.data
-      # ref = createReference symbol
+      # ref = createIdentifier symbol
       # getVarByIdentifier
       unless scope.getVarInScope(symbol)
         scope.addVar
           nodeType: 'variable'
-          identifier: createReference(left)
+          identifier: createIdentifier(left)
           typeAnnotation: member.typeAnnotation
 
   # Member
@@ -434,19 +434,19 @@ walkAssignOp = (node, scope) ->
     if preAnnotation?
       scope.addVar
         nodeType: 'variable'
-        identifier: createReference(left)
+        identifier: createIdentifier(left)
         typeAnnotation: preAnnotation
 
     else if right.typeAnnotation? and not right.typeAnnotation.implicit and left?.typeAnnotation.implicit
       left.typeAnnotation = right.typeAnnotation
       scope.addVar
         nodeType: 'variable'
-        identifier: createReference(left)
+        identifier: createIdentifier(left)
         typeAnnotation: right.typeAnnotation
     else
       scope.addVar
         nodeType: 'variable'
-        identifier: createReference(left)
+        identifier: createIdentifier(left)
         typeAnnotation: ImplicitAny
       left.typeAnnotation ?= ImplicitAny
 
@@ -472,43 +472,43 @@ walkUndefined = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
     nodeType: 'identifier'
-    identifier: createReference('Undefined')
+    identifier: createIdentifier('Undefined')
 
 walkNull = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
     nodeType: 'identifier'
-    identifier: createReference('Null')
+    identifier: createIdentifier('Null')
 
 walkString = (node, scope) ->
   node.typeAnnotation ?=
     implicit: true
     nodeType: 'identifier'
-    identifier: createReference('String')
+    identifier: createIdentifier('String')
 
 walkInt = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'identifier'
     implicit: true
-    identifier: createReference('Int')
+    identifier: createIdentifier('Int')
 
 walkBool = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'identifier'
     implicit: true
-    identifier: createReference 'Boolean'
+    identifier: createIdentifier 'Boolean'
 
 walkFloat = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'identifier'
     implicit: true
-    identifier: createReference 'Float'
+    identifier: createIdentifier 'Float'
 
 walkNumbers = (node, scope) ->
   node.typeAnnotation ?=
     nodeType: 'identifier'
     implicit: true
-    identifier: createReference 'Number'
+    identifier: createIdentifier 'Number'
 
 walkIdentifier = (node, scope) ->
   typeName = node.data
@@ -522,7 +522,7 @@ walkThis = (node, scope) ->
   node.typeAnnotation =
     nodeType: 'members'
     implicit: true
-    identifier: createReference('[this]')
+    identifier: createIdentifier('[this]')
     properties: scope._this
 
 walkDynamicMemberAccessOp = (node, scope) ->
@@ -596,7 +596,7 @@ walkObjectInitializer = (node, scope) ->
     walk expression, nextScope
     props.push
       implicit: true
-      identifier: createReference(key)
+      identifier: createIdentifier(key)
       nodeType: 'identifier'
       typeAnnotation: expression.typeAnnotation
 
@@ -604,7 +604,7 @@ walkObjectInitializer = (node, scope) ->
     properties: props
     nodeType: 'members'
     implicit: true
-    identifier: createReference '[object]'
+    identifier: createIdentifier '[object]'
 
 walkClass = (node, scope) ->
   classScope = new ClassScope scope
@@ -700,14 +700,14 @@ addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
       unless scope.getVar(symbol)
         scope.addVar
           nodeType: 'variable'
-          identifier: createReference(member)
+          identifier: createIdentifier(member)
           typeAnnotation: member.typeAnnotation ? ImplicitAny
   else if initializerNode instanceof CS.ObjectInitialiser
     for member in initializerNode.members
       unless scope.getVar(symbol)
         scope.addVar
           nodeType: 'variable'
-          identifier: createReference(member.key)
+          identifier: createIdentifier(member.key)
           typeAnnotation: member.typeAnnotation ? ImplicitAny
 
 # walkFunction :: Node * Scope * TypeAnnotation? -> ()
@@ -739,7 +739,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
       if param instanceof CS.Identifier
         functionScope.addVar
           nodeType: 'variable'
-          identifier: createReference(param)
+          identifier: createIdentifier(param)
           typeAnnotation: param.typeAnnotation
 
       # getX :: Int[] -> Int = ([x, y]) -> x
@@ -774,7 +774,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
       if param instanceof CS.Identifier
         functionScope.addVar
           nodeType: 'variable'
-          identifier: createReference(param)
+          identifier: createIdentifier(param)
           typeAnnotation: param.typeAnnotation ? ImplicitAny
       else if param instanceof CS.ObjectInitialiser
         addValuesByInitializer scope, param

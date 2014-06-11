@@ -142,6 +142,10 @@ class Scope
       else
         ImplicitAny
 
+  # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
+  getTypeByIdentifier: (identifier) ->
+    @getTypeInScope(identifier.typeRef)
+
   # addThis :: Type * TypeArgument[] -> ()
   addThis: (type, args = []) ->
     # TODO: Refactor with addThis
