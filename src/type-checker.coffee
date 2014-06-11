@@ -290,9 +290,46 @@ isAcceptable = (scope, left, right) ->
       return false
   true # FIXME: pass all unknow pattern
 
+
+util = require 'util'
+formatType = (node, prefix = '') ->
+  if node.nodeType is 'members'
+    lines = node.properties.map (prop) ->
+      prefix + '- ' + formatType(prop, prefix + '  ')
+    '[struct]'+ '\n' + lines.join '\n'
+  else if node.nodeType is 'primitiveIdentifier'
+    prefix + node.identifier.typeRef
+  else if node.nodeType is 'identifier'
+    'identifier'
+    array = if node.identifier.isArray then '[]' else ''
+    if node.typeAnnotation?
+      node.identifier.typeRef + array + ' :: ' + formatType(node.typeAnnotation, prefix)
+    else
+      node.identifier.typeRef + array
+  else if node.nodeType is 'functionType'
+    args = node.arguments.map (arg) -> prefix + '- ' + formatType(arg, prefix + '  ')
+    joined = '\n' + args.join '\n'
+    returnType = formatType(node.returnType, prefix + '  ')
+    # '[function]\n' + prefix + '[arguments]\n' + args.join(' * ') + '\n' + prefix + '[return]\n' + prefix + returnType
+    """
+    [function]
+    #{prefix}[arguments] #{joined}
+    #{prefix}[return] #{returnType}
+    """
+  else
+    util.inspect node, false, null
+
 typeErrorText = (left, right) ->
-  util = require 'util'
-  "TypeError: \n#{util.inspect left, false, null} \n to \n #{util.inspect right, false, null}"
+  header = "\nTypeError:"
+  l = formatType left, '  '
+  r = formatType right, '  '
+  """
+  #{header}
+  required:
+  #{l}
+  assignee:
+  #{r}
+  """
 
 # checkType :: Scope * Node * Type * Type -> ()
 checkType = (scope, node, left, right) ->

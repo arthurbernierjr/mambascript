@@ -28,6 +28,31 @@ suite 'TypeChecker', ->
     initializeGlobalTypes(global._root_)
     reporter.clean()
 
+  suite 'Primitive', ->
+    test 'int', ->
+      x :: Int = 3
+
+    test 'int', ->
+      x :: Int = 3 + 3
+
+    test 'string', ->
+      x :: String = ''
+
+    test 'string', ->
+      x :: String = '' + ''
+
+    test 'boolean', ->
+      x :: Boolean = true
+
+    test 'boolean', ->
+      x :: Boolean = 1 is 2
+
+    test 'boolean', ->
+      x :: Null = null
+
+    test 'boolean', ->
+      x :: Undefined = undefined
+
   suite 'Assignment', ->
     test 'basic assign', ->
       x :: Int = 3
@@ -1085,6 +1110,45 @@ suite 'TypeChecker', ->
         class B extends A
           b :: String
         b :: { a :: String, b :: String} = new B
+
+      test 'extends', ->
+        class A
+          a :: Int
+
+        class B extends A
+          b :: Int
+
+        class C extends B
+          c :: Int
+
+        c :: {a :: Int, b :: Int, c :: Int}
+        c = new C
+
+      test 'extends', ->
+        class A
+          a :: Int
+
+        class B extends A
+          b :: Int
+
+        class C extends B
+          c :: Int
+        c :: A
+        c = new C
+
+      test 'extends', ->
+        shouldBeTypeError """
+        class A
+          a :: String
+
+        class B extends A
+          b :: Int
+
+        class C extends B
+          c :: Int
+        c :: {a :: Int, b :: Int, c :: Int}
+        c = new C
+        """
 
       test 'extends', ->
         class A

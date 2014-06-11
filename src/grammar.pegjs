@@ -1303,6 +1303,7 @@ vardef = !expressionworthy name:typeIdentifier __ '::' _ expr: typeExpr !(_ "=")
   s.nodeType = 'vardef';
   s.name = name;
   s.expr = expr;
+  s.static = !!_static;
   return s;
 }
 
