@@ -991,6 +991,20 @@ suite 'TypeChecker', ->
       s :: Int = A.name
       """
 
+    test 'define class', ->
+      class A
+        @foo :: String
+      class B extends A
+      s :: String = B.foo
+
+    test 'define class', ->
+      shouldBeTypeError """
+      class A
+        @foo :: String
+      class B extends A
+      s :: Int = B.foo
+      """
+
     suite 'constructor', ->
       test 'define class with pre defined arugments', ->
         class A

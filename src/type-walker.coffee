@@ -635,7 +635,6 @@ walkClass = (node, scope) ->
 
   # has parent class?
   if node.impl?.length
-    # TODO: static extend
     for impl in node.impl
       parentAnnotation = scope.getTypeInScope(impl.identifier.typeRef) # TODO: member access
       if parentAnnotation
@@ -645,6 +644,12 @@ walkClass = (node, scope) ->
   # has parent class?
   if node.parent?
     # TODO: member access
+    # TODO: static extend
+    if parentStaticAnnotation = scope.getVarInScope(node.parent.data)
+      # should be clone?
+      for prop in parentStaticAnnotation.typeAnnotation.properties
+        staticAnn.properties.push _.cloneDeep(prop)
+
     parentAnnotation = scope.getTypeInScope(node.parent.data)
     if parentAnnotation
       parentAnnotation.properties.map (prop) ->
