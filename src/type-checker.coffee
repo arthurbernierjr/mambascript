@@ -252,7 +252,7 @@ checkTypeAnnotation = (scope, node, left, right) ->
       reporter.add_error node, err
     return false
 
-rewriteTypeWithArg = (scope, node, from, to) ->
+rewriteType = (scope, node, from, to) ->
   if node.nodeType is 'identifier'
     # TODO: type arguments
     if node.identifier?.typeArguments?.length
@@ -263,7 +263,6 @@ rewriteTypeWithArg = (scope, node, from, to) ->
       ann = scope.getTypeByIdentifier from.typeAnnotation # Check later
       if ann
         extendType scope, ann, typeArgs
-
     if node.identifier?.typeRef is from.identifier.typeRef
       node.identifier.typeRef = to.identifier.typeRef
 
@@ -271,9 +270,9 @@ rewriteTypeWithArg = (scope, node, from, to) ->
     for prop in node.properties
       switch prop.typeAnnotation.nodeType
         when 'functionType'
-          rewriteTypeWithArg scope, prop.typeAnnotation.returnType, from, to
+          rewriteType scope, prop.typeAnnotation.returnType, from, to
           for arg in prop.typeAnnotation.arguments
-            rewriteTypeWithArg scope, arg, from, to
+            rewriteType scope, arg, from, to
           # debug 'functionType rewriten', prop.typeAnnotation
         when 'identifier'
           if prop.typeAnnotation?.identifier?.typeArguments?.length
@@ -288,39 +287,38 @@ rewriteTypeWithArg = (scope, node, from, to) ->
           if prop.typeAnnotation.identifier?.typeRef is from.identifier.typeRef
             prop.typeAnnotation.identifier.typeRef = to.identifier.typeRef
         when 'members'
-          rewriteTypeWithArg scope, prop.typeAnnotation, from, to
+          rewriteType scope, prop.typeAnnotation, from, to
+
+extendIdentifierType = (scope, node) ->
+  ann = scope.getTypeInScope(node.identifier.typeRef)
+  if ann.nodeType is 'identifier'
+    unless ann.typeAnnotation?
+      throw new Error 'identifier with annotation required'
+    from = node
+    to = ann.typeAnnotation
+    rewriteType scope, node, from, to
 
 extendFunctionType = (scope, node) ->
-  # return type
-  rType = scope.getTypeInScope(node.returnType.identifier.typeRef)
-  if rType.nodeType is 'identifier'
-    rFrom = node.returnType
-    rTo = rType.typeAnnotation
-    rewriteTypeWithArg scope, node.returnType, rFrom, rTo
-
+  extendIdentifierType scope, node.returnType
   for arg in node.arguments
     if arg.nodeType is 'identifier'
-      type = scope.getTypeInScope(arg.identifier.typeRef)
-      # ignore other type
-      if type.nodeType is 'identifier'
-        from = _.cloneDeep arg
-        to = _.cloneDeep type.typeAnnotation
-        rewriteTypeWithArg scope, arg, from, to
+      extendIdentifierType scope, arg
     else if arg.nodeType is 'functionType'
       extendFunctionType scope, arg
-  return node
+  node
 
 extendMembers = (scope, node, givenArgs) ->
   typeScope = new Scope scope
   if node.identifier?.typeArguments?.length
     for arg, n in node.identifier.typeArguments
       givenArg = givenArgs[n]
+
       if givenArg?.identifier?.typeArguments?.length
         typeArgs = givenArg.identifier.typeArguments
-        ann = scope.getTypeByIdentifier givenArg
-        if ann
-          ret = extendType scope, ann, typeArgs
-      a =
+        if ann = scope.getTypeByIdentifier givenArg
+          extendType scope, ann, typeArgs
+
+      typeScope.addType
         nodeType: 'identifier'
         identifier:
           typeRef: arg.identifier.typeRef
@@ -328,16 +326,14 @@ extendMembers = (scope, node, givenArgs) ->
           nodeType: 'identifier'
           identifier:
             typeRef: givenArg.identifier.typeRef
-      typeScope.addType a
 
   for arg, n in node.identifier.typeArguments
     givenArg = givenArgs[n]
-    rewriteTypeWithArg typeScope, node, arg, givenArg
+    rewriteType typeScope, node, arg, givenArg
 
 extendType = (scope, node, givenArgs) ->
   if node.nodeType is 'members'
     extendMembers scope, node, givenArgs
-
   else if node.nodeType is 'functionType'
     extendFunctionType scope, node
 
