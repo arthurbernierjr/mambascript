@@ -10,6 +10,10 @@ _ = require 'lodash'
   resolveType,
   extendType
 } = require './type-checker'
+{
+  resolveType,
+  extendType
+} = require './type-resolver'
 
 ImplicitAnyAnnotation =
   implicit: true
