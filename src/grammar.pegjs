@@ -637,11 +637,11 @@ newExpressionNoImplicitObjectCall
 memberExpression
   = e:
     (
-      e:primaryExpression typeArgs:classTypeArguments? {
+      e:primaryExpression typeArgs:symbolTypeArguments? {
         e.typeArguments = typeArgs || null;
         return e;
       }
-      / NEW __ e:memberExpression  typeArgs:classTypeArguments? args:argumentList {
+      / NEW __ e:memberExpression  typeArgs:symbolTypeArguments? args:argumentList {
         var ret = new CS.NewOp(e, args.operands[0])
         ret.typeArguments = typeArgs || null;
         return rp(ret);
@@ -649,7 +649,7 @@ memberExpression
     ) accesses:MemberAccessOps* {
       return createMemberExpression(e, accesses || []);
     }
-  / NEW __ e:memberExpression  typeArgs:classTypeArguments? args:secondaryArgumentList {
+  / NEW __ e:memberExpression  typeArgs:symbolTypeArguments? args:secondaryArgumentList {
       var ret = rp(new CS.NewOp(e, args));
       ret.typeArguments = typeArgs || null;
       return ret;
@@ -657,7 +657,7 @@ memberExpression
 
   memberAccess
     = e:
-      ( e:primaryExpression typeArgs:classTypeArguments? {return e;}
+      ( e:primaryExpression typeArgs:symbolTypeArguments? {return e;}
       / NEW __ e:memberExpression args:argumentList { return rp(new CS.NewOp(e, args.operands[0])); }
       ) accesses:(argumentList MemberAccessOps / MemberAccessOps)+ {
         var acc = foldl(function(memo, a){ return memo.concat(a); }, [], accesses);
@@ -769,11 +769,11 @@ implementArguments = _ IMPLEMENTS __ e:typeIdentifier _ es:(_ "," _ typeIdentifi
   return [e].concat(es.map(function(e){return e[3];}));
 }
 
-classTypeArguments = "<" _ e:typeExpr _ es:(typeSplitter _ typeExpr _)* _ ">" {
+symbolTypeArguments = "<" _ e:typeExpr _ es:(typeSplitter _ typeExpr _)* _ ">" {
   return [e].concat(es.map(function(e){return e[2];}));
 }
 class
-  = CLASS name:(_ Assignable)? typeArgs:classTypeArguments? parent:(_ EXTENDS _ extendee)? implementArguments:implementArguments? body:classBody {
+  = CLASS name:(_ Assignable)? typeArgs:symbolTypeArguments? parent:(_ EXTENDS _ extendee)? implementArguments:implementArguments? body:classBody {
       var ctor = null;
       name = name ? name[1] : null;
       parent = parent ? parent[3] : null;
