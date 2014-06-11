@@ -10,24 +10,23 @@ _ = require 'lodash'
   resolveType,
   extendType
 } = require './type-checker'
+
 {
   resolveType,
   extendType
 } = require './type-resolver'
 
-ImplicitAnyAnnotation =
-  implicit: true
-  isPrimitive: true
-  nodeType: 'primitiveIdentifier'
-  identifier:
-    typeRef: 'Any'
-
 {
-  initializeGlobalTypes,
   Scope,
   ClassScope,
   FunctionScope
+} = require './type-scope'
+
+{
+  initializeGlobalTypes,
+  ImplicitAny
 } = require './types'
+
 
 # CS_AST -> Scope
 checkNodes = (cs_ast) ->
@@ -48,7 +47,7 @@ checkNodes = (cs_ast) ->
 
 walkStruct = (node, scope) ->
   scope.addStructType _.cloneDeep node
-  node.typeAnnotation = ImplicitAnyAnnotation
+  node.typeAnnotation = ImplicitAny
 
 walkVardef = (node, scope) ->
   symbol = node.name.identifier.typeRef
@@ -109,7 +108,7 @@ walkBinOp = (node, scope) ->
 
   [leftAnnotation, rightAnnotation] = [node.left.typeAnnotation, node.right.typeAnnotation].map (node) =>
     unless node? # FIXME
-      return ImplicitAnyAnnotation
+      return ImplicitAny
 
     if node.nodeType is 'identifier'
       scope.getTypeByIdentifier(node)
@@ -169,13 +168,13 @@ walkBinOp = (node, scope) ->
             typeRef: 'Number'
     else
       # FIXME
-      node.typeAnnotation ?= ImplicitAnyAnnotation
+      node.typeAnnotation ?= ImplicitAny
 
   else
-    node.typeAnnotation = ImplicitAnyAnnotation
+    node.typeAnnotation = ImplicitAny
 
 walkConditional = (node, scope) ->
-  # node.typeAnnotation ?= ImplicitAnyAnnotation
+  # node.typeAnnotation ?= ImplicitAny
   walk node.condition, scope #=> Expr
   # else if
   if node.consequent
@@ -197,7 +196,7 @@ walkConditional = (node, scope) ->
       ret.identifier.nullable = true
     node.typeAnnotation = ret
   else
-    node.typeAnnotation = ImplicitAnyAnnotation
+    node.typeAnnotation = ImplicitAny
 
 walkSwitch = (node, scope) ->
   if node.expression
@@ -225,9 +224,9 @@ walkSwitch = (node, scope) ->
   if ann?
     if ann.identifier?
       ann.identifier.nullable = not node.alternate?
-    node.typeAnnotation = ann ? ImplicitAnyAnnotation
+    node.typeAnnotation = ann ? ImplicitAny
   else
-    node.typeAnnotation = ImplicitAnyAnnotation
+    node.typeAnnotation = ImplicitAny
 
 walkNewOp = (node, scope) ->
   ctor = node.ctor?.ctor ? node.ctor
@@ -252,10 +251,10 @@ walkNewOp = (node, scope) ->
     if left and right
       checkTypeAnnotation scope, node, left, right
 
-  node.typeAnnotation = ann ? ImplicitAnyAnnotation
+  node.typeAnnotation = ann ? ImplicitAny
 
 walkOfOp = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
+  node.typeAnnotation ?= ImplicitAny
   return # TODO
 
 walkFor = (node, scope) ->
@@ -273,7 +272,7 @@ walkFor = (node, scope) ->
       delete targetType.identifier.isArray
       node.valAssignee.typeAnnotation = targetType
     else
-      node.valAssignee.typeAnnotation = ImplicitAnyAnnotation
+      node.valAssignee.typeAnnotation = ImplicitAny
 
     scope.addVar
       nodeType: 'variable'
@@ -321,12 +320,12 @@ walkFor = (node, scope) ->
       bodyType.identifier.isArray = true
       node.typeAnnotation = bodyType
     else
-      node.typeAnnotation = ImplicitAnyAnnotation
+      node.typeAnnotation = ImplicitAny
   else
-    node.typeAnnotation = ImplicitAnyAnnotation
+    node.typeAnnotation = ImplicitAny
 
 walkClassProtoAssignOp = (node, scope) ->
-  # node.typeAnnotation ?= ImplicitAnyAnnotation
+  # node.typeAnnotation ?= ImplicitAny
   # return # TODO
 
   left  = node.assignee
@@ -357,7 +356,7 @@ walkClassProtoAssignOp = (node, scope) ->
       annotation.typeAnnotation = right.typeAnnotation
 
 walkCompoundAssignOp = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
+  node.typeAnnotation ?= ImplicitAny
   return # TODO
 
 walkAssignOp = (node, scope) ->
@@ -456,8 +455,8 @@ walkAssignOp = (node, scope) ->
         nodeType: 'variable'
         identifier:
           typeRef: symbol
-        typeAnnotation: ImplicitAnyAnnotation
-      left.typeAnnotation ?= ImplicitAnyAnnotation
+        typeAnnotation: ImplicitAny
+      left.typeAnnotation ?= ImplicitAny
 
   # Vanilla CS
   else
@@ -530,9 +529,9 @@ walkIdentifier = (node, scope) ->
   typeName = node.data
   if scope.getVarInScope(typeName)
     typeAnnotation = scope.getVarInScope(typeName)?.typeAnnotation
-    node.typeAnnotation = typeAnnotation ? ImplicitAnyAnnotation
+    node.typeAnnotation = typeAnnotation ? ImplicitAny
   else
-    node.typeAnnotation ?= ImplicitAnyAnnotation
+    node.typeAnnotation ?= ImplicitAny
 
 walkThis = (node, scope) ->
   node.typeAnnotation =
@@ -543,15 +542,15 @@ walkThis = (node, scope) ->
     properties: scope._this
 
 walkDynamicMemberAccessOp = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
+  node.typeAnnotation ?= ImplicitAny
   return # TODO
 
 walkDynamicProtoMemberAccessOp = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
+  node.typeAnnotation ?= ImplicitAny
   return # TODO
 
 walkProtoMemberAccessOp = (node, scope) ->
-  node.typeAnnotation ?= ImplicitAnyAnnotation
+  node.typeAnnotation ?= ImplicitAny
   return # TODO
 
 walkMemberAccess = (node, scope) ->
@@ -562,9 +561,9 @@ walkMemberAccess = (node, scope) ->
 
   if type
     member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName
-    node.typeAnnotation = member?.typeAnnotation ? ImplicitAnyAnnotation # FIXME
+    node.typeAnnotation = member?.typeAnnotation ? ImplicitAny # FIXME
   else
-    node.typeAnnotation ?= ImplicitAnyAnnotation
+    node.typeAnnotation ?= ImplicitAny
 
   # if node.instanceof CS.SoakedMemberAccessOp
   #   walk node.expression, scope
@@ -695,7 +694,7 @@ addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
           nodeType: 'variable'
           identifier:
             typeRef: symbol
-          typeAnnotation: member.typeAnnotation ? ImplicitAnyAnnotation
+          typeAnnotation: member.typeAnnotation ? ImplicitAny
   else if initializerNode instanceof CS.ObjectInitialiser
     for member in initializerNode.members
       symbol = member.key.data
@@ -704,7 +703,7 @@ addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
           nodeType: 'variable'
           identifier:
             typeRef: symbol
-          typeAnnotation: member.typeAnnotation ? ImplicitAnyAnnotation
+          typeAnnotation: member.typeAnnotation ? ImplicitAny
 
 # walkFunction :: Node * Scope * TypeAnnotation? -> ()
 walkFunction = (node, scope, preAnnotation = null) ->
@@ -716,8 +715,8 @@ walkFunction = (node, scope, preAnnotation = null) ->
     # if node.typeAnnotation?.identifier?.typeRef is 'Any'
     if node.typeAnnotation?
       annotation = _.cloneDeep node.typeAnnotation
-      annotation.returnType ?= ImplicitAnyAnnotation
-      annotation.arguments ?= annotation.arguments?.map (arg) -> arg ? ImplicitAnyAnnotation
+      annotation.returnType ?= ImplicitAny
+      annotation.arguments ?= annotation.arguments?.map (arg) -> arg ? ImplicitAny
       annotation.arguments ?= []
       return unless checkTypeAnnotation scope, node,  annotation, preAnnotation
 
@@ -730,7 +729,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
       if param instanceof CS.MemberAccessOp
         walk param, functionScope
 
-      param.typeAnnotation ?= preAnnotation.arguments?[n] ? ImplicitAnyAnnotation
+      param.typeAnnotation ?= preAnnotation.arguments?[n] ? ImplicitAny
 
       if param instanceof CS.Identifier
         functionScope.addVar
@@ -751,7 +750,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
               delete t.identifier.isArray
               member.typeAnnotation = t
             else
-              member.typeAnnotation = type ? ImplicitAnyAnnotation
+              member.typeAnnotation = type ? ImplicitAny
 
         addValuesByInitializer scope, param
       # f :: Point -> Int = ({x, y}) -> Int
@@ -762,7 +761,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
             type =  resolveType scope, preAnn
             if type.nodeType is 'members'
               memberAnn =  _.find type.properties, (prop) -> prop.identifier?.typeRef is member.key?.data
-              member.typeAnnotation = memberAnn?.typeAnnotation ? ImplicitAnyAnnotation
+              member.typeAnnotation = memberAnn?.typeAnnotation ? ImplicitAny
         addValuesByInitializer scope, param
 
   else
@@ -773,7 +772,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
           nodeType: 'variable'
           identifier:
             typeRef: param.data
-          typeAnnotation: param.typeAnnotation ? ImplicitAnyAnnotation
+          typeAnnotation: param.typeAnnotation ? ImplicitAny
       else if param instanceof CS.ObjectInitialiser
         addValuesByInitializer scope, param
       else if param instanceof CS.ArrayInitialiser
@@ -795,8 +794,8 @@ walkFunction = (node, scope, preAnnotation = null) ->
       returnType: null
       arguments: []
 
-    left = node.typeAnnotation.returnType ?= ImplicitAnyAnnotation
-    right = node.body.typeAnnotation ?= ImplicitAnyAnnotation
+    left = node.typeAnnotation.returnType ?= ImplicitAny
+    right = node.body.typeAnnotation ?= ImplicitAny
     # debug 'walkFunction l', left
     # debug 'walkFunction r', right
     # debug 'walkFunction body', node.body
@@ -834,9 +833,9 @@ walkFunctionApplication = (node, scope) ->
     node.function.typeAnnotation = extendType typeScope, _.cloneDeep(node.function.typeAnnotation)
 
   if node.function.typeAnnotation?.nodeType is 'functionType'
-    node.typeAnnotation = node.function.typeAnnotation.returnType ? ImplicitAnyAnnotation
+    node.typeAnnotation = node.function.typeAnnotation.returnType ? ImplicitAny
   else if node.function.typeAnnotation?.nodeType is 'primitiveIdentifier'
-    node.typeAnnotation ?= ImplicitAnyAnnotation
+    node.typeAnnotation ?= ImplicitAny
 
   for arg, n in node.arguments
     left = node.function.typeAnnotation?.arguments?[n]
