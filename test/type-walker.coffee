@@ -148,6 +148,30 @@ suite 'TypeChecker', ->
       c :: Int
       {a, b, c} = {a: 3, b: '', c: 1}
 
+    test 'struct with implements', ->
+      struct A
+        a :: Int
+
+      struct B implements A
+        b :: Int
+
+      b :: B
+      b = {a: 1, b: 2}
+      obj :: {a :: Int, b :: Int} = b
+
+    test 'struct with implements', ->
+      shouldBeTypeError """
+      struct A
+        a :: Int
+
+      struct B implements A
+        b :: Int
+
+      a :: A
+      a = {a: 1, b: 2}
+      obj :: {a :: Int, b :: Int} = a
+      """
+
     test 'destructive assignment', ->
       struct Point
         x :: Int
@@ -169,8 +193,6 @@ suite 'TypeChecker', ->
       y :: String
       {x, y} = p
       """
-
-
 
     test 'destructive assignment', ->
       shouldBeTypeError """

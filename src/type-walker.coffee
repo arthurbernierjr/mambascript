@@ -25,8 +25,25 @@ checkNodes = (cs_ast) ->
   walk cs_ast, root
   return root
 
+
+# mergeStruct A, B
+mergeStruct = (left, list) ->
+  for right in list
+    # debug 'mergeStruct', left, right
+    for prop in right.properties
+      left.properties.push prop
+  # debug 'mergedStruct',  left
+  left
+
 walkStruct = (node, scope) ->
-  scope.addStructType _.cloneDeep node
+  s = _.cloneDeep node
+  if node.impl?.length
+    extendList =
+      for impl in node.impl
+        scope.getTypeInScope impl.identifier.typeRef
+    s.expr = mergeStruct node.expr, extendList
+
+  scope.addStructType s
   node.typeAnnotation = ImplicitAny
 
 walkVardef = (node, scope) ->

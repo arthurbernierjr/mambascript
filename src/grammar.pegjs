@@ -1294,7 +1294,7 @@ structdef = STRUCT !(_ "=") __ name:typeIdentifier _ impl:classImplements? _ pro
   s.nodeType = 'struct';
   s.name = name;
   s.expr = props;
-  s.impl = impl;
+  s.impl = impl || null;
   return s;
 }
 
