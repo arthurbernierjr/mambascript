@@ -8,7 +8,7 @@ _ = require 'lodash'
   checkType,
   checkTypeAnnotation,
   resolveType,
-  extendTypeWithArguments,
+  extendType,
   extendFunctionType
 } = require './type-checker'
 
@@ -234,7 +234,7 @@ walkNewOp = (node, scope) ->
   # override types
   if ctor.typeArguments?.length
     givenArgs = ctor.typeArguments
-    ann = extendTypeWithArguments scope, _.cloneDeep(ann), givenArgs
+    ann = extendType scope, _.cloneDeep(ann), givenArgs
 
   if ann
     ctorAnnotation = _.find ann.properties, (i) ->

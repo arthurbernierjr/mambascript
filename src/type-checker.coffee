@@ -125,7 +125,7 @@ rewriteTypeWithArg = (scope, node, from, to) ->
           resolved.typeAnnotation
       ann = scope.getTypeByIdentifier from.typeAnnotation # Check later
       if ann
-        extendTypeWithArguments scope, ann, typeArgs
+        extendType scope, ann, typeArgs
 
     if node.identifier?.typeRef is from.identifier.typeRef
       node.identifier.typeRef = to.identifier.typeRef
@@ -146,7 +146,7 @@ rewriteTypeWithArg = (scope, node, from, to) ->
                 resolved.typeAnnotation
             ann = scope.getTypeByIdentifier prop.typeAnnotation
             if ann
-              extendTypeWithArguments scope, ann, typeArgs
+              extendType scope, ann, typeArgs
 
           if prop.typeAnnotation.identifier?.typeRef is from.identifier.typeRef
             prop.typeAnnotation.identifier.typeRef = to.identifier.typeRef
@@ -173,7 +173,7 @@ extendFunctionType = (scope, node) ->
       extendFunctionType scope, arg
   return node
 
-extendTypeWithArguments = (scope, node, givenArgs) ->
+extendType = (scope, node, givenArgs) ->
   # debug 'ex node', node
   # debug 'ex given', givenArgs
   typeScope = new Scope scope
@@ -184,7 +184,7 @@ extendTypeWithArguments = (scope, node, givenArgs) ->
         typeArgs = givenArg.identifier.typeArguments
         ann = scope.getTypeByIdentifier givenArg
         if ann
-          ret = extendTypeWithArguments scope, ann, typeArgs
+          ret = extendType scope, ann, typeArgs
       a =
         nodeType: 'identifier'
         identifier:
@@ -204,7 +204,7 @@ resolveType = (scope, node) ->
   if node.nodeType is 'identifier'
     ret = scope.getTypeByIdentifier(node)
     if node.identifier?.typeArguments?.length
-      ret = extendTypeWithArguments scope, _.cloneDeep(ret), node.identifier.typeArguments
+      ret = extendType scope, _.cloneDeep(ret), node.identifier.typeArguments
     unless ret
       if node.nodeType is 'identifier' # TODO: consider nested type arguments
         return node
@@ -357,5 +357,5 @@ checkTypeAnnotation = (scope, node, left, right) ->
     return false
 
 module.exports = {
-  checkType, checkTypeAnnotation, isAcceptable, resolveType, extendTypeWithArguments, extendFunctionType
+  checkType, checkTypeAnnotation, isAcceptable, resolveType, extendType, extendFunctionType
 }
