@@ -39,7 +39,7 @@ rewriteType = (scope, node, from, to) ->
           rewriteType scope, prop.typeAnnotation, from, to
 
 extendIdentifierType = (scope, node) ->
-  ann = scope.getTypeInScope(node.identifier.typeRef)
+  ann = scope.getTypeByIdentifier(node.identifier)
   if ann.nodeType is 'identifier'
     unless ann.typeAnnotation?
       throw new Error 'identifier with annotation required'
