@@ -183,6 +183,35 @@ class Scope
 
   checkAcceptableObject: (left, right) -> false
 
+  getHighestCommonType: (list) ->
+    [head, tail...] = list
+    _.cloneDeep _.reduce tail, ((a, b) =>
+      @compareAsParent a, b
+    ), head
+
+  compareAsParent: (a, b) ->
+    {isAcceptable} = require './type-checker'
+
+    if a?.identifier?.typeRef in ['Undefined', 'Null']
+      b = _.cloneDeep(b)
+      if b?.identifier?
+        b.identifier.nullable = true
+      return b
+
+    if b?.identifier?.typeRef in ['Undefined', 'Null']
+      a = _.cloneDeep(a)
+      if a?
+        if a.identifier?
+          a.identifier.nullable = true
+      return a
+
+    retA = isAcceptable @, a, b
+    retB = isAcceptable @, b, a
+    if retA and retB then b
+    else if retA then a
+    else if retB then b
+    else ImplicitAnyAnnotation
+
 class ClassScope extends Scope
   getConstructorType: ->
     (_.find @_this, (v) -> v.identifier.typeRef is '_constructor_')?.typeAnnotation

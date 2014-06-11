@@ -1289,8 +1289,8 @@ ZWJ = "\u200D"
 
 
 // TODO: FIX CS.Int hack
-structdef = STRUCT !(_ "=") __ name:typeIdentifier _ props: typeExpr {
-  var s = rp(new CS.Int(line()))
+structdef = STRUCT !(_ "=") __ name:typeIdentifier _ props: typeBlock {
+  var s = rp(new CS.Int(0));
   s.nodeType = 'struct';
   s.name = name;
   s.expr = props;
@@ -1311,24 +1311,24 @@ typeExpr
   //= "(" _ typeFunction _ ")"
   = primaryTypeFunction
   / typeFunction
-  / typeLiteral
+  / typeBlock
   / typeIdentifier
 
-typeLiteral
-  = "{" members:typeLiteralBody TERMINATOR? _ "}" {
+typeBlock
+  = "{" members:typeBlockBody TERMINATOR? _ "}" {
     return {properties:members, nodeType: 'members'};
   }
-  / !typeIdentifier !"(" members:typeLiteralBody {
+  / !typeIdentifier !"(" members:typeBlockBody {
     return {properties:members, nodeType: 'members'};
   }
-  typeLiteralBody
-    = TERMINDENT members:typeLiteralMemberList DEDENT { return members; }
-    / _ members:typeLiteralMemberList? { return members || []; }
-  typeLiteralMemberList
-    = e:typeLiteralMember _ es:(arrayLiteralMemberSeparator _ typeLiteralMember _)* ","? {
+  typeBlockBody
+    = TERMINDENT members:typeBlockMemberList DEDENT { return members; }
+    / _ members:typeBlockMemberList? { return members || []; }
+  typeBlockMemberList
+    = e:typeBlockMember _ es:(arrayLiteralMemberSeparator _ typeBlockMember _)* ","? {
         return [e].concat(es.map(function(e){ return e[2]; }));
       }
-  typeLiteralMember
+  typeBlockMember
     = symbol:typeIdentifier _ "::" _ expr:typeExpr {
         symbol.typeAnnotation = expr;
         return symbol
@@ -1336,7 +1336,7 @@ typeLiteral
       }
 
 returnTypeExpr
-  = typeLiteral
+  = typeBlock
   / "(" _ tf:typeFunction _ ")" {return tf;}
   / typeIdentifier
 

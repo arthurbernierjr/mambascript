@@ -26,27 +26,6 @@ ImplicitAnyAnnotation =
   FunctionScope
 } = require './types'
 
-compareAsParent = (scope, a, b) ->
-  if a?.identifier?.typeRef in ['Undefined', 'Null']
-    b = _.cloneDeep(b)
-    if b?.identifier?
-      b.identifier.nullable = true
-    return b
-
-  if b?.identifier?.typeRef in ['Undefined', 'Null']
-    a = _.cloneDeep(a)
-    if a?
-      if a.identifier?
-        a.identifier.nullable = true
-    return a
-
-  retA = isAcceptable scope, a, b
-  retB = isAcceptable scope, b, a
-  if retA and retB then b
-  else if retA then a
-  else if retB then b
-  else ImplicitAnyAnnotation
-
 # CS_AST -> Scope
 checkNodes = (cs_ast) ->
   # dirty hack
@@ -113,14 +92,7 @@ walkBlock = (node, scope) ->
     lastAnn = (_.last node.statements).typeAnnotation
     returnables.push lastAnn
 
-  [head, tail...] = returnables
-  ann = _.cloneDeep _.reduce tail, ((a, b) ->
-    if a and b
-      compareAsParent scope, a, b
-    else
-      ImplicitAnyAnnotation
-  ), head
-  node.typeAnnotation = ann
+  node.typeAnnotation = scope.getHighestCommonType returnables
 
 walkReturn = (node, scope) ->
   walk node.expression, scope
@@ -214,7 +186,7 @@ walkConditional = (node, scope) ->
   alternateAnnotation = node.alternate?.typeAnnotation
 
   if consequentAnnotation and alternateAnnotation
-    parentType = compareAsParent scope, consequentAnnotation, alternateAnnotation
+    parentType = scope.getHighestCommonType [consequentAnnotation, alternateAnnotation]
     node.typeAnnotation = parentType
   else if consequentAnnotation and not alternateAnnotation
     ret = _.cloneDeep consequentAnnotation
@@ -245,14 +217,12 @@ walkSwitch = (node, scope) ->
     if c.alternate?.typeAnnotation?
       canditates.push c.alternate.typeAnnotation
 
-  [head, tail...] = canditates
-  ret = _.cloneDeep _.reduce tail, ((a, b) ->
-    compareAsParent scope, a, b
-  ), head
-  if ret?
-    if ret.identifier?
-      ret.identifier.nullable = not node.alternate?
-    node.typeAnnotation = ret ? ImplicitAnyAnnotation
+  ann = scope.getHighestCommonType canditates
+
+  if ann?
+    if ann.identifier?
+      ann.identifier.nullable = not node.alternate?
+    node.typeAnnotation = ann ? ImplicitAnyAnnotation
   else
     node.typeAnnotation = ImplicitAnyAnnotation
 
@@ -611,14 +581,11 @@ walkMemberAccess = (node, scope) ->
   #   else
   #     node.typeAnnotation = identifier: 'Any', explicit: false
 
+
 walkArrayInializer = (node, scope) ->
   for member in node.members
     walk member, scope
-
-  [head, tail...] = node.members.map (m) -> m.typeAnnotation
-  ann = _.cloneDeep _.reduce tail, ((a, b) ->
-    compareAsParent scope, a, b
-  ), head
+  ann = scope.getHighestCommonType node.members.map (m) -> m.typeAnnotation
 
   if ann?.identifier?
     ann.identifier.isArray = true
