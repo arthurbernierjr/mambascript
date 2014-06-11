@@ -50,7 +50,7 @@ walkStruct = (node, scope) ->
   if node.implementArguments?.length
     extendList =
       for implArg in node.implementArguments
-        scope.getTypeInScope implArg.identifier.typeRef
+        scope.getTypeByIdentifier implArg.identifier
     s.expr = mergeStruct node.expr, extendList
 
   scope.addStructType s
