@@ -39,12 +39,12 @@ Reimplementation of `~v0.9`
 - Generics
 - TypeArgument
 - Fix examples
+- Readable warnings
 
 #### wip
 
 - Super in class
 - Class static member type interface
-- Readable warnings
 
 ### `v0.10`
 
@@ -95,7 +95,7 @@ I DON'T reccomend to use in production yet.
 ## Known issues
 
 - Take over all coffee-script-redux problems
-	- imperfect super
+	- super with member access `super().member`
 	- object literal parsing in class field
   - and so on
 

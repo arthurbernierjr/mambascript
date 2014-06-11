@@ -310,7 +310,6 @@ formatType = (node, prefix = '') ->
     args = node.arguments.map (arg) -> prefix + '- ' + formatType(arg, prefix + '  ')
     joined = '\n' + args.join '\n'
     returnType = formatType(node.returnType, prefix + '  ')
-    # '[function]\n' + prefix + '[arguments]\n' + args.join(' * ') + '\n' + prefix + '[return]\n' + prefix + returnType
     """
     [function]
     #{prefix}[arguments] #{joined}
