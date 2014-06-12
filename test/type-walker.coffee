@@ -25,6 +25,7 @@ suite 'TypeChecker', ->
     global._root_.vars = []
     global._root_.types = []
     global._root_._this = []
+    global._root_._modules = []
     initializeGlobalTypes(global._root_)
     reporter.clean()
 
@@ -993,6 +994,25 @@ suite 'TypeChecker', ->
     test 'define class', ->
       class A
         name :: String
+
+    test 'nested class', ->
+      class A
+      class A.B
+      class A.B.C
+        name :: Int
+      abc = new A.B.C
+      n :: Int = abc.name
+
+    test 'nested class', ->
+      shouldBeTypeError """
+      class A
+      class A.B
+      class A.B.C
+        name :: String
+      abc = new A.B.C
+      n :: Int = abc.name
+      """
+
 
     test 'throw double assignment', ->
       shouldBeError """

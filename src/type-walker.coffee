@@ -46,16 +46,8 @@ createIdentifier = (node) ->
   if node instanceof CS.Identifier
     typeRef: node.data
   else if node instanceof CS.MemberAccessOp
-    # debug 'node', global._root_
-    # debug 'node', node
     ref = fromMemberAccessToRef node
-    debug 'ref', ref
-    # memberAccess
-    throw 'stop by member access'
-    # TODO: convert
-    nodeType: 'MemberAccess'
-    # left:
-    typeRef: 'member'
+    typeRef: ref
   else if _.isString node
     typeRef: node
   else
@@ -633,17 +625,22 @@ walkObjectInitializer = (node, scope) ->
 
 walkClass = (node, scope) ->
   classScope = new ClassScope scope
-  # Add props to this_socpe by extends and implements
-  symbol = node.nameAssignee?.data ? '_class' + _.uniqueId()
+  walk node.nameAssignee, scope
+
+  ident = createIdentifier node.nameAssignee
+  className = ident?.typeRef.right ? ident?.typeRef ? '_class' + _.uniqueId()
+
+  if ns = ident.typeRef.left
+    scope = scope.resolveNamespace ns, true
 
   staticAnn =
     properties: []
     nodeType: 'members'
     implicit: true
     identifier:
-      typeRef: symbol
+      typeRef: className
 
-  classScope.name = symbol
+  classScope.name = className
 
   # resolve at new
   if node.typeArguments?.length
@@ -695,14 +692,14 @@ walkClass = (node, scope) ->
   scope.addVar
     nodeType: 'variable'
     identifier:
-      typeRef: symbol
+      typeRef: className
     typeAnnotation: staticAnn
 
   scope.addType
     nodeType: 'members'
     newable: true
     identifier:
-      typeRef: symbol
+      typeRef: className
       typeArguments: node.typeArguments ? []
     properties: _.map _.cloneDeep(classScope._this), (prop) ->
       prop.nodeType = 'identifier' # hack for type checking

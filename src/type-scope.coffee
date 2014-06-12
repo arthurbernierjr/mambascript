@@ -1,5 +1,6 @@
 _ = require 'lodash'
 {ImplicitAny} = require './types'
+{debug} = require './helpers'
 
 # Var and typeRef scope as node
 class Scope
@@ -22,7 +23,7 @@ class Scope
     @_this  = []
 
     # Module scope
-    @_modules  = {}
+    @_modules  = []
 
     @_returnables = [] #=> Type[]
 
@@ -52,9 +53,17 @@ class Scope
   addModule: (name) ->
     scope = new Scope this
     scope.name = name
-    return @_modules[name] = scope
+    # return @_modules[name] = scope
+    mod =
+      nodeType: 'module'
+      identifier:
+        typeRef: name
+      scope: scope
+    @_modules.push mod
+    scope
 
-  getModule: (name) -> @_modules[name]
+  getModule: (name) ->
+    (_.find @_modules, (mod) -> mod.identifier.typeRef is name)?.scope
 
   getModuleInScope: (name) ->
     @getModule(name) or @parent?.getModuleInScope(name) or undefined
