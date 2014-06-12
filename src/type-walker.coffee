@@ -25,12 +25,36 @@ checkNodes = (cs_ast) ->
   walk cs_ast, root
   return root
 
+fromMemberAccessToRef = (node) ->
+  head = left: {}, right: node.memberName , nodeType: 'MemberAccess'
+  cur = node.expression
+  h = head.left
+  parent = head
+  while true
+    if cur instanceof CS.Identifier
+      parent.left = cur.data
+      break
+    else if cur instanceof CS.MemberAccessOp
+      h.nodeType = 'MemberAccess'
+      h = h.left = {}
+      h.right = cur.memberName
+      parent = h
+      cur = cur.expression
+  head
+
 createIdentifier = (node) ->
   if node instanceof CS.Identifier
     typeRef: node.data
   else if node instanceof CS.MemberAccessOp
+    # debug 'node', global._root_
+    # debug 'node', node
+    ref = fromMemberAccessToRef node
+    debug 'ref', ref
+    # memberAccess
     throw 'stop by member access'
     # TODO: convert
+    nodeType: 'MemberAccess'
+    # left:
     typeRef: 'member'
   else if _.isString node
     typeRef: node

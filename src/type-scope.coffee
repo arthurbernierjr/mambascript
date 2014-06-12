@@ -26,6 +26,14 @@ class Scope
 
     @_returnables = [] #=> Type[]
 
+  getPositionInScope: ->
+    arr = []
+    cur = @
+    while cur
+      arr.push cur.name
+      cur = cur.parent
+    arr.reverse()
+
   addReturnable: (typeRef) ->
     @_returnables.push typeRef
 
