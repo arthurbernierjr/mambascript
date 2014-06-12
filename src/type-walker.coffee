@@ -704,6 +704,7 @@ walkClass = (node, scope) ->
     properties: _.map _.cloneDeep(classScope._this), (prop) ->
       prop.nodeType = 'identifier' # hack for type checking
       prop
+  debug 'in class after add type', scope.getPositionInScope(), scope.types
 
   # constructor
   if node.ctor?

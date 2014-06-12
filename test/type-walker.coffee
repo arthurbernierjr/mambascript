@@ -1004,6 +1004,17 @@ suite 'TypeChecker', ->
       n :: Int = abc.name
 
     test 'nested class', ->
+      class A
+      class A.B
+      class A.B.C
+        p :: Int
+      class A.B.D
+        p :: Int
+
+      abd = new A.B.D
+      n :: Int = abd.p
+
+    test 'nested class', ->
       shouldBeTypeError """
       class A
       class A.B
@@ -1012,7 +1023,6 @@ suite 'TypeChecker', ->
       abc = new A.B.C
       n :: Int = abc.name
       """
-
 
     test 'throw double assignment', ->
       shouldBeError """
@@ -1707,3 +1717,29 @@ suite 'TypeChecker', ->
       class Entity implements Size
       e :: {z :: Int} = new Entity
       """
+
+    test 'implement with MemberAccess', ->
+      class A
+      class A.B
+      class A.B.C
+        a :: Int
+
+      struct S implements A.B.C
+        b :: Int
+
+      s :: {a :: Int, b :: Int} = {a: 1, b: 1}
+      t :: S = s
+
+    test 'implement with MemberAccess', ->
+      shouldBeTypeError """
+      class A
+      class A.B
+      class A.B.C
+        a :: Int
+
+      struct S implements A.B.C
+        b :: Int
+
+      s :: {a :: Int} = {a: 1, b: 1}
+      t :: S = s
+    """

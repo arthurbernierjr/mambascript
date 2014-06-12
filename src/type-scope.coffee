@@ -81,10 +81,11 @@ class Scope
         cur = cur.left
     # find or initialize module
     cur = @
-    for moduleName in ns
+    for moduleName in ns when moduleName?
       mod = cur.getModuleInScope(moduleName)
       unless mod
         if autoCreate
+          console.error '-- create module', moduleName
           mod = cur.addModule(moduleName)
         else
           return null
@@ -126,12 +127,11 @@ class Scope
   # getTypeByMemberAccess :: TypeRef -> Type
   getTypeByMemberAccess: (typeRef) ->
     ns = typeRef.left
-    property = typeRef.right
-
+    propName = typeRef.right
     mod = @resolveNamespace ns
     ret = _.find mod.types, (node) =>
-      node.identifier.typeRef is property
-    return (if ret.nodeType is 'struct' then ret.members else ret)
+      node.identifier.typeRef is propName
+    return (if ret?.nodeType is 'struct' then ret?.members else ret)
 
   # getType :: TypeRef -> Type
   getType: (typeRef) ->
