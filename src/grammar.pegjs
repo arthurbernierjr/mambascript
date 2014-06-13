@@ -351,6 +351,7 @@ block
 
 statement
   = structdef
+  / module
   / expression
   / return
   / continue
@@ -1295,6 +1296,11 @@ structdef = STRUCT !(_ "=") __ name:typeIdentifier _ implementArguments:implemen
   s.expr = props;
   s.implementArguments = implementArguments || null;
   return s;
+}
+
+MODULE = 'module'
+module = MODULE __ name:typeIdentifier _ TERMINDENT _ block: block _ DEDENT {
+  return rp(new CS.Int(1)); // Dummy
 }
 
 // TODO: FIX CS.Int hack

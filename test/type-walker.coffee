@@ -1743,3 +1743,51 @@ suite 'TypeChecker', ->
       s :: {a :: Int} = {a: 1, b: 1}
       t :: S = s
     """
+
+    test 'implement with MemberAccess', ->
+      class A
+      class A.B
+        a :: Int
+
+      struct S.T implements A.B
+        b :: Int
+
+      s :: {a :: Int, b :: Int} = {a: 1, b: 1}
+      t :: S.T = s
+
+    test 'implement with MemberAccess', ->
+      shouldBeTypeError """
+      class A
+      class A.B
+        a :: Int
+
+      struct S.T implements A.B
+        b :: Int
+
+      s :: {a :: Int} = {a: 1, b: 1}
+      t :: S.T = s
+      """
+
+    test 'implement with MemberAccess', ->
+      class A
+      class A.B
+        a :: Int
+
+      struct S.T<U> implements A.B
+        b :: U
+
+      s :: {a :: Int, b :: String} = {a: 1, b: 's'}
+      t :: S.T<String> = s
+
+    test 'implement with MemberAccess', ->
+      shouldBeTypeError """
+      class A
+      class A.B
+        a :: Int
+
+      struct S.T<U> implements A.B
+        b :: U
+
+      s :: {a :: Int, b :: String} = {a: 1, b: 's'}
+      t :: S.T<Int> = s
+      """
