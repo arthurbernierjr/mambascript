@@ -5,7 +5,7 @@ _ = require 'lodash'
 
 {checkType, checkTypeAnnotation }      = require './type-checker'
 {resolveType, extendType }             = require './type-resolver'
-{Scope, ClassScope, FunctionScope }    = require './type-scope'
+{Scope, ClassScope, FunctionScope, ModuleScope}    = require './type-scope'
 {initializeGlobalTypes, ImplicitAny }  = require './types'
 
 # CS_AST -> Scope
@@ -40,6 +40,23 @@ fromMemberAccessToRef = (node) ->
       h.right = cur.memberName
       parent = h
       cur = cur.expression
+  head
+
+fromObjectAccessToRef = (node) ->
+  head = left: {}, right: node.property.name, nodeType: 'MemberAccess'
+  cur = node.expression
+  h = head.left
+  parent = head
+  while true
+    if cur.name
+      parent.left = cur.name
+      break
+    else
+      h.nodeType = 'MemberAccess'
+      h = h.left = {}
+      h.right = cur.property.name
+      parent = h
+      cur = cur.object
   head
 
 createIdentifier = (node) ->
@@ -279,9 +296,13 @@ walkOfOp = (node, scope) ->
   return # TODO
 
 walkModule = (node, scope) ->
-  moduleScope = new Scope scope
-  scope.name = node.ident.data
-  walk node.body
+  if node.ident instanceof CS.Identifier
+    moduleScope = new ModuleScope scope
+    moduleScope.name = node.ident.data
+  else if node.ident instanceof CS.MemberAccessOp
+    ns = fromMemberAccessToRef(node.ident)
+    moduleScope = scope.resolveNamespace ns, true
+  walk node.body, moduleScope
 
 walkFor = (node, scope) ->
   walk node.target, scope

@@ -51,7 +51,7 @@ class Scope
 
   # addType :: Any * Object * Object -> Type
   addModule: (name) ->
-    scope = new Scope this
+    scope = new ModuleScope this
     scope.name = name
     # return @_modules[name] = scope
     mod =
@@ -227,8 +227,9 @@ class ClassScope extends Scope
   getConstructorType: ->
     (_.find @_this, (v) -> v.identifier.typeRef is '_constructor_')?.typeAnnotation
 
+class ModuleScope extends Scope
 class FunctionScope extends Scope
 
 module.exports = {
-  Scope, ClassScope, FunctionScope
+  Scope, ClassScope, FunctionScope, ModuleScope
 }
