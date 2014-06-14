@@ -30,9 +30,13 @@ fromMemberAccessToRef = (node) ->
   cur = node.expression
   h = head.left
   parent = head
+
   while true
     if cur instanceof CS.Identifier
       parent.left = cur.data
+      break
+    else if cur instanceof CS.This
+      parent.left = '@'
       break
     else if cur instanceof CS.MemberAccessOp
       h.nodeType = 'MemberAccess'
@@ -40,23 +44,6 @@ fromMemberAccessToRef = (node) ->
       h.right = cur.memberName
       parent = h
       cur = cur.expression
-  head
-
-fromObjectAccessToRef = (node) ->
-  head = left: {}, right: node.property.name, nodeType: 'MemberAccess'
-  cur = node.expression
-  h = head.left
-  parent = head
-  while true
-    if cur.name
-      parent.left = cur.name
-      break
-    else
-      h.nodeType = 'MemberAccess'
-      h = h.left = {}
-      h.right = cur.property.name
-      parent = h
-      cur = cur.object
   head
 
 createIdentifier = (node) ->
@@ -110,7 +97,6 @@ walkVardef = (node, scope) ->
             typeRef: symbol
             typeArguments: node.name?.identifier?.typeArguments
           typeAnnotation: node.expr
-
     else
       if val.typeAnnotation.implicit and val.typeAnnotation.identifier.typeRef is 'Any'
         val.typeAnnotation = node.expr
@@ -310,6 +296,7 @@ walkModule = (node, scope) ->
     moduleScope = scope.resolveNamespace ns, true
     # debug 'resolved', global._root_._modules
   walk node.body, moduleScope
+  # debug 'resolved', moduleScope
 
 walkFor = (node, scope) ->
   walk node.target, scope
@@ -564,6 +551,7 @@ walkIdentifier = (node, scope) ->
   # debug 'getModuleInScope' + node.data,scope.getModuleInScope(node.data)
   # debug 'scope', global._root_
   typeName = node.data
+  # debug 'identifier', node.data #, scope
   if val = scope.getVarInScope(typeName)
     typeAnnotation = val?.typeAnnotation
     node.typeAnnotation = typeAnnotation ? ImplicitAny
@@ -580,7 +568,7 @@ walkThis = (node, scope) ->
     nodeType: 'members'
     implicit: true
     identifier: createIdentifier('[this]')
-    properties: scope._this
+    properties: _.cloneDeep scope._this
 
 walkDynamicMemberAccessOp = (node, scope) ->
   node.typeAnnotation ?= ImplicitAny
@@ -595,35 +583,28 @@ walkProtoMemberAccessOp = (node, scope) ->
   return # TODO
 
 walkMemberAccess = (node, scope) ->
-  if node.instanceof CS.MemberAccessOp
+  # console.error node.raw
+
+  moduleFound = false
+  if node.expression instanceof CS.Identifier
+    if mod = scope.getModuleInScope(node.expression.data)
+      if childModule = mod.getModuleInScope(node.memberName)
+        moduleFound = true
+        node.typeAnnotation =
+          nodeType: 'members'
+          identifier: createIdentifier('[module]')
+          properties: _.cloneDeep childModule._this
+
+  unless moduleFound
     walk node.expression, scope
-
-  type = scope.getTypeByNode(node.expression.typeAnnotation)
-
-  if type
-    member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName
-    node.typeAnnotation = member?.typeAnnotation ? ImplicitAny # FIXME
-  else
-    node.typeAnnotation ?= ImplicitAny
-
-  # if node.instanceof CS.SoakedMemberAccessOp
-  #   walk node.expression, scope
-  #   identifier = scope.extendTypeLiteral(node.expression.typeAnnotation?.identifier)
-  #   if identifier?
-  #     node.typeAnnotation =
-  #       identifier:
-  #         possibilities:['Undefined', identifier[node.memberName]]
-  #   else
-  #     node.typeAnnotation = identifier: 'Any', explicit: false
-
-  # else if node.instanceof CS.MemberAccessOp
-  #   walk node.expression, scope
-  #   identifier = scope.extendTypeLiteral(node.expression.typeAnnotation?.identifier)
-  #   if identifier?
-  #     node.typeAnnotation = identifier: identifier[node.memberName], explicit: true
-  #   else
-  #     node.typeAnnotation = identifier: 'Any', explicit: false
-
+    if type = scope.getTypeByNode(node.expression.typeAnnotation)
+      member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName
+      if member?.typeAnnotation?
+        node.typeAnnotation = member?.typeAnnotation
+      else
+        node.typeAnnotation = ImplicitAny # FIXME
+    else
+      node.typeAnnotation ?= ImplicitAny
 
 walkArrayInializer = (node, scope) ->
   for member in node.members
@@ -665,13 +646,13 @@ walkObjectInitializer = (node, scope) ->
 
 walkClass = (node, scope) ->
   classScope = new ClassScope scope
-  walk node.nameAssignee, scope
 
-  ident = createIdentifier node.nameAssignee
-  className = ident?.typeRef.right ? ident?.typeRef ? '_class' + _.uniqueId()
-
-  if ns = ident.typeRef.left
-    scope = scope.resolveNamespace ns, true
+  if node.nameAssignee
+    walk node.nameAssignee, scope
+    ident = createIdentifier node.nameAssignee
+    className = ident?.typeRef.right ? ident?.typeRef ? '_class' + _.uniqueId()
+    if ns = ident.typeRef.left
+      scope = scope.resolveNamespace ns, true
 
   staticAnn =
     properties: []
@@ -745,8 +726,8 @@ walkClass = (node, scope) ->
       prop.nodeType = 'identifier' # hack for type checking
       prop
 
-  if scope instanceof ModuleScope
-    staticAnn.push
+  # if scope instanceof ModuleScope
+  #   staticAnn.push
 
   # constructor
   if node.ctor?

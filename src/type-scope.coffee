@@ -125,12 +125,16 @@ class Scope
 
   # getTypeByMemberAccess :: TypeRef -> Type
   getTypeByMemberAccess: (typeRef) ->
+    # console.error typeRef
     ns = typeRef.left
     propName = typeRef.right
     mod = @resolveNamespace ns
-    ret = _.find mod.types, (node) =>
-      node.identifier.typeRef is propName
-    return (if ret?.nodeType is 'struct' then ret?.members else ret)
+    if mod
+      ret = _.find mod.types, (node) =>
+        node.identifier.typeRef is propName
+      return (if ret?.nodeType is 'struct' then ret?.members else ret)
+    else
+      null
 
   # getType :: TypeRef -> Type
   getType: (typeRef) ->
@@ -142,10 +146,12 @@ class Scope
   # getTypeInScope :: TypeRef -> Type
   getTypeInScope: (typeRef) ->
     ret = @getType(typeRef) or @parent?.getTypeInScope(typeRef) or null
+    # console.error 'getTypeByIdentifier', typeRef
     ret
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByNode: (node) ->
+    # debug 'nodeType', node?.nodeType, node
     switch node?.nodeType
       when 'members'
         node
