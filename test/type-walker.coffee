@@ -1791,3 +1791,10 @@ suite 'TypeChecker', ->
       s :: {a :: Int, b :: String} = {a: 1, b: 's'}
       t :: S.T<Int> = s
       """
+
+  suite "Module", ->
+    test 'typecheck in module', ->
+      shouldBeTypeError """
+      module A
+        a :: Int = 'string'
+      """

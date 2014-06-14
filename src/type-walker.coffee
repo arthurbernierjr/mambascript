@@ -278,6 +278,11 @@ walkOfOp = (node, scope) ->
   node.typeAnnotation ?= ImplicitAny
   return # TODO
 
+walkModule = (node, scope) ->
+  moduleScope = new Scope scope
+  scope.name = node.ident.data
+  walk node.body
+
 walkFor = (node, scope) ->
   walk node.target, scope
   if node.valAssignee?
@@ -898,6 +903,8 @@ walk = (node, scope) ->
     when node.nodeType is 'vardef'       then walkVardef node, scope
     # Program
     when node.instanceof CS.Program      then walkProgram node, scope
+    # Module
+    when node.instanceof CS.Module       then walkModule node, scope
     # Block
     when node.instanceof CS.Block        then walkBlock node, scope
     # Retrun

@@ -85,7 +85,6 @@ class Scope
       mod = cur.getModuleInScope(moduleName)
       unless mod
         if autoCreate
-          console.error '-- create module', moduleName
           mod = cur.addModule(moduleName)
         else
           return null
