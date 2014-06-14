@@ -92,7 +92,7 @@ walkStruct = (node, scope) ->
 
 walkVardef = (node, scope) ->
   symbol = node.name.identifier.typeRef
-  if scope instanceof ClassScope
+  if (scope instanceof ClassScope) or (scope instanceof ModuleScope)
     # avoid 'constructor' because it's property has special action on EcmaScript
     if symbol is 'constructor'
       symbol = '_constructor_'
@@ -106,6 +106,14 @@ walkVardef = (node, scope) ->
             typeRef: symbol
             typeArguments: node.name?.identifier?.typeArguments
           typeAnnotation: node.expr
+      else if scope instanceof ModuleScope # FIXME: need refactor
+        scope.addThis
+          nodeType: 'variable'
+          identifier:
+            typeRef: symbol
+            typeArguments: node.name?.identifier?.typeArguments
+          typeAnnotation: node.expr
+
     else
       if val.typeAnnotation.implicit and val.typeAnnotation.identifier.typeRef is 'Any'
         val.typeAnnotation = node.expr
