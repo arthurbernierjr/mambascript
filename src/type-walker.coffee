@@ -73,10 +73,8 @@ createIdentifier = (node) ->
 # mergeStruct A, B
 mergeStruct = (left, list) ->
   for right in list
-    # debug 'mergeStruct', left, right
     for prop in right.properties
       left.properties.push prop
-  # debug 'mergedStruct',  left
   left
 
 walkStruct = (node, scope) ->
@@ -98,7 +96,6 @@ walkVardef = (node, scope) ->
       symbol = '_constructor_'
 
     unless val = scope.getThis symbol
-      # debug 'walkVardef', node
       unless node.isStatic
         scope.addThis
           nodeType: 'variable'
@@ -288,7 +285,6 @@ walkNewOp = (node, scope) ->
     ctorAnnotation = _.find ann.properties, (i) ->
       i.identifier?.typeRef is '_constructor_'
 
-  # debug 'walkNewOp', ctorAnnotation
   # argument type check
   for arg, n in args
     walk arg, scope
@@ -305,11 +301,14 @@ walkOfOp = (node, scope) ->
 
 walkModule = (node, scope) ->
   if node.ident instanceof CS.Identifier
-    moduleScope = new ModuleScope scope
-    moduleScope.name = node.ident.data
+    if mod = scope.getModuleInScope(node.ident.data)
+      moduleScope = mod
+    else
+      moduleScope = scope.addModule node.ident.data
   else if node.ident instanceof CS.MemberAccessOp
     ns = fromMemberAccessToRef(node.ident)
     moduleScope = scope.resolveNamespace ns, true
+    # debug 'resolved', global._root_._modules
   walk node.body, moduleScope
 
 walkFor = (node, scope) ->
@@ -562,10 +561,17 @@ walkNumbers = (node, scope) ->
     identifier: createIdentifier 'Number'
 
 walkIdentifier = (node, scope) ->
+  # debug 'getModuleInScope' + node.data,scope.getModuleInScope(node.data)
+  # debug 'scope', global._root_
   typeName = node.data
-  if scope.getVarInScope(typeName)
-    typeAnnotation = scope.getVarInScope(typeName)?.typeAnnotation
+  if val = scope.getVarInScope(typeName)
+    typeAnnotation = val?.typeAnnotation
     node.typeAnnotation = typeAnnotation ? ImplicitAny
+  else if mod = scope.getModuleInScope(node.data)
+    node.typeAnnotation =
+      nodeType: 'members'
+      properties: _.cloneDeep mod._this
+      identifier: createIdentifier('[module]')
   else
     node.typeAnnotation ?= ImplicitAny
 
@@ -738,7 +744,9 @@ walkClass = (node, scope) ->
     properties: _.map _.cloneDeep(classScope._this), (prop) ->
       prop.nodeType = 'identifier' # hack for type checking
       prop
-  # debug 'in class after add type', scope.getPositionInScope(), scope.types
+
+  if scope instanceof ModuleScope
+    staticAnn.push
 
   # constructor
   if node.ctor?
@@ -856,9 +864,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
     left = node.typeAnnotation.returnType ?= ImplicitAny
     right = node.body.typeAnnotation ?= ImplicitAny
-    # debug 'walkFunction l', left
-    # debug 'walkFunction r', right
-    # debug 'walkFunction body', node.body
     return unless checkTypeAnnotation scope, node, left, right
 
 walkFunctionApplication = (node, scope) ->

@@ -8,10 +8,10 @@ class Scope
   constructor: (@parent = null) ->
     @id = _.uniqueId()
 
-    @parent?.nodes.push this
+    # @parent?.nodes.push this
 
     @name = ''
-    @nodes  = [] #=> Scope[]
+    # @nodes  = [] #=> Scope[]
 
     # Scope vars
     @vars  = [] #=> Type[]
