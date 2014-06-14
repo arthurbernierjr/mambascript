@@ -165,6 +165,7 @@ createNodes
       Function: null # :: [Parameters] -> Maybe Exprs -> Function
       BoundFunction: null # :: [Parameters] -> Maybe Exprs -> BoundFunction
     ]
+
     DefaultParam: [['param', 'default']] # :: Parameters -> Exprs -> DefaultParam
     Identifiers: [
       ['data']
@@ -195,6 +196,8 @@ createNodes
 
     Rest: [['expression']] # :: Exprs -> Rest
     Spread: [['expression']] # :: Exprs -> Spread
+    Module: [['ident', 'body']] # :: TypeIdentifier -> Block -> Module
+    Annotation: [['data']] # :: TypeIdentifier -> Block -> Module
   ]
 
 
@@ -330,7 +333,6 @@ class exports.NegatedConditional extends Conditional
 # NegatedWhile :: Exprs -> Maybe Exprs -> NegatedWhile
 class exports.NegatedWhile extends While
   constructor: -> While.apply this, arguments
-
 # Note: This only represents the original syntactic specification as a "loop".
 # The node should be treated in all other ways as a While.
 # Loop :: Maybe Exprs -> Loop

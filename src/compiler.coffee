@@ -884,6 +884,30 @@ class exports.Compiler
           new JS.CallExpression (memberAccess (memberAccess (memberAccess (new JS.Identifier className) , '__super__'), functionName), 'call'), calledExprs
     ]
 
+    [CS.Module, ({ident, body}) ->
+      if ident.name?
+        new JS.CallExpression new JS.Identifier('_module_'), [
+          new JS.Literal(ident.name),
+          new JS.FunctionExpression null, [new JS.Identifier(ident.name)], body
+        ]
+      else
+        args = []
+        cur = ident
+        while true
+          if cur.name
+            args.unshift cur.name
+            break
+          args.unshift cur.property.name
+          cur = cur.object
+        literalName = args.join '.'
+        argsLiteral = args.map (i) -> new JS.Identifier i
+
+        new JS.CallExpression new JS.Identifier('_module_'), [
+          new JS.Literal("#{literalName}"),
+          new JS.FunctionExpression null, argsLiteral, body
+        ]
+    ]
+
     [CS.FunctionApplication, ({function: fn, arguments: args, compile}) ->
       if any args, (m) -> m.spread
         lhs = @function

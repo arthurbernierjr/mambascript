@@ -1299,8 +1299,8 @@ structdef = STRUCT !(_ "=") __ name:typeIdentifier _ implementArguments:implemen
 }
 
 MODULE = 'module'
-module = MODULE __ name:typeIdentifier _ TERMINDENT _ block: block _ DEDENT {
-  return rp(new CS.Int(1)); // Dummy
+module = MODULE __ ident:memberExpression _ TERMINDENT _ block: block _ DEDENT {
+  return rp(new CS.Module(ident, block)); // Dummy
 }
 
 // TODO: FIX CS.Int hack
@@ -1356,9 +1356,24 @@ typeRef
   / identifierName
 
 typeIdentifier
-  = v:VoidAlias {return {identifier:v, nodeType: 'identifier'}}
-  / "(" _ ret: _typeIdentifier _ ")" { return {identifier: ret, nodeType: 'identifier'};}
-  / t:_typeIdentifier { return {identifier: t, nodeType: 'identifier'};}
+  = v:VoidAlias {
+    var node = new CS.Int(0);
+    node.identifier = v;
+    node.nodeType = 'identifier';
+    return rp(node);
+  }
+  / "(" _ ret: _typeIdentifier _ ")" {
+    var node = new CS.Int(0);
+    node.identifier = v;
+    node.nodeType = 'identifier';
+    return rp(node);
+  }
+  / t:_typeIdentifier {
+    var node = new CS.Int(0);
+    node.identifier = t;
+    node.nodeType = 'identifier';
+    return rp(node);
+  }
 
   _typeIdentifier = symbol:typeRef args: typeArgumentLiteral? nullable:'?'? isArray:isArray? wholeNullable:'?'? {
     var obj = {typeRef: symbol};
