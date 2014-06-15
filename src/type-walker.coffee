@@ -548,6 +548,7 @@ walkNumbers = (node, scope) ->
     identifier: createIdentifier 'Number'
 
 walkIdentifier = (node, scope) ->
+  # debug 'walkIdentifier', node, node.raw
   # debug 'getModuleInScope' + node.data,scope.getModuleInScope(node.data)
   # debug 'scope', global._root_
   typeName = node.data
@@ -583,27 +584,36 @@ walkProtoMemberAccessOp = (node, scope) ->
   return # TODO
 
 walkMemberAccess = (node, scope) ->
-  # console.error node.raw
-
   moduleFound = false
   if node.expression instanceof CS.Identifier
     if mod = scope.getModuleInScope(node.expression.data)
       if childModule = mod.getModuleInScope(node.memberName)
         moduleFound = true
+        scope = childModule
         node.typeAnnotation =
           nodeType: 'members'
+          module: childModule # FIXME
           identifier: createIdentifier('[module]')
           properties: _.cloneDeep childModule._this
 
+  # console.error 'walkMemberAccess', node.raw, moduleFound
+
   unless moduleFound
     walk node.expression, scope
+    # # console.error 'walk exp', node.expression.typeAnnotation, node.memberName
+    # console.error '-', node.memberName, 'of scope:', scope.name, node.expression.typeAnnotation
+    # if mod = node.expression.typeAnnotation.module
+    #   console.error 'child node', mod, node.memberName
+    #   # if cmod = mod.getModuleInScope(node.memberName)
+    #     # scope =
+
+    # console.error 'walk moduleFound', moduleFound
     if type = scope.getTypeByNode(node.expression.typeAnnotation)
+      # debug 'found', type
       member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName
-      if member?.typeAnnotation?
-        node.typeAnnotation = member?.typeAnnotation
-      else
-        node.typeAnnotation = ImplicitAny # FIXME
+      node.typeAnnotation = member?.typeAnnotation ? ImplicitAny
     else
+      # debug 'not found'
       node.typeAnnotation ?= ImplicitAny
 
 walkArrayInializer = (node, scope) ->
@@ -772,7 +782,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
       return unless checkTypeAnnotation scope, node,  annotation, preAnnotation
 
     node.typeAnnotation = preAnnotation
-
     node.parameters?.map (param, n) ->
       if param.typeAnnotation?
         return unless checkTypeAnnotation scope, node, preAnnotation.arguments[n], param.typeAnnotation
@@ -781,11 +790,20 @@ walkFunction = (node, scope, preAnnotation = null) ->
         walk param, functionScope
 
       param.typeAnnotation ?= preAnnotation.arguments?[n] ? ImplicitAny
-
       if param instanceof CS.Identifier
         functionScope.addVar
           nodeType: 'variable'
           identifier: createIdentifier(param)
+          typeAnnotation: param.typeAnnotation
+      else if param instanceof CS.Rest
+        preLastArg = preAnnotation.arguments[n]
+        argType = _.cloneDeep preLastArg
+        delete argType.identifier.splats
+        argType.identifier.isArray = true
+        param.typeAnnotation = argType
+        functionScope.addVar
+          nodeType: 'variable'
+          identifier: createIdentifier(param.expression)
           typeAnnotation: param.typeAnnotation
 
       # getX :: Int[] -> Int = ([x, y]) -> x
@@ -794,7 +812,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
         if preAnn
           for member in param.members
             type =  _.cloneDeep resolveType scope, preAnn
-            type.identifier.isArRay = false
+            type.identifier.isArray = false
             if type.nodeType is 'primitiveIdentifier'
               t = _.cloneDeep preAnn
               delete t.identifier.isArray
@@ -845,21 +863,17 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
     left = node.typeAnnotation.returnType ?= ImplicitAny
     right = node.body.typeAnnotation ?= ImplicitAny
+    # debug 'node.body', node.body
+    # debug 'left', left
+    # debug 'right', right
     return unless checkTypeAnnotation scope, node, left, right
+
 
 walkFunctionApplication = (node, scope) ->
   walk node.function, scope
 
   for arg, n in node.arguments
     walk arg, scope
-
-    # preAnn = node.function.typeAnnotation?.arguments?[n]
-    # debug 'preAnn', preAnn
-    # if arg instanceof CS.Function and preAnn
-    #   walkFunction arg, scope, preAnn
-    # else
-    #   walk arg, scope
-
 
   type = scope.getVarInScope node.function.data
   if type?.identifier?.typeArguments?.length
@@ -881,9 +895,16 @@ walkFunctionApplication = (node, scope) ->
   else if node.function.typeAnnotation?.nodeType is 'primitiveIdentifier'
     node.typeAnnotation ?= ImplicitAny
 
+  splatsType = null
   for arg, n in node.arguments
     left = node.function.typeAnnotation?.arguments?[n]
     right = arg?.typeAnnotation
+
+    if left?.identifier?.splats
+      splatsType = _.clone left
+      delete splatsType.identifier.splats
+
+    left ?= splatsType
 
     if arg instanceof CS.Function
       if node.function.typeAnnotation?.identifier?.typeRef isnt 'Any'
@@ -905,7 +926,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  # console.error 'walking node:', node?.className , node?.raw
+  # console.error 'walking node:', node?.className #, node?.raw
   # debug 'walk', node
   switch
     # undefined(mayby null body)

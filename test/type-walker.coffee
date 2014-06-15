@@ -1,6 +1,18 @@
 {initializeGlobalTypes} = require '../lib/types'
 reporter = require '../lib/reporter'
 
+root = window ? global ? this
+root._module_ = (ns, f, context = root) =>
+  context ?= root
+  hist = []
+  for name in ns.split('.')
+    unless context[name]?
+      context[name] = {}
+    context = context[name]
+    hist.push context
+  f.apply context, hist
+
+
 parse = (coffee) ->
   reporter.clean()
   parse coffee
@@ -543,6 +555,34 @@ suite 'TypeChecker', ->
     #   shouldBeTypeError """
     #   f = (n :: Number) :: String ->  n * n
     #   """
+
+    test 'splats', ->
+      f :: Int... -> Int[]
+      f = (args...) ->
+        args
+      f 1, 2, 3
+
+    test 'splats', ->
+      shouldBeTypeError """
+      f :: Int... -> Int[]
+      f = (args...) ->
+        args
+      f 1, '', 3
+      """
+
+    test 'splats', ->
+      f :: String * Int... -> Int[]
+      f = (s, args...) ->
+        args
+      f '', 1, 2, 3
+
+    test 'splats', ->
+      shouldBeTypeError """
+      f :: String * Int... -> Int[]
+      f = (s, args...) ->
+        args
+      f '', '', 3
+      """
 
   suite 'FunctionApplication', ->
     test 'typed function and binding', ->
@@ -1793,8 +1833,47 @@ suite 'TypeChecker', ->
       """
 
   suite "Module", ->
+
+    test 'module', ->
+      module X
+        @a :: Int
+
     test 'typecheck in module', ->
       shouldBeTypeError """
       module A
         a :: Int = 'string'
       """
+
+    test 'module', ->
+      module X
+        @a :: Int
+        @a = 1
+      a :: Int = X.a
+
+    test 'nested module declare', ->
+      module X.Y
+        @a :: Int
+        @a = 1
+      a :: Int = X.Y.a
+
+    test 'nested module declare', ->
+      shouldBeTypeError """
+      module X.Y
+        @a :: Int
+        @a = 1
+      a :: String = X.Y.a
+      """
+
+    # test 'nested module declare', ->
+    #   module X.Y.Z
+    #     @a :: Int
+    #     @a = 1
+    #   a :: Int = X.Y.Z.a
+
+    # test 'nested module declare', ->
+    #   shouldBeTypeError """
+    #   module X.Y.Z
+    #     @a :: Int
+    #     @a = 1
+    #   a :: Int = X.Y.Z.a
+    #   """

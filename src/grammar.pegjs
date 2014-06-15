@@ -1375,12 +1375,13 @@ typeIdentifier
     return rp(node);
   }
 
-  _typeIdentifier = symbol:typeRef args: typeArgumentLiteral? nullable:'?'? isArray:isArray? wholeNullable:'?'? {
+  _typeIdentifier = symbol:typeRef args: typeArgumentLiteral? nullable:'?'? isArray:isArray? wholeNullable:'?'? splats:'...'?{
     var obj = {typeRef: symbol};
     if(isArray) obj.isArray = true;
     if(nullable) obj.nullable = true;
     if(wholeNullable) obj.wholeNullable = true;
     if(args) obj.typeArguments = (args || []);
+    if(splats) obj.splats = true;
     return obj;
   }
   isArray = "[" _ "]" {return true}

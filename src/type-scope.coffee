@@ -159,10 +159,10 @@ class Scope
         node
       when 'identifier'
         @getTypeInScope(node.identifier.typeRef)
-      when 'functionType'
-        ImplicitAny
-      else
-        ImplicitAny
+      # when 'functionType'
+      #   ImplicitAny
+      # else
+      #   ImplicitAny
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByIdentifier: (identifier) ->

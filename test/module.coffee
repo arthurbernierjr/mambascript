@@ -10,17 +10,17 @@ root._module_ = (ns, f, context = root) =>
   f.apply context, hist
 
 suite 'Module', ->
-  test 'simple arrays', ->
+  test 'module', ->
     module X
       @x = 3
     eq X.x, 3
 
-  test 'simple arrays', ->
+  test 'nested module', ->
     module X.Y
       @x = 3
     eq X.Y.x, 3
 
-  test 'simple arrays', ->
+  test 'inner property access', ->
     module X.Y
       Y.x = 3
     eq X.Y.x, 3
