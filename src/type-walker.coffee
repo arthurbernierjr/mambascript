@@ -290,13 +290,12 @@ walkModule = (node, scope) ->
     if mod = scope.getModuleInScope(node.ident.data)
       moduleScope = mod
     else
-      moduleScope = scope.addModule node.ident.data
+      parentMod = scope.getParentModule()
+      moduleScope = parentMod.addModule node.ident.data
   else if node.ident instanceof CS.MemberAccessOp
     ns = fromMemberAccessToRef(node.ident)
-    moduleScope = scope.resolveNamespace ns, true
-    # debug 'resolved', global._root_._modules
+    moduleScope = scope.getParentModule().resolveNamespace ns, true
   walk node.body, moduleScope
-  # debug 'resolved', moduleScope
 
 walkFor = (node, scope) ->
   walk node.target, scope
@@ -547,19 +546,25 @@ walkNumbers = (node, scope) ->
     implicit: true
     identifier: createIdentifier 'Number'
 
+
+moduleToProperties = (mod) ->
+  properties = _.cloneDeep mod._this
+  mod._modules.forEach ({scope, identifier}) =>
+    properties.push
+      nodeType: 'moduleRef'
+      identifier: _.cloneDeep identifier
+      moduleId: scope.id
+  _.cloneDeep properties
+
 walkIdentifier = (node, scope) ->
-  # debug 'walkIdentifier', node, node.raw
-  # debug 'getModuleInScope' + node.data,scope.getModuleInScope(node.data)
-  # debug 'scope', global._root_
-  typeName = node.data
-  # debug 'identifier', node.data #, scope
-  if val = scope.getVarInScope(typeName)
+  if val = scope.getVarInScope(node.data)
     typeAnnotation = val?.typeAnnotation
     node.typeAnnotation = typeAnnotation ? ImplicitAny
   else if mod = scope.getModuleInScope(node.data)
+    properties = moduleToProperties(mod)
     node.typeAnnotation =
       nodeType: 'members'
-      properties: _.cloneDeep mod._this
+      properties: properties
       identifier: createIdentifier('[module]')
   else
     node.typeAnnotation ?= ImplicitAny
@@ -584,37 +589,26 @@ walkProtoMemberAccessOp = (node, scope) ->
   return # TODO
 
 walkMemberAccess = (node, scope) ->
-  moduleFound = false
-  if node.expression instanceof CS.Identifier
-    if mod = scope.getModuleInScope(node.expression.data)
-      if childModule = mod.getModuleInScope(node.memberName)
-        moduleFound = true
-        scope = childModule
+  walk node.expression, scope
+  if type = scope.getTypeByNode(node.expression.typeAnnotation)
+    member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName
+    if member?
+      if member.nodeType is 'moduleRef'
+
+        mod = scope.findModuleById(member.moduleId)
+        unless mod?
+          throw 'unresolved module:'+member.moduleId
+
+        props = moduleToProperties(mod)
         node.typeAnnotation =
+          properties: props
           nodeType: 'members'
-          module: childModule # FIXME
-          identifier: createIdentifier('[module]')
-          properties: _.cloneDeep childModule._this
+          identifier: createIdentifier mod.name
+      else
+        node.typeAnnotation = member.typeAnnotation
+    node.typeAnnotation ?= member?.typeAnnotation
 
-  # console.error 'walkMemberAccess', node.raw, moduleFound
-
-  unless moduleFound
-    walk node.expression, scope
-    # # console.error 'walk exp', node.expression.typeAnnotation, node.memberName
-    # console.error '-', node.memberName, 'of scope:', scope.name, node.expression.typeAnnotation
-    # if mod = node.expression.typeAnnotation.module
-    #   console.error 'child node', mod, node.memberName
-    #   # if cmod = mod.getModuleInScope(node.memberName)
-    #     # scope =
-
-    # console.error 'walk moduleFound', moduleFound
-    if type = scope.getTypeByNode(node.expression.typeAnnotation)
-      # debug 'found', type
-      member = _.find type.properties, (prop) => prop.identifier?.typeRef is node.memberName
-      node.typeAnnotation = member?.typeAnnotation ? ImplicitAny
-    else
-      # debug 'not found'
-      node.typeAnnotation ?= ImplicitAny
+  node.typeAnnotation ?= ImplicitAny
 
 walkArrayInializer = (node, scope) ->
   for member in node.members
@@ -863,9 +857,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
     left = node.typeAnnotation.returnType ?= ImplicitAny
     right = node.body.typeAnnotation ?= ImplicitAny
-    # debug 'node.body', node.body
-    # debug 'left', left
-    # debug 'right', right
     return unless checkTypeAnnotation scope, node, left, right
 
 

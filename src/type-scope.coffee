@@ -49,6 +49,28 @@ class Scope
       else break
     root
 
+  getParentModule: ->
+    return @ unless @parent
+    root = @parent
+    while root
+      return root if root instanceof ModuleScope
+      return root unless root.parent?
+      root = root.parent
+
+  _findModuleById: (moduleId) ->
+    # console.error moduleId, 'findModule', @name, @id
+    for {scope} in @_modules
+      if scope.id is moduleId
+        return scope
+      else
+        if ret = scope._findModuleById(moduleId)
+          return ret
+    null
+
+  findModuleById: (moduleId) ->
+    root = @getRoot()
+    root._findModuleById(moduleId)
+
   # addType :: Any * Object * Object -> Type
   addModule: (name) ->
     scope = new ModuleScope this
@@ -151,7 +173,6 @@ class Scope
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByNode: (node) ->
-    # debug 'nodeType', node?.nodeType, node
     switch node?.nodeType
       when 'members'
         node

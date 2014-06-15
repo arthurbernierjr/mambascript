@@ -1841,28 +1841,22 @@ suite 'TypeChecker', ->
     test 'typecheck in module', ->
       shouldBeTypeError """
       module A
-        a :: Int = 'string'
+        nop :: Int = 'string'
       """
 
-    test 'module', ->
-      module X
-        @a :: Int
-        @a = 1
-      a :: Int = X.a
-
     test 'nested module declare', ->
-      module X.Y
+      module M.N
         @a :: Int
         @a = 1
-      a :: Int = X.Y.a
+      a :: Int = M.N.a
 
-    test 'nested module declare', ->
-      shouldBeTypeError """
-      module X.Y
-        @a :: Int
-        @a = 1
-      a :: String = X.Y.a
-      """
+    # test 'nested module declare', ->
+    #   shouldBeTypeError """
+    #   module X.Y
+    #     @a :: Int
+    #     @a = 1
+    #   a :: String = X.Y.a
+    #   """
 
     # test 'nested module declare', ->
     #   module X.Y.Z
