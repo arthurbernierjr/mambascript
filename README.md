@@ -41,8 +41,44 @@ Current biggest issues is implementation of typescript d.ts importer.
 
 TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dts-parser "mizchi/dts-parser")
 
+### Current Tasks(v0.12)
+#### wip
 
-### `v0.11`(current version)
+- module system
+- robust namespace resolver
+- splats argument such as `( args...: T[] ) -> `
+- TypeScript `*.d.ts` importer
+- typealias such as `typealias Bar = Foo<T>[]`
+- Annotate module.exports by top level `@exportFunction :: Int -> Int`
+
+## Milestone
+
+### `v0.13`
+
+- Be stable(RC for 1.0)
+- Add more tests.
+- Coverage of types to symbol
+- Infer super arguments in class
+- (Fix CoffeeScriptRedux bugs if I can)
+
+## Known bugs
+
+- Compiler can't resolve module namespace when namespace has more than three dots, such as `A.B.C.d`
+- Take over all coffee-script-redux problems
+	- super with member access `super().member`
+	- object literal parsing in class field
+
+## How to contribute
+
+You can use this compiler without type annotation. All test by `CoffeeScriptRedux` passed.
+
+If you encounter bugs, such as type interface... parser..., please report as github issues or pull request to me. I also welcome new syntax proposal.
+
+I DON'T reccomend to use in production yet.
+
+## CHANGE LOG
+
+### `v0.11`
 
 - Generics
 - TypeArgument
@@ -66,39 +102,6 @@ TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dt
 ### `~v0.9`
 
 - Implement basic concepts
-
-## Milestone
-
-### `v0.12`
-
-- module system
-- robust namespace resolver
-- typealias such as `typealias Bar = Foo<T>[]`
-- TypeScript `*.d.ts` importer
-
-### `v0.13`
-
-- Be stable!(RC for 1.0)
-- Add more tests.
-- Coverage of types to symbol
-- Annotate module.exports by top level `@exportFunction :: Int -> Int`
-- Infer super arguments in class
-- (Fix CoffeeScriptRedux bugs if I can)
-
-## How to contribute
-
-You can use this compiler without type annotation. All test by `CoffeeScriptRedux` passed.
-
-If you encounter bugs, such as type interface... parser..., please report as github issues or pull request to me. I also welcome new syntax proposal.
-
-I DON'T reccomend to use in production yet.
-
-## Known issues
-
-- Take over all coffee-script-redux problems
-	- super with member access `super().member`
-	- object literal parsing in class field
-  - and so on
 
 ## Examples
 
