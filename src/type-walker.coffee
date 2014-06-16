@@ -26,12 +26,16 @@ checkNodes = (cs_ast) ->
   return root
 
 fromMemberAccessToRef = (node) ->
+  if node instanceof CS.Identifier
+    return node.data
+
+  # debug 'fromMemberAccessToRef', node
   head = left: {}, right: node.memberName , nodeType: 'MemberAccess'
   cur = node.expression
   h = head.left
   parent = head
 
-  while true
+  while cur
     if cur instanceof CS.Identifier
       parent.left = cur.data
       break
@@ -43,7 +47,7 @@ fromMemberAccessToRef = (node) ->
       h = h.left = {}
       h.right = cur.memberName
       parent = h
-      cur = cur.expression
+    cur = cur.expression
   head
 
 createIdentifier = (node) ->
@@ -258,9 +262,22 @@ walkSwitch = (node, scope) ->
     node.typeAnnotation = ImplicitAny
 
 walkNewOp = (node, scope) ->
+  # console.log '---', node.raw
   ctor = node.ctor?.ctor ? node.ctor
   args = node.ctor?.arguments ? node.arguments
-  ann = scope.getTypeByIdentifier createIdentifier(ctor)
+
+  # ann = scope.getTypeByIdentifier createIdentifier(ctor)
+  if ctor instanceof CS.Identifier
+    ann = scope.getTypeByIdentifier createIdentifier(ctor)
+  else if ctor instanceof CS.MemberAccessOp
+    ns = fromMemberAccessToRef(ctor.expression)
+    parentScope = scope.getParentModule().resolveNamespace ns
+    # debug 'parentScope ', parentScope
+    # debug 'aaaa', node.raw
+    if parentScope
+      ann = parentScope.getType ctor.memberName
+    else
+      ann = ImplicitAny
 
   # override types
   if ctor.typeArguments?.length
@@ -650,14 +667,27 @@ walkObjectInitializer = (node, scope) ->
 
 walkClass = (node, scope) ->
   classScope = new ClassScope scope
+  className = null
 
-  if node.nameAssignee
+  isThis = false
+
+  if node?.nameAssignee instanceof CS.Identifier
     walk node.nameAssignee, scope
     ident = createIdentifier node.nameAssignee
     className = ident?.typeRef.right ? ident?.typeRef ? '_class' + _.uniqueId()
     if ns = ident.typeRef.left
-      scope = scope.resolveNamespace ns, true
+      parentScope = scope.resolveNamespace ns, true
+  else if node?.nameAssignee instanceof CS.MemberAccessOp
+    # walk node.nameAssgnee, scope
+    ref = fromMemberAccessToRef node.nameAssignee #.expression
+    className = ref.right
+    if ref.left in ['@', 'this']
+      isThis = true
+    else
+      # scope = scope.getParentModule().resolveNamespace ref.left, true
+      parentScope = scope.getParentModule().resolveNamespace ref.left, true
 
+  className ?= '[unnamed-class]'+_.uniqueId()
   staticAnn =
     properties: []
     nodeType: 'members'
@@ -674,11 +704,6 @@ walkClass = (node, scope) ->
         nodeType: 'identifier'
         identifier:
           typeRef: arg.identifier.typeRef
-        # typeAnnotation:
-        #   unresolved: true
-        #   nodeType: 'identifier'
-        #   identifier:
-        #     typeRef: arg.identifier.typeRef
 
   # has parent class?
   if node.implementArguments?.length
@@ -714,13 +739,19 @@ walkClass = (node, scope) ->
       else
         walkVardef statement, classScope
 
-  scope.addVar
+  val =
     nodeType: 'variable'
     identifier:
       typeRef: className
     typeAnnotation: staticAnn
 
-  scope.addType
+  if isThis
+    scope.addThis val
+    parentScope?.addThis val
+  else
+    scope.addVar val
+
+  (parentScope ? scope).addType
     nodeType: 'members'
     newable: true
     identifier:

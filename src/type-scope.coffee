@@ -50,6 +50,7 @@ class Scope
     root
 
   getParentModule: ->
+    return @ if @ instanceof ModuleScope
     return @ unless @parent
     root = @parent
     while root
@@ -73,6 +74,10 @@ class Scope
 
   # addType :: Any * Object * Object -> Type
   addModule: (name) ->
+    # for m in @_modules
+    #   if m.identifier.typeRef is name
+    #     throw 'Adding module is exsited: '+name
+
     scope = new ModuleScope this
     scope.name = name
     # return @_modules[name] = scope
@@ -92,6 +97,7 @@ class Scope
 
   # resolveNamespace :: TypeRef -> Module
   resolveNamespace: (ref, autoCreate = false) ->
+    # debug 'resolveNamespace ref', ref
     ns = []
     cur = ref
     while true
@@ -190,8 +196,10 @@ class Scope
     @getTypeInScope(identifier.typeRef)
 
   # addThis :: Type * TypeArgument[] -> ()
-  addThis: (type, args = []) ->
-    # TODO: Refactor with addThis
+  addThis: (type) ->
+    # for v in @_this
+    #   if v.identifier.typeRef is type.identifier.typeRef
+    #     throw 'Adding this param is exsited: '+type.identifier.typeRef
     @_this.push type
 
   getThis: (propName) ->
@@ -202,8 +210,13 @@ class Scope
     @getThis(typeName)?.typeAnnotation
 
   # addVar :: Type * TypeArgument[] -> ()
-  addVar: (type, args = []) ->
-    # TODO: Apply typeArgument
+  addVar: (type) ->
+    # console.log 'type', type
+    # if type.identifier?.typeRef?
+    #   for v in @vars when v?.identifier?.typeRef?
+    #     if v.identifier.typeRef is type.identifier.typeRef
+    #       debug 'scope at addVar', @name
+    #       throw 'Adding var is exsited: '+type.identifier.typeRef
     @vars.push type
 
   # getVar :: String -> ()

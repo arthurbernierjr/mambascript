@@ -1761,14 +1761,14 @@ suite 'TypeChecker', ->
     test 'implement with MemberAccess', ->
       class A
       class A.B
-      class A.B.C
+      class A.B.C2
         a :: Int
 
-      struct S implements A.B.C
+      struct S2 implements A.B.C2
         b :: Int
 
       s :: {a :: Int, b :: Int} = {a: 1, b: 1}
-      t :: S = s
+      t :: S2 = s
 
     test 'implement with MemberAccess', ->
       shouldBeTypeError """
@@ -1885,3 +1885,22 @@ suite 'TypeChecker', ->
           a :: Int
       a :: X.Y.Z.A = a: ''
       """
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        class @A
+          a :: Int
+      a :: X.Y.Z.A = a: 1
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        class @A
+          a :: Int
+      a :: {a :: Int} = new X.Y.Z.A
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        class @A
+          a :: Int
+      a :: X.Y.Z.A = new X.Y.Z.A
+
