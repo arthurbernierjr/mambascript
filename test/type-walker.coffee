@@ -1850,24 +1850,24 @@ suite 'TypeChecker', ->
         @a = 1
       a :: Int = M.N.a
 
-    # test 'nested module declare', ->
-    #   shouldBeTypeError """
-    #   module X.Y
-    #     @a :: Int
-    #     @a = 1
-    #   a :: String = X.Y.a
-    #   """
+    test 'nested module declare', ->
+      shouldBeTypeError """
+      module X.Y
+        @a :: Int
+        @a = 1
+      a :: String = X.Y.a
+      """
 
-    # test 'nested module declare', ->
-    #   module X.Y.Z
-    #     @a :: Int
-    #     @a = 1
-    #   a :: Int = X.Y.Z.a
+    test 'nested module declare', ->
+      module X.Y.Z
+        @a :: Int
+        @a = 1
+      a :: Int = X.Y.Z.a
 
-    # test 'nested module declare', ->
-    #   shouldBeTypeError """
-    #   module X.Y.Z
-    #     @a :: Int
-    #     @a = 1
-    #   a :: Int = X.Y.Z.a
-    #   """
+    test 'nested module declare', ->
+      shouldBeTypeError """
+      module X.Y.Z
+        @a :: Int
+        @a = 1
+      a :: String = X.Y.Z.a
+      """
