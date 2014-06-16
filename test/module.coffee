@@ -19,8 +19,3 @@ suite 'Module', ->
     module X.Y
       @x = 3
     eq X.Y.x, 3
-
-  # test 'inner property access', ->
-  #   module X.Y
-  #     Y.x = 3
-  #   eq X.Y.x, 3

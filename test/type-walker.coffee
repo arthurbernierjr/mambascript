@@ -1871,3 +1871,17 @@ suite 'TypeChecker', ->
         @a = 1
       a :: String = X.Y.Z.a
       """
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        struct A
+          a :: Int
+      a :: X.Y.Z.A = a: 1
+
+    test 'nested module declare', ->
+      shouldBeTypeError """
+      module X.Y.Z
+        struct A
+          a :: Int
+      a :: X.Y.Z.A = a: ''
+      """
