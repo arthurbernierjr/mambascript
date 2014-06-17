@@ -42,14 +42,15 @@ Current biggest issues is implementation of typescript d.ts importer.
 TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dts-parser "mizchi/dts-parser")
 
 ### Current Tasks(v0.12)
-#### wip
 
 - module system
 - robust namespace resolver
 - splats argument such as `( args...: T[] ) -> `
+
+#### Wip
+
 - TypeScript `*.d.ts` importer
 - typealias such as `typealias Bar = Foo<T>[]`
-- Annotate module.exports by top level `@exportFunction :: Int -> Int`
 
 ## Milestone
 
