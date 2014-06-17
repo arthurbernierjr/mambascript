@@ -46,6 +46,7 @@ TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dt
 - module system
 - robust namespace resolver
 - splats argument such as `( args...: T[] ) -> `
+- this scope in bound function 
 
 #### Wip
 
