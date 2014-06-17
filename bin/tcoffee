@@ -17,6 +17,7 @@ reporter = require '../lib/reporter'
   .boolean('bare')
   .boolean('scope')
   .boolean('self')
+  .boolean('print')
   .alias('c', 'compile')
   .alias('e', 'execute')
   .alias('b', 'bare')
@@ -55,6 +56,7 @@ mode = switch
   when argv._.length > 0      then 'execute'
   else 'repl'
 
+moduleCode = 'var _include_,_module_;_module_=function(e){return function(t,n,r){var i,s,o,u,a,f,l;r==null&&(r=o),o=(f=typeof window!=="undefined"&&window!==null?window:global)!=null?f:e,r==null&&(r=o),i=[],l=t.split(".");for(u=0,a=l.length;u<a;u++)s=l[u],r[s]==null&&(r[s]={}),r=r[s],i.push(r);return n.apply(r,i)}}(this),_include_=function(e,t){var n,r;for(n in t)r=t[n],e[n]=r;return t};'
 class Code
   @join: (codes, to) ->
     c = new Code
@@ -71,6 +73,9 @@ class Code
     console.log 'compile:', @from, '->', @to
 
   write: (callback) ->
+    console.log 'write to', @to
+    if global._root_.hasModule
+      @code = moduleCode + '\n' + @code
     fs.writeFile @to, @code, (err) =>
       throw err if err
       console.log 'compile:', @from, '->', @to
@@ -133,19 +138,20 @@ switch mode
 
     # if argv.join and argv.browserify # TODO
     if argv.join
-      console.log codes
-      console.log 'join:', argv.join
       outpath = path.join(argv.out or '', argv.join)
       joined = Code.join(codes, outpath)
       joined.write()
     else
       for code in codes
-        code.write()
+        if argv.print
+          console.log code.code
+        else
+          code.write()
 
   when 'execute'
     fpath = argv.execute ?  argv._[0]
     source = fs.readFileSync(fpath).toString()
-    run fpath, source
+    run fpath, '\`' + moduleCode + '\`\n' + source
     # js = compileFromSourceToJS(source)
     # vm = require 'vm'
     # vm.runInThisContext js, fpath

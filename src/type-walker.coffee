@@ -302,6 +302,7 @@ walkOfOp = (node, scope) ->
   return # TODO
 
 walkModule = (node, scope) ->
+  global._root_.hasModule = true
   if node.ident instanceof CS.Identifier
     if mod = scope.getModuleInScope(node.ident.data)
       moduleScope = mod
