@@ -773,6 +773,9 @@ walkFunction = (node, scope, preAnnotation = null) ->
   if scope instanceof ClassScope # TODO: fat arrow
     functionScope._this = scope._this
 
+  if node instanceof CS.BoundFunction
+    functionScope._this = scope._this
+
   if preAnnotation?
     if node.typeAnnotation?
       annotation = _.cloneDeep node.typeAnnotation
@@ -923,7 +926,7 @@ walkFunctionApplication = (node, scope) ->
 # Node -> void
 walk = (node, scope) ->
   return unless node?
-  # console.error 'walking node:', node?.className #, node?.raw
+  # console.error 'walking node:', node?.className, node?.raw
   switch
     # undefined(mayby null body)
     when not node? then return
@@ -982,7 +985,7 @@ walk = (node, scope) ->
     # Class
     when node.instanceof CS.Class             then walkClass node, scope
     # Function
-    when node.instanceof CS.Function          then walkFunction node, scope
+    when (node.instanceof CS.Function) or node.instanceof CS.BoundFunction then walkFunction node, scope
     # FunctionApplication
     when node.instanceof CS.FunctionApplication then walkFunctionApplication node, scope
     # left.typeAnnotation.identifier

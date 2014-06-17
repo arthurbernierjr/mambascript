@@ -20,6 +20,28 @@ shouldBeError = (input) ->
     return
   throw 'must be error but parsed'
 
+root = window ? global ? this
+root._module_ = (ns, f, context = root) =>
+  context ?= root
+  hist = []
+  for name in ns.split('.')
+    unless context[name]?
+      context[name] = {}
+    context = context[name]
+    hist.push context
+  f.apply context, hist
+
+suite 'Module', ->
+  test 'module', ->
+    module X
+      @x = 3
+    eq X.x, 3
+
+  test 'nested module', ->
+    module X.Y
+      @x = 3
+    eq X.Y.x, 3
+
 suite 'TypeChecker', ->
   setup ->
     global._root_.vars = []
@@ -1156,6 +1178,22 @@ suite 'TypeChecker', ->
           @text = n
           1
       """
+
+    test 'bound function', ->
+      class A
+        name :: String
+        f: ->
+          setTimeout =>
+            @name = ''
+
+    test 'bound function', ->
+      shouldBeTypeError '''
+      class A
+        name :: String
+        f: ->
+          setTimeout =>
+            @name = 1
+      '''
 
     suite 'MemberAccess in class', ->
       test 'access this in class', ->
