@@ -73,7 +73,6 @@ class Code
     console.log 'compile:', @from, '->', @to
 
   write: (callback) ->
-    console.log 'write to', @to
     if global._root_.hasModule
       @code = moduleCode + '\n' + @code
     fs.writeFile @to, @code, (err) =>
@@ -152,9 +151,6 @@ switch mode
     fpath = argv.execute ?  argv._[0]
     source = fs.readFileSync(fpath).toString()
     run fpath, '\`' + moduleCode + '\`\n' + source
-    # js = compileFromSourceToJS(source)
-    # vm = require 'vm'
-    # vm.runInThisContext js, fpath
 
   when 'repl'
     repl.start()
