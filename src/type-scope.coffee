@@ -8,10 +8,7 @@ class Scope
   constructor: (@parent = null) ->
     @id = _.uniqueId()
 
-    # @parent?.nodes.push this
-
     @name = ''
-    # @nodes  = [] #=> Scope[]
 
     # Scope vars
     @vars  = [] #=> Type[]
@@ -59,7 +56,6 @@ class Scope
       root = root.parent
 
   _findModuleById: (moduleId) ->
-    # console.error moduleId, 'findModule', @name, @id
     for {scope} in @_modules
       if scope.id is moduleId
         return scope
@@ -74,13 +70,8 @@ class Scope
 
   # addType :: Any * Object * Object -> Type
   addModule: (name) ->
-    # for m in @_modules
-    #   if m.identifier.typeRef is name
-    #     throw 'Adding module is exsited: '+name
-
     scope = new ModuleScope this
     scope.name = name
-    # return @_modules[name] = scope
     mod =
       nodeType: 'module'
       identifier:
@@ -97,7 +88,6 @@ class Scope
 
   # resolveNamespace :: TypeRef -> Module
   resolveNamespace: (ref, autoCreate = false) ->
-    # debug 'resolveNamespace ref', ref
     ns = []
     cur = ref
     while true
@@ -153,7 +143,6 @@ class Scope
 
   # getTypeByMemberAccess :: TypeRef -> Type
   getTypeByMemberAccess: (typeRef) ->
-    # console.error typeRef
     ns = typeRef.left
     propName = typeRef.right
     mod = @resolveNamespace ns
@@ -174,7 +163,6 @@ class Scope
   # getTypeInScope :: TypeRef -> Type
   getTypeInScope: (typeRef) ->
     ret = @getType(typeRef) or @parent?.getTypeInScope(typeRef) or null
-    # console.error 'getTypeByIdentifier', typeRef
     ret
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
@@ -186,10 +174,6 @@ class Scope
         node
       when 'identifier'
         @getTypeInScope(node.identifier.typeRef)
-      # when 'functionType'
-      #   ImplicitAny
-      # else
-      #   ImplicitAny
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByIdentifier: (identifier) ->
@@ -197,9 +181,6 @@ class Scope
 
   # addThis :: Type * TypeArgument[] -> ()
   addThis: (type) ->
-    # for v in @_this
-    #   if v.identifier.typeRef is type.identifier.typeRef
-    #     throw 'Adding this param is exsited: '+type.identifier.typeRef
     @_this.push type
 
   getThis: (propName) ->
@@ -211,12 +192,6 @@ class Scope
 
   # addVar :: Type * TypeArgument[] -> ()
   addVar: (type) ->
-    # console.log 'type', type
-    # if type.identifier?.typeRef?
-    #   for v in @vars when v?.identifier?.typeRef?
-    #     if v.identifier.typeRef is type.identifier.typeRef
-    #       debug 'scope at addVar', @name
-    #       throw 'Adding var is exsited: '+type.identifier.typeRef
     @vars.push type
 
   # getVar :: String -> ()

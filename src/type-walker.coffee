@@ -21,7 +21,6 @@ checkNodes = (cs_ast) ->
     root.name = 'root'
     initializeGlobalTypes(root)
 
-  # debug 'root', cs_ast
   walk cs_ast, root
   return root
 
@@ -32,7 +31,6 @@ fromMemberAccessToRef = (node) ->
   if node instanceof CS.This
     return '@'
 
-  # debug 'fromMemberAccessToRef', node
   head = left: {}, right: node.memberName , nodeType: 'MemberAccess'
   cur = node.expression
   h = head.left
@@ -64,7 +62,6 @@ createIdentifier = (node) ->
   else
     node
 
-# mergeStruct A, B
 mergeStruct = (left, list) ->
   for right in list
     for prop in right.properties
@@ -210,13 +207,10 @@ walkBinOp = (node, scope) ->
     node.typeAnnotation = ImplicitAny
 
 walkConditional = (node, scope) ->
-  # node.typeAnnotation ?= ImplicitAny
   walk node.condition, scope #=> Expr
-  # else if
   if node.consequent
     walk node.consequent, scope #=> Block
 
-  # else
   if node.alternate?
     walk node.alternate, scope #=> Block
 
@@ -239,17 +233,13 @@ walkSwitch = (node, scope) ->
     walk node.expression, scope
 
   canditates = []
-  # condition expr
   for c in node.cases
-    # when a, b, c
     for cond in c.conditions
       walk c, scope #=> Expr
-    # console.error c.className
     if c.consequent
       walk c.consequent, scope
       canditates.push c.consequent.typeAnnotation
 
-  # else
   if node.alternate
     walk node.alternate, scope #=> Block
     if c.alternate?.typeAnnotation?
@@ -263,11 +253,9 @@ walkSwitch = (node, scope) ->
     node.typeAnnotation = ImplicitAny
 
 walkNewOp = (node, scope) ->
-  # console.log '---', node.raw
   ctor = node.ctor?.ctor ? node.ctor
   args = node.ctor?.arguments ? node.arguments
 
-  # ann = scope.getTypeByIdentifier createIdentifier(ctor)
   if ctor instanceof CS.Identifier
     ann = scope.getTypeByIdentifier createIdentifier(ctor)
   else if ctor instanceof CS.MemberAccessOp
@@ -320,7 +308,6 @@ walkFor = (node, scope) ->
     preAnnotation = node?.valAssignee?.typeAnnotation
     walk node.valAssignee, scope
     # Override annotation if it is implicit Any
-    # if node.target.typeAnnotation?.identifier?.isArray
     if preAnnotation
       # TODO: type check
       node.valAssignee.typeAnnotation = preAnnotation
@@ -375,9 +362,6 @@ walkFor = (node, scope) ->
     node.typeAnnotation = ImplicitAny
 
 walkClassProtoAssignOp = (node, scope) ->
-  # node.typeAnnotation ?= ImplicitAny
-  # return # TODO
-
   left  = node.assignee
   right = node.expression
   symbol = left.data
@@ -442,7 +426,6 @@ walkAssignOp = (node, scope) ->
           rpropAnn = _.cloneDeep right.typeAnnotation
           delete rpropAnn.identifier.isArray
           if lprop and rpropAnn # FIXME: right may be null
-            # checkType scope, node, lprop, rprop
             checkTypeAnnotation scope, node, lprop.typeAnnotation, rpropAnn
 
     for member in left.members
@@ -462,8 +445,6 @@ walkAssignOp = (node, scope) ->
 
     for member in left.members
       symbol = member.key.data
-      # ref = createIdentifier symbol
-      # getVarByIdentifier
       unless scope.getVarInScope(symbol)
         scope.addVar
           nodeType: 'variable'
@@ -678,13 +659,11 @@ walkClass = (node, scope) ->
     if ns = ident.typeRef.left
       parentScope = scope.resolveNamespace ns, true
   else if node?.nameAssignee instanceof CS.MemberAccessOp
-    # walk node.nameAssgnee, scope
     ref = fromMemberAccessToRef node.nameAssignee #.expression
     className = ref.right
     if ref.left in ['@', 'this']
       isThis = true
     else
-      # scope = scope.getParentModule().resolveNamespace ref.left, true
       parentScope = scope.getParentModule().resolveNamespace ref.left, true
 
   className ?= '[unnamed-class]'+_.uniqueId()
@@ -761,9 +740,6 @@ walkClass = (node, scope) ->
       prop.nodeType = 'identifier' # hack for type checking
       prop
 
-  # if scope instanceof ModuleScope
-  #   staticAnn.push
-
   # constructor
   if node.ctor?
     walkFunction node.ctor.expression, classScope, classScope.getConstructorType()
@@ -798,7 +774,6 @@ walkFunction = (node, scope, preAnnotation = null) ->
     functionScope._this = scope._this
 
   if preAnnotation?
-    # if node.typeAnnotation?.identifier?.typeRef is 'Any'
     if node.typeAnnotation?
       annotation = _.cloneDeep node.typeAnnotation
       annotation.returnType ?= ImplicitAny
@@ -949,7 +924,6 @@ walkFunctionApplication = (node, scope) ->
 walk = (node, scope) ->
   return unless node?
   # console.error 'walking node:', node?.className #, node?.raw
-  # debug 'walk', node
   switch
     # undefined(mayby null body)
     when not node? then return
