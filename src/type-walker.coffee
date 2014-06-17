@@ -29,6 +29,9 @@ fromMemberAccessToRef = (node) ->
   if node instanceof CS.Identifier
     return node.data
 
+  if node instanceof CS.This
+    return '@'
+
   # debug 'fromMemberAccessToRef', node
   head = left: {}, right: node.memberName , nodeType: 'MemberAccess'
   cur = node.expression
@@ -255,8 +258,6 @@ walkSwitch = (node, scope) ->
   ann = scope.getHighestCommonType canditates
 
   if ann?
-    if ann.identifier?
-      ann.identifier.nullable = not node.alternate?
     node.typeAnnotation = ann ? ImplicitAny
   else
     node.typeAnnotation = ImplicitAny
@@ -270,14 +271,12 @@ walkNewOp = (node, scope) ->
   if ctor instanceof CS.Identifier
     ann = scope.getTypeByIdentifier createIdentifier(ctor)
   else if ctor instanceof CS.MemberAccessOp
-    ns = fromMemberAccessToRef(ctor.expression)
-    parentScope = scope.getParentModule().resolveNamespace ns
-    # debug 'parentScope ', parentScope
-    # debug 'aaaa', node.raw
-    if parentScope
-      ann = parentScope.getType ctor.memberName
-    else
-      ann = ImplicitAny
+    if ctor.expression?
+      ns = fromMemberAccessToRef(ctor.expression)
+      parentScope = scope.getParentModule().resolveNamespace ns
+      if parentScope
+        ann = parentScope.getType ctor.memberName
+    ann ?= ImplicitAny
 
   # override types
   if ctor.typeArguments?.length

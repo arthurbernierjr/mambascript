@@ -1027,7 +1027,7 @@ suite 'TypeChecker', ->
           when 0
             'foo'
           when 1
-            'bar'
+            1
       """
 
   suite 'Class', ->
@@ -1903,4 +1903,3 @@ suite 'TypeChecker', ->
         class @A
           a :: Int
       a :: X.Y.Z.A = new X.Y.Z.A
-
