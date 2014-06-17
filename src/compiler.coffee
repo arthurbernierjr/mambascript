@@ -394,7 +394,6 @@ for own h, fn of inlineHelpers
   helpers[h] = fn
 
 
-
 class exports.Compiler
 
   @compile = => (new this).compile arguments...

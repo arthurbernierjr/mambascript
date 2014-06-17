@@ -20,6 +20,28 @@ shouldBeError = (input) ->
     return
   throw 'must be error but parsed'
 
+root = window ? global ? this
+root._module_ = (ns, f, context = root) =>
+  context ?= root
+  hist = []
+  for name in ns.split('.')
+    unless context[name]?
+      context[name] = {}
+    context = context[name]
+    hist.push context
+  f.apply context, hist
+
+suite 'Module', ->
+  test 'module', ->
+    module X
+      @x = 3
+    eq X.x, 3
+
+  test 'nested module', ->
+    module X.Y
+      @x = 3
+    eq X.Y.x, 3
+
 suite 'TypeChecker', ->
   setup ->
     global._root_.vars = []
@@ -544,6 +566,34 @@ suite 'TypeChecker', ->
     #   f = (n :: Number) :: String ->  n * n
     #   """
 
+    test 'splats', ->
+      f :: Int... -> Int[]
+      f = (args...) ->
+        args
+      f 1, 2, 3
+
+    test 'splats', ->
+      shouldBeTypeError """
+      f :: Int... -> Int[]
+      f = (args...) ->
+        args
+      f 1, '', 3
+      """
+
+    test 'splats', ->
+      f :: String * Int... -> Int[]
+      f = (s, args...) ->
+        args
+      f '', 1, 2, 3
+
+    test 'splats', ->
+      shouldBeTypeError """
+      f :: String * Int... -> Int[]
+      f = (s, args...) ->
+        args
+      f '', '', 3
+      """
+
   suite 'FunctionApplication', ->
     test 'typed function and binding', ->
       f :: Int -> Int = (n :: Int) ->  n * n
@@ -987,7 +1037,7 @@ suite 'TypeChecker', ->
           when 0
             'foo'
           when 1
-            'bar'
+            1
       """
 
   suite 'Class', ->
@@ -1128,6 +1178,22 @@ suite 'TypeChecker', ->
           @text = n
           1
       """
+
+    test 'bound function', ->
+      class A
+        name :: String
+        f: ->
+          setTimeout =>
+            @name = ''
+
+    test 'bound function', ->
+      shouldBeTypeError '''
+      class A
+        name :: String
+        f: ->
+          setTimeout =>
+            @name = 1
+      '''
 
     suite 'MemberAccess in class', ->
       test 'access this in class', ->
@@ -1721,14 +1787,14 @@ suite 'TypeChecker', ->
     test 'implement with MemberAccess', ->
       class A
       class A.B
-      class A.B.C
+      class A.B.C2
         a :: Int
 
-      struct S implements A.B.C
+      struct S2 implements A.B.C2
         b :: Int
 
       s :: {a :: Int, b :: Int} = {a: 1, b: 1}
-      t :: S = s
+      t :: S2 = s
 
     test 'implement with MemberAccess', ->
       shouldBeTypeError """
@@ -1791,3 +1857,75 @@ suite 'TypeChecker', ->
       s :: {a :: Int, b :: String} = {a: 1, b: 's'}
       t :: S.T<Int> = s
       """
+
+  suite "Module", ->
+
+    test 'module', ->
+      module X
+        @a :: Int
+
+    test 'typecheck in module', ->
+      shouldBeTypeError """
+      module A
+        nop :: Int = 'string'
+      """
+
+    test 'nested module declare', ->
+      module M.N
+        @a :: Int
+        @a = 1
+      a :: Int = M.N.a
+
+    test 'nested module declare', ->
+      shouldBeTypeError """
+      module X.Y
+        @a :: Int
+        @a = 1
+      a :: String = X.Y.a
+      """
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        @a :: Int
+        @a = 1
+      a :: Int = X.Y.Z.a
+
+    test 'nested module declare', ->
+      shouldBeTypeError """
+      module X.Y.Z
+        @a :: Int
+        @a = 1
+      a :: String = X.Y.Z.a
+      """
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        struct A
+          a :: Int
+      a :: X.Y.Z.A = a: 1
+
+    test 'nested module declare', ->
+      shouldBeTypeError """
+      module X.Y.Z
+        struct A
+          a :: Int
+      a :: X.Y.Z.A = a: ''
+      """
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        class @A
+          a :: Int
+      a :: X.Y.Z.A = a: 1
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        class @A
+          a :: Int
+      a :: {a :: Int} = new X.Y.Z.A
+
+    test 'nested module declare', ->
+      module X.Y.Z
+        class @A
+          a :: Int
+      a :: X.Y.Z.A = new X.Y.Z.A

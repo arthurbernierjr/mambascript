@@ -8,10 +8,7 @@ class Scope
   constructor: (@parent = null) ->
     @id = _.uniqueId()
 
-    @parent?.nodes.push this
-
     @name = ''
-    @nodes  = [] #=> Scope[]
 
     # Scope vars
     @vars  = [] #=> Type[]
@@ -49,11 +46,32 @@ class Scope
       else break
     root
 
+  getParentModule: ->
+    return @ if @ instanceof ModuleScope
+    return @ unless @parent
+    root = @parent
+    while root
+      return root if root instanceof ModuleScope
+      return root unless root.parent?
+      root = root.parent
+
+  _findModuleById: (moduleId) ->
+    for {scope} in @_modules
+      if scope.id is moduleId
+        return scope
+      else
+        if ret = scope._findModuleById(moduleId)
+          return ret
+    null
+
+  findModuleById: (moduleId) ->
+    root = @getRoot()
+    root._findModuleById(moduleId)
+
   # addType :: Any * Object * Object -> Type
   addModule: (name) ->
-    scope = new Scope this
+    scope = new ModuleScope this
     scope.name = name
-    # return @_modules[name] = scope
     mod =
       nodeType: 'module'
       identifier:
@@ -85,7 +103,6 @@ class Scope
       mod = cur.getModuleInScope(moduleName)
       unless mod
         if autoCreate
-          console.error '-- create module', moduleName
           mod = cur.addModule(moduleName)
         else
           return null
@@ -129,9 +146,12 @@ class Scope
     ns = typeRef.left
     propName = typeRef.right
     mod = @resolveNamespace ns
-    ret = _.find mod.types, (node) =>
-      node.identifier.typeRef is propName
-    return (if ret?.nodeType is 'struct' then ret?.members else ret)
+    if mod
+      ret = _.find mod.types, (node) =>
+        node.identifier.typeRef is propName
+      return (if ret?.nodeType is 'struct' then ret?.members else ret)
+    else
+      null
 
   # getType :: TypeRef -> Type
   getType: (typeRef) ->
@@ -154,18 +174,13 @@ class Scope
         node
       when 'identifier'
         @getTypeInScope(node.identifier.typeRef)
-      when 'functionType'
-        ImplicitAny
-      else
-        ImplicitAny
 
   # getTypoIdentifier :: TypoAnnotation -> TypeAnnotation
   getTypeByIdentifier: (identifier) ->
     @getTypeInScope(identifier.typeRef)
 
   # addThis :: Type * TypeArgument[] -> ()
-  addThis: (type, args = []) ->
-    # TODO: Refactor with addThis
+  addThis: (type) ->
     @_this.push type
 
   getThis: (propName) ->
@@ -176,8 +191,7 @@ class Scope
     @getThis(typeName)?.typeAnnotation
 
   # addVar :: Type * TypeArgument[] -> ()
-  addVar: (type, args = []) ->
-    # TODO: Apply typeArgument
+  addVar: (type) ->
     @vars.push type
 
   # getVar :: String -> ()
@@ -228,8 +242,9 @@ class ClassScope extends Scope
   getConstructorType: ->
     (_.find @_this, (v) -> v.identifier.typeRef is '_constructor_')?.typeAnnotation
 
+class ModuleScope extends Scope
 class FunctionScope extends Scope
 
 module.exports = {
-  Scope, ClassScope, FunctionScope
+  Scope, ClassScope, FunctionScope, ModuleScope
 }

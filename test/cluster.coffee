@@ -12,7 +12,7 @@ if semver.satisfies process.version, '>= 0.10.0'
       do done
       return
 
-  test "jashkenas/coffee-script#2737: cluster module can spawn litcoffee workers", (done) ->
+  test.skip "jashkenas/coffee-script#2737: cluster module can spawn litcoffee workers", (done) ->
     (child_process.spawn coffeeBinary, ['test/cluster/cluster.litcoffee']).on 'close', (code) ->
       eq 0, code
       do done
