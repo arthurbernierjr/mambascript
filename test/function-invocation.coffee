@@ -445,20 +445,20 @@ suite 'Function Invocation', ->
     do (overridden = 2) ->
       eq overridden, 2
 
-    two_ = 2
-    do (one = 1, two_, three = 3) ->
+    two = 2
+    do (one = 1, two, three = 3) ->
       eq one, 1
-      eq two_, 2
+      eq two, 2
       eq three, 3
 
-    ret = do func = (two_) ->
-      eq two_, 2
+    ret = do func = (two) ->
+      eq two, 2
       func
     eq ret, func
 
     o = {}
-    ret = do o.f = (two_) ->
-      eq two_, 2
+    ret = do o.f = (two) ->
+      eq two, 2
       o.f
     eq ret, o.f
 

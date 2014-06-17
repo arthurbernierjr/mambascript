@@ -150,10 +150,15 @@ struct Point3d implements Point
   z :: Number
 ```
 
-### Typed Array
+### Module
+
+TypedCoffeeScript has module system like TypeScript
 
 ```coffee
-line :: Point[] = [{x: 3, y: 4}, {x: 8, y: 5}, p]
+module A.B
+	class @C
+		a :: Int
+abc :: A.B.C = new A.B.C
 ```
 
 ### Typed Function
