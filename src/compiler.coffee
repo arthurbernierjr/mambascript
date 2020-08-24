@@ -401,7 +401,7 @@ class exports.Compiler
   # TODO: none of the default rules should need to use `compile`; fix it with functions
   defaultRules = [
     # control flow structures
-    [CS.Program, ({body, inScope, options}) ->
+    [CS.Program, ({body, inScope, options = {bare: true, header:   true}}) ->
       return new JS.Program [] unless body?
       block = stmt body
       block =

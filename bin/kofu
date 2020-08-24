@@ -4,7 +4,6 @@ fs = require 'fs'
 path = require 'path'
 CoffeeScript = require '../lib/module'
 {exec, spawn} = require 'child_process'
-
 cscodegen = require 'cscodegen'
 escodegen = require 'escodegen'
 
@@ -35,8 +34,12 @@ compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
     sourceMap: true
     literate
   }
-  js_ast = CoffeeScript.compile cs_ast, compileOption ? bare: !!argv.bare
-  escodegen.generate js_ast
+  compileOptions = {
+    bare: true
+    header: true
+  }
+  js_ast = CoffeeScript.compileTypedToCS cs_ast, compileOptions ? bare: !!argv.bare
+  CoffeeScript.js js_ast, compileOptions
 
 run = (fname, source, {parseOption, compileOption} = {}) ->
   cs_ast = CoffeeScript.parse source, parseOption ? {
@@ -46,7 +49,11 @@ run = (fname, source, {parseOption, compileOption} = {}) ->
     sourceMap: true
     literate
   }
-  js_ast = CoffeeScript.compile cs_ast, compileOption ? bare: !!argv.bare
+  compileOptions = {
+    bare: true
+    header: true
+  }
+  js_ast = CoffeeScript.compile cs_ast, compileOptions ? bare: !!argv.bare
   js = escodegen.generate js_ast
   runMain source, js, js_ast, fname
 
@@ -116,7 +123,7 @@ switch mode
         return
 
       js_ast = CoffeeScript.compile cs_ast, bare: !!argv.bare
-      code = escodegen.generate js_ast
+      code = CoffeeScript.js js_ast
 
       extReplacer = (name) ->
         name

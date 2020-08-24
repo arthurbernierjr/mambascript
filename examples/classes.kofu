@@ -27,3 +27,5 @@ class Class<A>
   constructor :: A -> ()
   constructor: (a) ->
 c = new Class<Int>(1)
+
+present a
