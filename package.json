@@ -2,9 +2,9 @@
   "name": "typed-coffee-script",
   "author": "mizchi",
   "version": "0.12.2",
-  "homepage": "https://github.com/mizchi/TypedCoffeeScript",
-  "bugs": "https://github.com/mizchi/TypedCoffeeScript/issues",
-  "description": "Unfancy JavaScript with Types",
+  "homepage": "https://github.com/arthurbernierjr/KofuScript",
+  "bugs": "https://github.com/arthurbernierjr/KofuScript/issues",
+  "description": "KofuScript the rebirth of typed Unfancy Javascript",
   "keywords": [
     "typedcoffeescript",
     "coffeescript",
@@ -14,11 +14,11 @@
   ],
   "main": "./lib/module",
   "bin": {
-    "tcoffee": "./bin/tcoffee"
+    "kofu": "./bin/kofu"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/michaelficarra/CoffeeScriptRedux.git"
+    "url": "git://github.com/arthurbernierjr/KofuScript.git"
   },
   "scripts": {
     "build": "make -j build",
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "StringScanner": "~0.0.3",
-    "coffee-script": "^1.7.1",
+    "coffeescript": "^2.5.1",
     "colors": "^0.6.2",
     "lodash": "^2.4.1",
     "nopt": "~2.1.2",

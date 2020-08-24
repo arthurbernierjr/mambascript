@@ -1,4 +1,11 @@
-TypedCoffeeScript
+#KofuScript in Development
+
+
+
+
+
+
+(Built KofuScript On Top Of) TypedCoffeeScript
 ==================================
 
 [![Build Status](https://drone.io/github.com/mizchi/TypedCoffeeScript/status.png)](https://drone.io/github.com/mizchi/TypedCoffeeScript/latest)
@@ -46,7 +53,7 @@ TypeScript AST parser is ready. [mizchi/dts-parser](https://github.com/mizchi/dt
 - module system
 - robust namespace resolver
 - splats argument such as `( args...: T[] ) -> `
-- this scope in bound function 
+- this scope in bound function
 
 #### Wip
 
