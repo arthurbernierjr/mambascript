@@ -37,6 +37,7 @@
     "StringScanner": "~0.0.3",
     "coffeescript": "^2.5.1",
     "colors": "^0.6.2",
+    "consola": "^2.15.0",
     "lodash": "^2.4.1",
     "nopt": "~2.1.2",
     "optimist": "^0.6.1"

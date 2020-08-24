@@ -8,10 +8,8 @@ CS = require './nodes'
 reporter = require './reporter'
 
 addMultilineHandler = (repl) ->
-  {rli, inputStream, outputStream} = repl
-  initialPrompt = repl.prompt.replace /^[^> ]*/, (x) -> x.replace /./g, '-'
-  continuationPrompt = repl.prompt.replace /^[^> ]*>?/, (x) -> x.replace /./g, '.'
-
+  {inputStream, outputStream} = repl
+  rli = repl
   enabled = no
   buffer = ''
 
@@ -61,52 +59,52 @@ addHistory = (repl, filename, maxSize) ->
     stat = fs.statSync filename
     size = Math.min maxSize, stat.size
     readFd = fs.openSync filename, 'r'
-    buffer = new Buffer size
+    buffer = new Buffer.alloc size
     # read last `size` bytes from the file
     fs.readSync readFd, buffer, 0, size, stat.size - size if size
-    repl.rli.history = (buffer.toString().split '\n').reverse()
+    repl.history = (buffer.toString().split '\n').reverse()
     # if the history file was truncated we should pop off a potential partial line
-    do repl.rli.history.pop if stat.size > maxSize
+    do repl.history.pop if stat.size > maxSize
     # shift off the final blank newline
-    do repl.rli.history.shift if repl.rli.history[0] is ''
-    repl.rli.historyIndex = -1
+    do repl.history.shift if repl.history[0] is ''
+    repl.historyIndex = -1
   catch e
-    repl.rli.history = []
+    repl.history = []
 
   fd = fs.openSync filename, 'a'
 
   # like readline's history, we do not want any adjacent duplicates
-  lastLine = repl.rli.history[0]
+  lastLine = repl.history[0]
 
   # save new commands to the history file
-  repl.rli.addListener 'line', (code) ->
+  repl.addListener 'line', (code) ->
     if code and code isnt lastLine
       lastLine = code
       fs.writeSync fd, "#{code}\n"
 
-  repl.rli.on 'exit', -> fs.closeSync fd
+  repl.on 'exit', -> fs.closeSync fd
 
   # .clear should also clear history
-  original_clear = repl.commands['.clear'].action
-  repl.commands['.clear'].action = ->
-    repl.outputStream.write 'Clearing history...\n'
-    repl.rli.history = []
-    fs.closeSync fd
-    fd = fs.openSync filename, 'w'
-    lastLine = undefined
-    original_clear.call this
+  # original_clear = repl.commands['.clear'].action
+  # repl.commands['.clear'].action = ->
+  #   repl.outputStream.write 'Clearing history...\n'
+  #   repl.history = []
+  #   fs.closeSync fd
+  #   fd = fs.openSync filename, 'w'
+  #   lastLine = undefined
+  #   original_clear.call this
 
   # add a command to show the history stack
   repl.commands['.history'] =
     help: 'Show command history'
     action: ->
-      repl.outputStream.write "#{repl.rli.history[..].reverse().join '\n'}\n"
+      repl.outputStream.write "#{repl.history[..].reverse().join '\n'}\n"
       do repl.displayPrompt
 
 module.exports =
   start: (opts = {}) ->
     # REPL defaults
-    opts.prompt or= 'tcoffee> '
+    opts.prompt or= 'kofuScript🐐>> '
     opts.ignoreUndefined ?= yes
     opts.historyFile ?= path.join process.env.HOME, '.coffee_history'
     opts.historyMaxInputSize ?= 10 * 1024 # 10KiB
