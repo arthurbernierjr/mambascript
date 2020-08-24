@@ -1,7 +1,7 @@
 {
-  "name": "typed-coffee-script",
-  "author": "mizchi",
-  "version": "0.12.2",
+  "name": "kofuscript",
+  "author": "arthurbernierjr",
+  "version": "0.0.1",
   "homepage": "https://github.com/arthurbernierjr/KofuScript",
   "bugs": "https://github.com/arthurbernierjr/KofuScript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
@@ -49,7 +49,7 @@
     "cscodegen": "git://github.com/michaelficarra/cscodegen.git#73fd7202ac086c26f18c9d56f025b18b3c6f5383"
   },
   "engines": {
-    "node": "0.8.x || 0.10.x"
+    "node": "14.8.x"
   },
   "licenses": [
     {
