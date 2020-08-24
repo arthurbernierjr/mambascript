@@ -1,9 +1,45 @@
-#KofuScript in Development
+# KofuScript in Development
+
+## Getting Started
+
+Install and run!
+
+```
+$ npm install -g kofuscript
+$ kofu -c foo.kofu # compile
+$ kofu foo.kofu # execute
+$ kofu # repl
+```
+
+### Extensions you should know about KofuScript
+
+- `.kofu` and `.tcoffee` are compiled by kofuscript compiler.
+- Compiler uses jashkenas/coffeescript in `require('./foo.coffee')` by default.
+- if you want to compile `.coffee` with kofuscript, add `--self` option.
 
 
+# Why work on an old project.
 
+This project is amazing, period. Everything here is exactly what I needed to be added to KOFUJS project in order for it to run the way I want it to run, without having to move over to the clunky TypeScript syntax that I would rather avoid.
 
+## Fixes made
 
+1. Fixed Bug Causing REPL Not to Function
+1. Updated CoffeeScript to stable version 2.5+ with JSX support
+1. Added .kofu file type
+
+## Updates Coming
+
+1. Documentation on Usage with KOFUJS
+1. Updates to Create KofuJS App
+1. Make This Kofuscript fork the default syntax for KOFUJS
+
+## Current Tasks
+
+1. Discover Additional Bugs
+1. Make Production Ready
+
+<hr/>
 
 (Built KofuScript On Top Of) TypedCoffeeScript
 ==================================
@@ -24,23 +60,6 @@ This repository is heavily under development and unstable. See below milestone.
 ## What is pessimistic type interface?
 
 To pass dynamic type system, TypedCoffeeScript expects symbol to `implicit` node by default. If compiler compares implicit node type and implicit node type and fails, it recover to `implicit` `Any` automatically.
-
-## Getting Started
-
-Install and run!
-
-```
-$ npm install -g typed-coffee-script
-$ tcoffee -c foo.typed.coffee # compile
-$ tcoffee foo.typed.coffee # execute
-$ tcoffee # repl
-```
-
-### Extensions you should know about TypedCoffeeScript
-
-- `.tcoffee` and `.typed.coffee` are compiled by TypedCoffeeScript compiler.
-- Compiler uses jashkenas/coffeescript in `require('./foo.coffee')` by default.
-- if you want to compile `.coffee` with TypedCoffeeScript, add `--self` option.
 
 ## Project Status
 
