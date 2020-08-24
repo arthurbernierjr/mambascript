@@ -1,7 +1,7 @@
 {
   "name": "kofuscript",
   "author": "arthurbernierjr",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "https://github.com/arthurbernierjr/KofuScript",
   "bugs": "https://github.com/arthurbernierjr/KofuScript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
