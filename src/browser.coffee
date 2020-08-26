@@ -25,7 +25,7 @@ CoffeeScript.load = (url, callback) ->
     if xhr.status in [0, 200]
       CoffeeScript.run xhr.responseText
     else
-      throw new Error "Could not load #{url}"
+      throw new Error "Greetings from the CoffeeScript.load function in the browser.coffer file  Could not load #{url}"
     do callback if callback
   xhr.send null
 

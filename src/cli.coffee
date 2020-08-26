@@ -32,8 +32,9 @@ optAliases =
   p: '--parse'
   v: '--version'
   w: '--watch'
+  z: '--svelte'
 
-option 'parse', 'compile', 'optimise', 'debug', 'literate', 'raw', 'version', 'help', 'typed2cs'
+option 'parse', 'compile', 'optimise', 'debug', 'literate', 'raw', 'version', 'help', 'typed2cs', 'svelte'
 parameter 'cli', 'input', 'nodejs', 'output', 'watch'
 
 if escodegen?
@@ -138,6 +139,7 @@ if options.help
 
   -b, --bare              omit the top-level function wrapper
   -c, --compile           output a JSON-serialised AST representation of the output
+  -z, --svelte           output a JSON-serialised AST representation of the output optimized for svelte
   -e, --eval              evaluate compiled JavaScript
   -f, --cscodegen         output cscodegen-generated CoffeeScript code
   -i, --input FILE        file to be used as input instead of STDIN
@@ -170,7 +172,7 @@ if options.help
 
 else if options.version
   pkg = require './../package.json'
-  console.log "TypedCoffeeScript version #{pkg.version}"
+  console.log "kofuscript version #{pkg.version}"
 
 else if options.repl
   CoffeeScript.register()

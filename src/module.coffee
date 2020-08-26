@@ -9,6 +9,7 @@ reporter = require './reporter'
 {TypeError} = require './type-helpers'
 cscodegen = try require 'cscodegen'
 escodegen = try require 'escodegen'
+NewCoffeScript = require 'coffeescript'
 
 pkg = require './../package.json'
 
@@ -29,6 +30,7 @@ CoffeeScript =
   Parser: Parser
   Preprocessor: Preprocessor
   Nodes: Nodes
+  NewCoffeScript: NewCoffeScript
 
   VERSION: pkg.version
 
@@ -81,6 +83,14 @@ CoffeeScript =
     jsAST = CoffeeScript.compile csAST, bare: options.bare
     CoffeeScript.js jsAST, compact: options.compact or options.minify
 
+  svelteCompile: (input) ->
+    options = {
+      optimize: true
+      bare: true
+      header: true
+      compact: true
+    }
+    @cs2js(input, options)
 
 module.exports = CoffeeScript
 
