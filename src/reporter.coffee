@@ -9,9 +9,15 @@ class Reporter
     @errors = []
     @warnings = []
 
-  has_errors: -> @errors.length > 0
+  has_errors: ->
+    @errors = @errors.filter ([node, text])->
+      node.raw is not undefined
+    @errors.length > 0
 
-  has_warnings: -> @warnings.length > 0
+  has_warnings: ->
+    @warnings = @warnings.filter ([node, text])->
+      node.raw is not undefined
+    @warnings.length > 0
 
   # () -> String
   report: ->
