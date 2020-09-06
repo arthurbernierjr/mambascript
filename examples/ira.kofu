@@ -1,0 +1,10 @@
+present ((5 >3 also 3 > 1) is true)
+
+class Person
+
+ira = new Person
+
+present ira areYouA Person
+
+# also keyword
+# areYouA keyword

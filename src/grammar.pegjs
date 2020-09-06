@@ -6,6 +6,7 @@ var CS = require("./nodes"),
     , or: CS.LogicalOrOp
     , '&&': CS.LogicalAndOp
     , and: CS.LogicalAndOp
+    , also: CS.LogicalAndOp
     , '|': CS.BitOrOp
     , '^': CS.BitXorOp
     , '&': CS.BitAndOp
@@ -20,6 +21,7 @@ var CS = require("./nodes"),
     , '>': CS.GTOp
     , 'extends': CS.ExtendsOp
     , 'instanceof': CS.InstanceofOp
+    , 'areYouA' : CS.InstanceofOp
     , 'in': CS.InOp
     , 'of': CS.OfOp
     , '<<': CS.LeftShiftOp
@@ -33,19 +35,19 @@ var CS = require("./nodes"),
     , '**': CS.ExpOp
     },
 
-  negatableOps = ['instanceof', 'in', 'of'],
+  negatableOps = ['instanceof', 'areYouA', 'in', 'of'],
   chainableComparisonOps = ['<=', '>=', '<', '>', '==', 'is', '!=', 'isnt'],
 
   rightAssocOps = [';', '=', '?', '**'],
   precedenceHierarchy =
     [ ['or', '||']
-    , ['and', '&&']
+    , ['and', '&&', 'also']
     , ['|']
     , ['^']
     , ['&']
     , ['?']
     , ['is', '==', 'isnt', '!=']
-    , ['instanceof', 'in', 'of', '<=', '>=', '<', '>']
+    , ['instanceof', 'areYouA', 'in', 'of', '<=', '>=', '<', '>']
     , ['<<', '>>', '>>>']
     , ['+', '-']
     , ['*', '/', '%']
@@ -103,6 +105,7 @@ var CS = require("./nodes"),
     , 'do': CS.DoOp
     , 'typeof': CS.TypeofOp
     , 'delete': CS.DeleteOp
+    , 'thanos': CS.DeleteOp
     },
 
   postfixConstructorLookup =
@@ -457,7 +460,7 @@ assignmentExpression
         return rp(new CS.CompoundAssignOp(constructorLookup[op].prototype.className, left, right));
       }
   CompoundAssignmentOperators
-    = $("&&" / AND / "||" / OR / "**" / [?&^|*/%] / "+" !"+" / "-" !"-" / "<<" / ">>>" / ">>")
+    = $("&&" / AND / ALSO / "||" / OR / "**" / [?&^|*/%] / "+" !"+" / "-" !"-" / "<<" / ">>>" / ">>")
   existsAssignmentOp
     = left:ExistsAssignable _ "?=" _ right:
       ( TERMINDENT e:secondaryExpression DEDENT { return e; }
@@ -503,8 +506,8 @@ binaryExpression
   binaryOperator
     = $(CompoundAssignmentOperators !"=")
     / "<=" / ">=" / "<" / ">" / "==" / IS / "!=" / ISNT
-    / EXTENDS / INSTANCEOF / IN / OF
-    / NOT _ op:(INSTANCEOF / IN / OF) { return 'not ' + op;  }
+    / EXTENDS / INSTANCEOF / AREYOUA / IN / OF
+    / NOT _ op:(INSTANCEOF / AREYOUA / IN / OF) { return 'not ' + op;  }
 binaryExpressionNoImplicitObjectCall
   = left:prefixExpressionNoImplicitObjectCall rights:(_ o:binaryOperator TERMINATOR? _ e:(expressionworthy / prefixExpressionNoImplicitObjectCall) { return [o, e]; })* {
       switch(rights.length) {
@@ -523,7 +526,7 @@ prefixExpression
       }, e, ops));
     }
   PrefixOperators
-    = "++" / "--" / "+" / "-" / "!" / NOT / "~" / DO / TYPEOF / DELETE
+    = "++" / "--" / "+" / "-" / "!" / NOT / "~" / DO / TYPEOF / DELETE / THANOS
   nfe
     = !unassignable a:Assignable _ "=" _ f:functionLiteral { return rp(new CS.AssignOp(a, f)); }
 prefixExpressionNoImplicitObjectCall
@@ -1210,12 +1213,14 @@ TERMINDENT = $(TERMINATOR INDENT)
 
 // keywords
 AND = $("and" !identifierPart)
+ALSO = $("also" !identifierPart)
 BREAK = $("break" !identifierPart)
 BY = $("by" !identifierPart)
 CATCH = $("catch" !identifierPart)
 CONTINUE = $("continue" !identifierPart)
 CLASS = $("class" !identifierPart)
 DELETE = $("delete" !identifierPart)
+THANOS = $("thanos" !identifierPart)
 DEBUGGER = $("debugger" !identifierPart)
 DO = $("do" !identifierPart)
 ELSE = $("else" !identifierPart)
@@ -1226,6 +1231,7 @@ FOR = $("for" !identifierPart)
 IF = $("if" !identifierPart)
 IN = $("in" !identifierPart)
 INSTANCEOF = $("instanceof" !identifierPart)
+AREYOUA = $("areYouA" !identifierPart)
 IS = $("is" !identifierPart)
 ISNT = $("isnt" !identifierPart)
 LOOP = $("loop" !identifierPart)
@@ -1268,8 +1274,8 @@ JSKeywords
   "package" / "private" / "protected" / "public" / "static" / "yield") !identifierPart
 
 CSKeywords
-  = ("undefined" / "then" / "unless" / "until" / "loop" / "off" / "by" / "when" /
-  "and" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of" / "struct") !identifierPart
+  = ("undefined" / "then" / "unless" / "until" / "loop" / "off" / "by" / "when" / "thanos" / "areYouA" /
+  "and" / "also" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of" / "struct") !identifierPart
 
 reserved
   = $(macro)

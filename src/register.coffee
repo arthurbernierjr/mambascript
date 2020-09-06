@@ -18,7 +18,7 @@ compile = (module, filename, opts) ->
   runModule module, js, jsAst, filename
 
 compileWithOriginalCoffee = (module, filename, opts = {}) ->
-  OriginalCoffee = require 'coffee-script'
+  OriginalCoffee = require 'coffeescript'
 
   input = fs.readFileSync filename, 'utf8'
   js = OriginalCoffee.compile input, opts
@@ -39,12 +39,15 @@ require.extensions['.litcoffee'] = (module, filename) ->
 require.extensions['.tcoffee'] = (module, filename) ->
   compile module, filename, raw: yes, typeCheck: true
 
+require.extensions['.kofu'] = (module, filename) ->
+  compile module, filename, raw: yes, typeCheck: true
+
 # patch child_process.fork to default to the coffee binary as the execPath for coffee/litcoffee files
 {fork} = child_process
 unless fork.coffeePatched
-  coffeeBinary = path.resolve 'bin', 'tcoffee'
+  coffeeBinary = path.resolve 'bin', 'kofu'
   child_process.fork = (file, args = [], options = {}) ->
-    if (path.extname file) in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee']
+    if (path.extname file) in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.kofu']
       if not Array.isArray args
         args = []
         options = args or {}

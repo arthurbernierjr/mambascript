@@ -1,7 +1,7 @@
 {
   "name": "kofuscript",
   "author": "arthurbernierjr",
-  "version": "0.0.3-alpha.3",
+  "version": "0.0.3-alpha.4",
   "homepage": "https://github.com/arthurbernierjr/KofuScript",
   "bugs": "https://github.com/arthurbernierjr/KofuScript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "StringScanner": "~0.0.3",
+    "arthur-pavlos-string-reversal": "^1.0.0",
     "coffeescript": "^2.5.1",
     "colors": "^0.6.2",
     "consola": "^2.15.0",

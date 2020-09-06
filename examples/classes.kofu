@@ -28,4 +28,4 @@ class Class<A>
   constructor: (a) ->
 c = new Class<Int>(1)
 
-present a
+present a areYouA Person
