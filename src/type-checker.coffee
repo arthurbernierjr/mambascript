@@ -1,4 +1,4 @@
-_.some# struct Node
+# struct Node
 #   nodeType :: String
 #
 # struct MemberAccess extends Node
@@ -48,7 +48,7 @@ correctExtends = (scope, annotation) ->
   extendList
 
 isAcceptableExtends = (scope, left, right) ->
-  _.any correctExtends(scope, left).map (le) ->
+  _.some correctExtends(scope, left).map (le) ->
     le.identifier.typeRef is right.identifier.typeRef
 
 # isAcceptablePrimitiveSymbol :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
