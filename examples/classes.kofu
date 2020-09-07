@@ -7,7 +7,7 @@ class Person
     @name = name
     @age = age
 
-a :: Person = new Person 'mizchi', 26
+a :: Person = new Person 'arthur', 32
 name :: String = a.name
 
 class Point

@@ -6,5 +6,15 @@ ira = new Person
 
 present ira areYouA Person
 
+obj =
+  age: 33
+  weight: 250
+  height: 73
+
+thanos obj.age
+
+present obj
+
 # also keyword
 # areYouA keyword
+# thanos keyword

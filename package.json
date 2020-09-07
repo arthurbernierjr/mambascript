@@ -1,7 +1,7 @@
 {
   "name": "kofuscript",
   "author": "arthurbernierjr",
-  "version": "0.0.3-alpha.4",
+  "version": "0.0.3-alpha.5",
   "homepage": "https://github.com/arthurbernierjr/KofuScript",
   "bugs": "https://github.com/arthurbernierjr/KofuScript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
@@ -29,11 +29,11 @@
   "devDependencies": {
     "cluster": "~0.7.7",
     "commonjs-everywhere": "~0.9.0",
-    "grunt": "^0.4.5",
-    "grunt-contrib-coffee": "^0.10.1",
-    "mocha": "~1.12.0",
+    "grunt": "^1.3.0",
+    "grunt-contrib-coffee": "^2.1.0",
+    "mocha": "^8.1.3",
     "pegjs": "git+https://github.com/dmajda/pegjs.git#bea6b1fde74c8aebf802f9bcc3380c65b241e1b7",
-    "semver": "~2.1.0"
+    "semver": "^7.3.2"
   },
   "dependencies": {
     "StringScanner": "~0.0.3",
@@ -41,7 +41,7 @@
     "coffeescript": "^2.5.1",
     "colors": "^0.6.2",
     "consola": "^2.15.0",
-    "lodash": "^2.4.1",
+    "lodash": "^4.17.19",
     "nopt": "~2.1.2",
     "optimist": "^0.6.1"
   },

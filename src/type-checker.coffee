@@ -1,4 +1,4 @@
-# struct Node
+_.some# struct Node
 #   nodeType :: String
 #
 # struct MemberAccess extends Node
@@ -74,7 +74,7 @@ isAcceptablePrimitiveSymbol = (scope, left, right, nullable = false, isArray = f
 
 # isAcceptableStruct :: Scope * TypeAnnotation * TypeAnnotation -> Boolean
 isAcceptableStruct = (scope, left, right) ->
-  _.all left.properties.map (lprop, n) =>
+  _.every left.properties.map (lprop, n) =>
     rprop = _.find right.properties, (rp) ->
       rp.identifier?.typeRef is lprop.identifier?.typeRef
     unless rprop?
@@ -89,7 +89,7 @@ isAcceptableFunctionType = (scope, left, right) ->
   # debug 'isAcceptable functionType l', left
   # debug 'isAcceptable functionType r', right
 
-  passArgs = _.all left.arguments.map (leftArg, n) ->
+  passArgs = _.every left.arguments.map (leftArg, n) ->
     leftArg = leftArg ? ImplicitAny
     rightArg = right.arguments[n] ? ImplicitAny
     isAcceptable scope, leftArg, rightArg
