@@ -1,4 +1,4 @@
-class Person
+blueprint Person
   name :: String
   age  :: Int
 
@@ -10,7 +10,15 @@ class Person
 a :: Person = new Person 'arthur', 32
 name :: String = a.name
 
-class Point
+blueprint Guy inheritsFrom Person
+
+b :: Guy = new Guy 'paul', 29
+
+present a areYouA Person
+present b areYouA Person
+present name 
+
+blueprint Point
   x :: Int
   y :: Int
 
@@ -18,14 +26,15 @@ struct Size
   width  :: Int
   height :: Int
 
-class Region extends Point implements Size
+blueprint Region inheritsFrom Point implements Size
 region :: {x :: Int, width :: Int} = new Region
+present region
 
 # class type arguments
+###
 class Class<A>
   f :: Int -> Int
   constructor :: A -> ()
   constructor: (a) ->
 c = new Class<Int>(1)
-
-present a areYouA Person
+###

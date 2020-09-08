@@ -9,6 +9,7 @@ $ npm install -g kofuscript
 $ kofu -c foo.kofu # compile
 $ kofu foo.kofu # execute
 $ kofu # repl
+$ start-kofuscript #start a new kofuscript project
 ```
 
 ### Extensions you should know about KofuScript

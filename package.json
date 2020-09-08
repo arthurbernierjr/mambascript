@@ -1,5 +1,5 @@
 {
-  "name": "kofuscript",
+  "name": "kofuscript-development",
   "author": "arthurbernierjr",
   "version": "0.0.4-alpha.1",
   "homepage": "https://github.com/arthurbernierjr/KofuScript",
@@ -16,8 +16,8 @@
   ],
   "main": "./lib/module",
   "bin": {
-    "kofu": "./bin/kofu",
-    "start-kofuscript":"./bin/kofu-project"
+    "kofu-d": "./bin/kofu",
+    "start-kofuscript-d":"./bin/kofu-project"
   },
   "repository": {
     "type": "git",

@@ -20,6 +20,7 @@ var CS = require("./nodes"),
     , '<': CS.LTOp
     , '>': CS.GTOp
     , 'extends': CS.ExtendsOp
+    , 'inheritsFrom': CS.ExtendsOp
     , 'instanceof': CS.InstanceofOp
     , 'areYouA' : CS.InstanceofOp
     , 'in': CS.InOp
@@ -386,6 +387,9 @@ expressionworthy
   / switch
   / implicitObjectLiteral
   / class
+  / blueprint
+  / forEveryIn
+  / forEveryOf
 
 seqExpression
   = left:postfixControlFlowExpression right:(_ ";" TERMINATOR? _ expression)? {
@@ -506,7 +510,7 @@ binaryExpression
   binaryOperator
     = $(CompoundAssignmentOperators !"=")
     / "<=" / ">=" / "<" / ">" / "==" / IS / "!=" / ISNT
-    / EXTENDS / INSTANCEOF / AREYOUA / IN / OF
+    / EXTENDS / INHERITSFROM/ INSTANCEOF / AREYOUA / IN / OF
     / NOT _ op:(INSTANCEOF / AREYOUA / IN / OF) { return 'not ' + op;  }
 binaryExpressionNoImplicitObjectCall
   = left:prefixExpressionNoImplicitObjectCall rights:(_ o:binaryOperator TERMINATOR? _ e:(expressionworthy / prefixExpressionNoImplicitObjectCall) { return [o, e]; })* {
@@ -796,6 +800,26 @@ class
       n.typeArguments = typeArgs || [];
       return n;
     }
+blueprint
+  = BLUEPRINT name:(_ Assignable)? typeArgs:symbolTypeArguments? parent:(_ INHERITSFROM _ extendee)? implementArguments:implementArguments? body:classBody {
+      var ctor = null;
+      name = name ? name[1] : null;
+      parent = parent ? parent[3] : null;
+      var boundMembers = [];
+      var stmts = body ? body.statements || [body] : [];
+      for(var i = 0, l = stmts.length; i < l; ++i) {
+        var m = stmts[i];
+        if(m.instanceof(CS.Constructor)) {
+          ctor = m;
+        } else if(m.instanceof(CS.ClassProtoAssignOp) && m.expression.instanceof(CS.BoundFunction)) {
+          boundMembers.push(m);
+        }
+      }
+      var n = rp(new CS.Class(name, parent, ctor, body, boundMembers));
+      n.implementArguments = implementArguments || null;
+      n.typeArguments = typeArgs || [];
+      return n;
+    }
   extendee = secondaryExpressionNoImplicitObjectCall
   classBody
     = _ TERMINDENT b:classBlock DEDENT { return b; }
@@ -853,6 +877,20 @@ forIn
       var filter = maybeFilter ? maybeFilter[2] : null;
       return rp(new CS.ForIn(val, key, list, step, filter, body.block));
     }
+  forEveryOf
+    = FOREVERY _ own:(OWN _)? key:Assignable _ maybeVal:("," _ Assignable _)? OF _ obj:assignmentExpressionNoImplicitObjectCall _ maybeFilter:(WHEN _ assignmentExpressionNoImplicitObjectCall _)? body:forBody {
+        var val = maybeVal ? maybeVal[2] : null;
+        var filter = maybeFilter ? maybeFilter[2] : null;
+        return rp(new CS.ForOf(!!own, key, val, obj, filter, body.block));
+      }
+  forEveryIn
+    = FOREVERY _ maybeVal:(Assignable _ ("," _ Assignable _)?)? IN _ list:assignmentExpressionNoImplicitObjectCall _ maybeStep:(BY _ assignmentExpressionNoImplicitObjectCall _)? maybeFilter:(WHEN _ assignmentExpressionNoImplicitObjectCall _)? body:forBody {
+        var val = maybeVal ? maybeVal[0] : null;
+        var key = maybeVal && maybeVal[2] ? maybeVal[2][2] : null;
+        var step = maybeStep ? maybeStep[2] : new CS.Int(1).r('1').g();
+        var filter = maybeFilter ? maybeFilter[2] : null;
+        return rp(new CS.ForIn(val, key, list, step, filter, body.block));
+      }
 
 
 switch
@@ -1219,15 +1257,18 @@ BY = $("by" !identifierPart)
 CATCH = $("catch" !identifierPart)
 CONTINUE = $("continue" !identifierPart)
 CLASS = $("class" !identifierPart)
+BLUEPRINT = $("blueprint" !identifierPart)
 DELETE = $("delete" !identifierPart)
 THANOS = $("thanos" !identifierPart)
 DEBUGGER = $("debugger" !identifierPart)
 DO = $("do" !identifierPart)
 ELSE = $("else" !identifierPart)
 EXTENDS = $("extends" !identifierPart)
+INHERITSFROM = $("inheritsFrom" !identifierPart)
 FALSE = $("false" !identifierPart)
 FINALLY = $("finally" !identifierPart)
 FOR = $("for" !identifierPart)
+FOREVERY = $("forEvery" !identifierPart)
 IF = $("if" !identifierPart)
 IN = $("in" !identifierPart)
 INSTANCEOF = $("instanceof" !identifierPart)
@@ -1275,7 +1316,7 @@ JSKeywords
 
 CSKeywords
   = ("undefined" / "then" / "unless" / "until" / "loop" / "off" / "by" / "when" / "thanos" / "areYouA" /
-  "and" / "also" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of" / "struct") !identifierPart
+  "and" / "also" / "or" / "isnt" / "is" / "not" / "yes" / "no" / "on" / "of" / "struct"/ "inheritsFrom" / "forEvery" / "blueprint" ) !identifierPart
 
 reserved
   = $(macro)

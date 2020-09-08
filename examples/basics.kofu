@@ -24,4 +24,9 @@ sum :: Int = 0
 
 sum += currentNumber for currentNumber in [1..10]
 
+nums = [1,2,3]
+
+forEvery num in nums
+  present num
+
 present sum

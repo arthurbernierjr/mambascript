@@ -12,7 +12,7 @@ const QUESTIONS = [
     {
       name: 'project-choice',
       type: 'list',
-      message: 'If You Ready To Make Your Project witcha boi Big Poppa Code Select Which Lesson You Are On or else press CTRL + C',
+      message: 'If You Ready To Make Your Project witcha boi Big Poppa Code Select Getting Started Template or else press CTRL + C to exit',
       choices: CHOICES
     },
     {
