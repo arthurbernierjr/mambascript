@@ -16,7 +16,7 @@ b :: Guy = new Guy 'paul', 29
 
 present a areYouA Person
 present b areYouA Person
-present name 
+present name
 
 blueprint Point
   x :: Int
@@ -29,12 +29,3 @@ struct Size
 blueprint Region inheritsFrom Point implements Size
 region :: {x :: Int, width :: Int} = new Region
 present region
-
-# class type arguments
-###
-class Class<A>
-  f :: Int -> Int
-  constructor :: A -> ()
-  constructor: (a) ->
-c = new Class<Int>(1)
-###
