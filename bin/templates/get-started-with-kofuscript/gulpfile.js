@@ -46,22 +46,20 @@ gulp.task('default', (cb) => {
 		browserSync.init({
 			server: './public',
 			notify: true,
-			open: true //change this to true if you want the broser to open automatically
+			open: true //change this to true if you want the browser to open automatically
 		});
 		cb(err);
 	});
 	gulp.watch('./src/scss/**/*',  gulp.task('styles'));
-	gulp.watch('./lib/components/**/*', gulp.task('webpack'));
 	gulp.watch('./src/components/App.kofu', gulp.task('app'));
 	gulp.watch('./src/components/collections/*', gulp.task('collections'));
 	gulp.watch('./src/components/models/*', gulp.task('models'));
 	gulp.watch('./src/components/views/*', gulp.task('views'));
+	gulp.watch(['./lib/components/**/*', './src/index.html'], { delay: 500, queue: true }, gulp.task('webpack'));
 	gulp
 		.watch([
 			'./public/**/*',
-			'./public/*',
-			'public/js/**/.#*js',
-			'public/css/**/.#*css'
+			'!public/css/**/*.css'
 		])
 		.on('change', reload);
 		cb()
@@ -201,4 +199,4 @@ gulp.task('build', cb => {
 	});
 });
 // This is for the startup sequence
-exports.main = gulp.series('collections', 'models', 'views', 'app', 'webpack');
+exports.main = gulp.series('collections', 'models', 'views', 'app');
