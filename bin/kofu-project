@@ -53,16 +53,16 @@ const QUESTIONS = [
         }else {
           consola.warn(stdout);
           exec(`cd ${projectName} && npm audit`, function (err, stdout, stderr ){
-            consola.warn('If you have any vulnerabilities trust that \n BrowserSync,Webpack, Gulp, and Babel are probably fixing them \n As long as its a dev dependency it wont effect our production code or the lesson, ask me if your not sure')
+            consola.warn('If you have any vulnerabilities trust that \n BrowserSync, Webpack, Gulp, and Babel are probably fixing them \n ')
             consola.warn(stdout)
-            consola.success('Looks like we built your KofuScript Project inside the directory you suggested, you can scroll up and see your output and any NPM Warnings :) ')
+            consola.success('Looks like we built your KofuScript Project inside the directory you suggested, you can scroll up and see your output and any NPM Warnings :) \n')
             consola.success(`It is finished.... well not really you still need to cd into the ${projectName} folder by running \n
               --------->   cd ${projectName}    <---------`)
             consola.success(`To help here is some useful info: \n
               to start the app you can run \n
               ----> npm run dev <----- \n
               If your Hungry For More \n you can hack the project yourself by editing  \n
-              ------------> babel.config.json (controls babel), gulpfile.js (controls gulp), webpack.config.js (controls webpack) , gulp-kofu.js (controls kofuscript) <--------------
+              ------------> babel.config.json (controls babel), \n gulpfile.js (controls gulp), \n webpack.config.js (controls webpack) , \n gulp-kofu.js (controls kofuscript) <--------------
               `)
               consola.success(`happy coding ....... `)
 
