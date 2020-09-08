@@ -443,6 +443,16 @@ postfixControlFlowExpression
           , own: own, key: key, val: val, obj: obj, filter: filter
           };
       }
+    / FOREVERY _ maybeVal:(Assignable _ ("," _ Assignable _)?)? IN _ list:assignmentExpression maybeStep:(_ BY _ assignmentExpression)? maybeFilter:(_ WHEN _ assignmentExpression)? {
+        var val = maybeVal ? maybeVal[0] : null,
+            key = maybeVal && maybeVal[2] ? maybeVal[2][2] : null,
+            step = maybeStep ? maybeStep[3] : new CS.Int(1).r('1').g(),
+            filter = maybeFilter ? maybeFilter[3] : null;
+        return 0,
+          { type: 'for-in'
+          , val: val, key: key, list: list, step: step, filter: filter
+          };
+      }
 
 assignmentExpression
   = assignmentOp
