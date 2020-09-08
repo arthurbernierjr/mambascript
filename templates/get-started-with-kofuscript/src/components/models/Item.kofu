@@ -1,0 +1,9 @@
+# Item Model
+
+class Item extends Backbone.Model
+
+  defaults:
+    part1: 'Hello'
+    part2: 'Kofu With Backbone'
+
+module.exports= Item
