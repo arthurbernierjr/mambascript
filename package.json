@@ -17,7 +17,7 @@
   "main": "./lib/module",
   "bin": {
     "kofu": "./bin/kofu",
-    "start-kofuscript":"./bin/kofu-project"
+    "start-kofuscript": "./bin/kofu-project"
   },
   "repository": {
     "type": "git",
@@ -32,6 +32,7 @@
     "commonjs-everywhere": "~0.9.0",
     "grunt": "^1.3.0",
     "grunt-contrib-coffee": "^2.1.0",
+    "jest": "^26.4.2",
     "mocha": "^8.1.3",
     "pegjs": "git+https://github.com/dmajda/pegjs.git#bea6b1fde74c8aebf802f9bcc3380c65b241e1b7",
     "semver": "^7.3.2"
@@ -41,11 +42,10 @@
     "arthur-pavlos-string-reversal": "^1.0.0",
     "coffeescript": "^2.5.1",
     "colors": "^0.6.2",
-    "consola": "^2.15.0",
+    "consola": "^2.12.1",
     "lodash": "^4.17.19",
     "nopt": "~2.1.2",
     "optimist": "^0.6.1",
-    "consola": "^2.12.1",
     "inquirer": "^7.0.1"
   },
   "optionalDependencies": {
@@ -58,6 +58,14 @@
   "engines": {
     "node": "14.8.x"
   },
+  "jest": {
+      "moduleFileExtensions": [
+      "kofu",
+      "js"
+      ],
+      "transformIgnorePatterns": [],
+      "transform": {".*": "<rootDir>/tdd/testprocessor.js"}
+    },
   "licenses": [
     {
       "type": "3-clause BSD",
