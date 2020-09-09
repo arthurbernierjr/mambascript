@@ -3,6 +3,7 @@ coffee-script-redux-*.tgz
 .gitignore
 lib/bootstrap
 dist
-test
+old-tests
+tdd
 Makefile
 ./src
