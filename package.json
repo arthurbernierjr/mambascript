@@ -1,7 +1,7 @@
 {
   "name": "kofuscript",
   "author": "arthurbernierjr",
-  "version": "0.0.4-alpha.3",
+  "version": "0.0.4-alpha.4",
   "homepage": "https://github.com/arthurbernierjr/KofuScript",
   "bugs": "https://github.com/arthurbernierjr/KofuScript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
@@ -43,10 +43,11 @@
     "coffeescript": "^2.5.1",
     "colors": "^0.6.2",
     "consola": "^2.12.1",
+    "inquirer": "^7.0.1",
     "lodash": "^4.17.19",
     "nopt": "~2.1.2",
     "optimist": "^0.6.1",
-    "inquirer": "^7.0.1"
+    "transform-imports": "^2.1.1"
   },
   "optionalDependencies": {
     "prettyjson": "*",
@@ -59,13 +60,15 @@
     "node": "14.8.x"
   },
   "jest": {
-      "moduleFileExtensions": [
+    "moduleFileExtensions": [
       "kofu",
       "js"
-      ],
-      "transformIgnorePatterns": [],
-      "transform": {".*": "<rootDir>/tdd/testprocessor.js"}
-    },
+    ],
+    "transformIgnorePatterns": [],
+    "transform": {
+      ".*": "<rootDir>/tdd/testprocessor.js"
+    }
+  },
   "licenses": [
     {
       "type": "3-clause BSD",

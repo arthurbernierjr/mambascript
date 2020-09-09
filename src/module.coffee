@@ -10,6 +10,7 @@ reporter = require './reporter'
 cscodegen = try require 'cscodegen'
 escodegen = try require 'escodegen'
 NewCoffeScript = require 'coffeescript'
+transformImports = require 'transform-imports'
 
 pkg = require './../package.json'
 
@@ -73,7 +74,15 @@ CoffeeScript =
       file: targetName or 'unknown'
       format: if options.compact then escodegen.FORMAT_MINIFY else options.format ? escodegenFormat
 
+  jsEsm: (jsAst, options) ->
+    code = (@jsWithSourceMap jsAst, null, options).code
+    transformImports code, (importDefs) ->
+      importDefs.forEach( (importDef) ->
+        importDef.importedExport.isImportedAsCJS = false
+      )
+
   js: (jsAst, options) -> (@jsWithSourceMap jsAst, null, options).code
+
   sourceMap: (jsAst, name, options) -> (@jsWithSourceMap jsAst, name, options).map
 
   # Equivalent to original CS compile
@@ -82,6 +91,12 @@ CoffeeScript =
     csAST = CoffeeScript.parse input, options
     jsAST = CoffeeScript.compile csAST, bare: options.bare
     CoffeeScript.js jsAST, compact: options.compact or options.minify
+
+  smoothCompile: (input, options = {}) ->
+    options.optimise ?= on
+    csAST = CoffeeScript.parse input, options
+    jsAST = CoffeeScript.compile csAST, bare: true
+    CoffeeScript.jsEsm jsAST, compact: options.compact or options.minify
 
   svelteCompile: (input) ->
     options = {

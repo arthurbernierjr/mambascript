@@ -123,7 +123,10 @@ switch mode
         console.log cscodegen.generate cs_ast
         return
 
-      code = CoffeeScript.svelteCompile cs_ast
+      #change here
+      js_ast = CoffeeScript.compile cs_ast, bare: true
+      code = CoffeeScript.jsEsm js_ast
+
 
 
       extReplacer = (name) ->

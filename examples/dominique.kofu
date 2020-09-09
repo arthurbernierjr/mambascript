@@ -1,0 +1,16 @@
+blueprint Person
+    name :: String
+    age :: Int
+
+    constructor: (name, age) ->
+      @name = name
+      @age = age
+
+
+dominique :: Person = new Person "Dominique", "27"
+arthur :: String = "arthur"
+
+present dominique
+present dominique areYouA Person
+present arthur areYouA Person
+present 5 is 6
