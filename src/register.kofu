@@ -2,7 +2,7 @@ child_process = require 'child_process'
 fs = require 'fs'
 path = require 'path'
 
-CoffeeScript = require './module'
+KofuScript = require './module'
 {runModule} = require './run'
 
 module.exports = not require.extensions['.coffee']?
@@ -12,9 +12,9 @@ module.exports = not require.extensions['.coffee']?
 
 compile = (module, filename, opts) ->
   input = fs.readFileSync filename, 'utf8'
-  csAst = CoffeeScript.parse input, opts
-  jsAst = CoffeeScript.compile csAst
-  js = CoffeeScript.js jsAst
+  csAst = KofuScript.parse input, opts
+  jsAst = KofuScript.compile csAst
+  js = KofuScript.js jsAst
   runModule module, js, jsAst, filename
 
 compileWithOriginalCoffee = (module, filename, opts = {}) ->

@@ -5,7 +5,7 @@ path = require 'path'
 {Preprocessor} = require './preprocessor'
 {Optimiser} = require './optimiser'
 {runMain} = require './run'
-CoffeeScript = require './module'
+KofuScript = require './module'
 Repl = require './repl'
 nopt = require 'nopt'
 cscodegen = try require 'cscodegen'
@@ -138,14 +138,14 @@ if options.help
       example: #{$0}
 
   -b, --bare              omit the top-level function wrapper
-  -c, --compile           output a JSON-serialised AST representation of the output
-  -z, --svelte           output a JSON-serialised AST representation of the output optimized for svelte
+  -c, --compile           compile input .kofu file to js
+  -z, --svelte           compile input .kofu file to js svelte
   -e, --eval              evaluate compiled JavaScript
-  -f, --cscodegen         output cscodegen-generated CoffeeScript code
+  -f, --cscodegen         output cscodegen-generated KofuScript code
   -i, --input FILE        file to be used as input instead of STDIN
   -I, --require FILE      require a library before a script is executed
   -j, --js                generate JavaScript output
-  -l, --literate          treat the input as literate CoffeeScript code
+  -l, --literate          treat the input as literate KofuScript code
   -m, --minify            run compiled javascript output through a JS minifier
   -o, --output FILE       file to be used as output instead of STDOUT
   -p, --parse             output a JSON-serialised AST representation of the input
@@ -157,7 +157,7 @@ if options.help
   --nodejs OPTS           pass options through to the node binary
   --optimise              enable optimisations (default: on)
   --raw                   preserve source position and raw parse information
-  --repl                  run an interactive TypedCoffeeScript REPL
+  --repl                  run an interactive TypedKofuScript REPL
   --source-map            generate source map
   --source-map-file FILE  file used as output for source map when using --js
 
@@ -175,7 +175,7 @@ else if options.version
   console.log "kofuscript version #{pkg.version}"
 
 else if options.repl
-  CoffeeScript.register()
+  KofuScript.register()
   do process.argv.shift
   do Repl.start
 
@@ -206,7 +206,7 @@ else
 
     # parse
     try
-      result = CoffeeScript.parse input,
+      result = KofuScript.parse input,
         optimise: no
         raw: options.raw or options.sourceMap or options.sourceMapFile or options.eval
         inputSource: inputSource
@@ -247,7 +247,7 @@ else
         process.exit 1
 
     # compile
-    jsAST = CoffeeScript.compile result, bare: options.bare
+    jsAST = KofuScript.compile result, bare: options.bare
 
     # --compile
     if options.compile
@@ -271,7 +271,7 @@ else
 
     if options.sourceMap
       # source map generation
-      try sourceMap = CoffeeScript.sourceMap jsAST, inputName, compact: options.minify
+      try sourceMap = KofuScript.sourceMap jsAST, inputName, compact: options.minify
       catch e
         console.error (e.stack or e.message)
         process.exit 1
@@ -284,7 +284,7 @@ else
 
     # js code gen
     try
-      {code: js, map: sourceMap} = CoffeeScript.jsWithSourceMap jsAST, inputName, compact: options.minify
+      {code: js, map: sourceMap} = KofuScript.jsWithSourceMap jsAST, inputName, compact: options.minify
     catch e
       console.error (e.stack or e.message)
       process.exit 1
@@ -308,7 +308,7 @@ else
 
     # --eval
     if options.eval
-      CoffeeScript.register()
+      KofuScript.register()
       process.argv = [process.argv[1], options.input].concat additionalArgs
       runMain input, js, jsAST, inputSource
       return

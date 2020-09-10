@@ -2,7 +2,7 @@ fs = require 'fs'
 path = require 'path'
 vm = require 'vm'
 nodeREPL = require 'repl'
-CoffeeScript = require './module'
+KofuScript = require './module'
 CS = require './nodes'
 {merge} = require './helpers'
 reporter = require './reporter'
@@ -118,10 +118,10 @@ module.exports =
       # empty command
       return cb null if /^\s*$/.test input
       try
-        inputAst = CoffeeScript.parse input, {filename, raw: yes}
+        inputAst = KofuScript.parse input, {filename, raw: yes}
         transformedAst = new CS.AssignOp (new CS.Identifier '_'), inputAst.body
-        jsAst = CoffeeScript.compile transformedAst, bare: yes, inScope: Object.keys context
-        js = CoffeeScript.js jsAst
+        jsAst = KofuScript.compile transformedAst, bare: yes, inScope: Object.keys context
+        js = KofuScript.js jsAst
         cb null, vm.runInContext js, context, filename
       catch err
         cb "\x1B[0;31m#{err.constructor.name}: #{err.message}\x1B[0m"

@@ -1,13 +1,13 @@
 default: all
 
-SRC = $(wildcard src/*.coffee | sort)
-LIB = $(SRC:src/%.coffee=lib/%.js) lib/parser.js
-BOOTSTRAPS = $(SRC:src/%.coffee=lib/bootstrap/%.js) lib/bootstrap/parser.js
+SRC = $(wildcard src/*.kofu | sort)
+LIB = $(SRC:src/%.kofu=lib/%.js) lib/parser.js
+BOOTSTRAPS = $(SRC:src/%.kofu=lib/bootstrap/%.js) lib/bootstrap/parser.js
 LIBMIN = $(LIB:lib/%.js=lib/%.min.js)
-TEST = $(wildcard test/*.coffee | sort)
+TEST = $(wildcard test/*.kofu | sort)
 ROOT = $(shell pwd)
 
-COFFEE = bin/coffee --js --bare --self
+KOFU = bin/kofuscript --js --bare --self
 PEGJS = node_modules/.bin/pegjs --cache --export-var 'module.exports'
 MOCHA = node_modules/.bin/mocha --self --compilers coffee:./register -u tdd
 CJSIFY = node_modules/.bin/cjsify --export CoffeeScript
@@ -16,7 +16,7 @@ MINIFIER = node_modules/.bin/esmangle
 all: $(LIB)
 build: all
 parser: lib/parser.js
-browser: dist/coffee-script-redux.min.js
+browser: dist/kofuscript.min.js
 min: minify
 minify: $(LIBMIN)
 # TODO: test-browser
@@ -34,27 +34,27 @@ lib/parser.js: src/grammar.pegjs bootstraps lib
 	$(PEGJS) <"$<" >"$@.tmp" && mv "$@.tmp" "$@"
 lib/bootstrap/parser.js: src/grammar.pegjs lib/bootstrap
 	$(PEGJS) <"$<" >"$@"
-lib/bootstrap/%.js: src/%.coffee lib/bootstrap
-	$(COFFEE) -i "$<" >"$@"
+lib/bootstrap/%.js: src/%.kofu lib/bootstrap
+	$(KOFU) -i "$<" >"$@"
 bootstraps: $(BOOTSTRAPS) lib/bootstrap
 	cp lib/bootstrap/* lib
-lib/%.js: src/%.coffee lib/bootstrap/%.js bootstraps lib
-	$(COFFEE) -i "$<" >"$@.tmp" && mv "$@.tmp" "$@"
+lib/%.js: src/%.kofu lib/bootstrap/%.js bootstraps lib
+	$(KOFU) -i "$<" >"$@.tmp" && mv "$@.tmp" "$@"
 
 
 dist:
 	mkdir dist/
 
-dist/coffee-script-redux.js: lib/browser.js dist
-	$(CJSIFY) src/browser.coffee -vx CoffeeScript \
-		-a /src/register.coffee: \
-		-a /src/parser.coffee:/lib/parser.js \
+dist/kofuscript.js: lib/browser.js dist
+	$(CJSIFY) src/browser.kofu -vx CoffeeScript \
+		-a /src/register.kofu: \
+		-a /src/parser.kofu:/lib/parser.js \
 		--source-map "$@.map" > "$@"
 
-dist/coffee-script-redux.min.js: lib/browser.js dist
-	$(CJSIFY) src/browser.coffee -vmx CoffeeScript \
-		-a /src/register.coffee: \
-		-a /src/parser.coffee:/lib/parser.js \
+dist/kofuscript.min.js: lib/browser.js dist
+	$(CJSIFY) src/browser.kofu -vmx CoffeeScript \
+		-a /src/register.kofu: \
+		-a /src/parser.kofu:/lib/parser.js \
 		--source-map "$@.map" > "$@"
 
 
@@ -65,7 +65,7 @@ lib/%.min.js: lib/%.js lib/coffee-script
 .PHONY: default all build parser browser min minify test coverage install loc clean
 
 test:
-	$(MOCHA) -R dot test/*.coffee
+	$(MOCHA) -R dot test/*.kofu
 
 # TODO: use Constellation/ibrik for coverage
 coverage:
