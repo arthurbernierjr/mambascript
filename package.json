@@ -43,6 +43,7 @@
     "coffeescript": "^2.5.1",
     "colors": "^0.6.2",
     "consola": "^2.12.1",
+    "globby": "^11.0.1",
     "inquirer": "^7.0.1",
     "lodash": "^4.17.19",
     "nopt": "~2.1.2",

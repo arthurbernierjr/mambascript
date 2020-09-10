@@ -1,9 +1,13 @@
 KofuScript = require '../lib/module'
+Fix = require '../utils/esm'
 code ="""
-a = require 'b'
+a = require '~/b'
+{b} = require '@/g'
+module.exports = a
 """
 
 csAST = KofuScript.parse code
 jsAST = KofuScript.compile csAST , bare: true
 final = KofuScript.jsEsm jsAST
-present final
+fixed = Fix final
+present fixed

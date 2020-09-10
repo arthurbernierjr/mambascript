@@ -10,7 +10,7 @@ reporter = require './reporter'
 cscodegen = try require 'cscodegen'
 escodegen = try require 'escodegen'
 NewCoffeScript = require 'coffeescript'
-transformImports = require 'transform-imports'
+ESMRewriter = require '../utils/esm'
 
 pkg = require './../package.json'
 
@@ -23,9 +23,9 @@ escodegenFormat =
   quotes: 'auto'
   parentheses: no
 
-CoffeeScript =
+KofuScript =
 
-  CoffeeScript: CoffeeScript
+  KofuScript: KofuScript
   Compiler: Compiler
   Optimiser: Optimiser
   Parser: Parser
@@ -76,11 +76,7 @@ CoffeeScript =
 
   jsEsm: (jsAst, options) ->
     code = (@jsWithSourceMap jsAst, null, options).code
-    transformImports code, (importDefs) ->
-      importDefs.forEach( (importDef) ->
-        importDef.importedExport.isImportedAsCJS = false
-        true
-      )
+    ESMRewriter code
 
   js: (jsAst, options) -> (@jsWithSourceMap jsAst, null, options).code
 
@@ -89,15 +85,15 @@ CoffeeScript =
   # Equivalent to original CS compile
   cs2js: (input, options = {}) ->
     options.optimise ?= on
-    csAST = CoffeeScript.parse input, options
-    jsAST = CoffeeScript.compile csAST, bare: options.bare
-    CoffeeScript.js jsAST, compact: options.compact or options.minify
+    csAST = KofuScript.parse input, options
+    jsAST = KofuScript.compile csAST, bare: options.bare
+    KofuScript.js jsAST, compact: options.compact or options.minify
 
   smoothCompile: (input, options = {}) ->
     options.optimise ?= on
-    csAST = CoffeeScript.parse input, options
-    jsAST = CoffeeScript.compile csAST, bare: true
-    CoffeeScript.jsEsm jsAST, compact: options.compact or options.minify
+    csAST = KofuScript.parse input, options
+    jsAST = KofuScript.compile csAST, bare: true
+    KofuScript.jsEsm jsAST, compact: options.compact or options.minify
 
   svelteCompile: (input) ->
     options = {
@@ -108,13 +104,13 @@ CoffeeScript =
     }
     @cs2js(input, options)
 
-module.exports = CoffeeScript
+module.exports = KofuScript
 
 if require.extensions?['.node']?
-  CoffeeScript.register = -> require './register'
+  KofuScript.register = -> require './register'
   # Throw error with deprecation warning when depending upon implicit `require.extensions` registration
   for ext in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.kofu']
     require.extensions[ext] ?= ->
       throw new Error """
-      Use CoffeeScript.register() or require the coffee-script-redux/register module to require #{ext} files.
+      Use KofuScript.register() or require the coffee-script-redux/register module to require #{ext} files.
       """
