@@ -79,6 +79,7 @@ CoffeeScript =
     transformImports code, (importDefs) ->
       importDefs.forEach( (importDef) ->
         importDef.importedExport.isImportedAsCJS = false
+        true
       )
 
   js: (jsAst, options) -> (@jsWithSourceMap jsAst, null, options).code

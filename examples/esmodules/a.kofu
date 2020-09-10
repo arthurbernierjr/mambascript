@@ -1,5 +1,4 @@
-import {b} from './b'
-
-a = b + 1
-
-present a
+module A.B
+	class @C
+		a :: Int
+abc :: A.B.C = new A.B.C

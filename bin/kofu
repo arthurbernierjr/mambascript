@@ -17,12 +17,14 @@ reporter = require '../lib/reporter'
   .boolean('scope')
   .boolean('self')
   .boolean('print')
+  .boolean('svelte')
   .alias('c', 'compile')
   .alias('e', 'execute')
   .alias('b', 'bare')
   .alias('o', 'out')
   .alias('j', 'join')
   .alias('d', 'debug')
+  .alias('z', 'svelte')
 
 {runMain} = require '../lib/run'
 
@@ -153,11 +155,11 @@ switch mode
       joined = Code.join(codes, outpath)
       joined.write()
     else
-      for code in codes
-        if argv.print
-          console.log code.code
-        else
-          code.write()
+        for code in codes
+          if argv.print
+            console.log code.code
+          else
+            code.write()
 
   when 'compile'
     {Preprocessor} = require '../lib/preprocessor'

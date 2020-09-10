@@ -1,4 +1,9 @@
-reversal = require('arthur-pavlos-string-reversal')
+KofuScript = require '../lib/module'
+code ="""
+a = require 'b'
+"""
 
-
-present reversal "arthur"
+csAST = KofuScript.parse code
+jsAST = KofuScript.compile csAST , bare: true
+final = KofuScript.jsEsm jsAST
+present final

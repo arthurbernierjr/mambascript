@@ -12,6 +12,8 @@ Add 1 to 'count' Continue at [loop] [end]
 Output 'total'
 ###
 
+stringParser = require 'arthur-pavlos-string-reversal'
+
 total :: Int = 0
 count :: Int = 1
 
