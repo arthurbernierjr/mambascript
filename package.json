@@ -29,14 +29,19 @@
     "test": "make -j test"
   },
   "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
+    "babel-loader": "^8.1.0",
     "cluster": "~0.7.7",
-    "commonjs-everywhere": "~0.9.0",
     "grunt": "^1.3.0",
     "grunt-contrib-coffee": "^2.1.0",
+    "gulp": "^4.0.2",
     "jest": "^26.4.2",
+    "kofu-loader": "^1.0.0",
     "mocha": "^8.1.3",
     "pegjs": "git+https://github.com/dmajda/pegjs.git#bea6b1fde74c8aebf802f9bcc3380c65b241e1b7",
-    "semver": "^7.3.2"
+    "semver": "^7.3.2",
+    "webpack": "^4.44.1"
   },
   "dependencies": {
     "StringScanner": "~0.0.3",
@@ -48,7 +53,7 @@
     "inquirer": "^7.0.1",
     "lodash": "^4.17.19",
     "nopt": "~2.1.2",
-    "optimist": "^0.6.1",
+    "kofu-optimist": "^0.6.3",
     "transform-imports": "^2.1.1"
   },
   "optionalDependencies": {

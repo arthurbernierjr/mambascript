@@ -1,4 +1,4 @@
-module.exports = KofuScript = require './module'
+KofuScript = require './module'
 
 # Use standard JavaScript `eval` to eval code.
 KofuScript.eval = (code, options = {}) ->
@@ -34,7 +34,7 @@ KofuScript.load = (url, callback) ->
 # This happens on page load.
 runScripts = ->
   scripts = document.getElementsByTagName 'script'
-  coffees = (s for s in scripts when s.type is 'text/coffeescript')
+  coffees = (s for s in scripts when s.type is 'text/kofu')
   index = 0
   do execute = ->
     return unless script = coffees[index++]
@@ -50,3 +50,5 @@ if addEventListener?
   addEventListener 'DOMContentLoaded', runScripts, no
 else if attachEvent?
   attachEvent 'onload', runScripts
+
+module.exports = KofuScript

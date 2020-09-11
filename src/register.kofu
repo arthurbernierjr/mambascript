@@ -7,7 +7,7 @@ KofuScript = require './module'
 
 module.exports = not require.extensions['.coffee']?
 
-{argv} = require('optimist')
+{argv} = require('kofu-optimist')
   .boolean('self')
 
 compile = (module, filename, opts) ->

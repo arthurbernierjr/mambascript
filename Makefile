@@ -10,7 +10,7 @@ ROOT = $(shell pwd)
 KOFU = bin/kofuscript --js --bare --self
 PEGJS = node_modules/.bin/pegjs --cache --export-var 'module.exports'
 MOCHA = node_modules/.bin/mocha --self --compilers coffee:./register -u tdd
-CJSIFY = node_modules/.bin/cjsify --export CoffeeScript
+CJSIFY = node_modules/.bin/cjsify --export KofuScript
 MINIFIER = node_modules/.bin/esmangle
 
 all: $(LIB)
@@ -46,19 +46,19 @@ dist:
 	mkdir dist/
 
 dist/kofuscript.js: lib/browser.js dist
-	$(CJSIFY) src/browser.kofu -vx CoffeeScript \
+	$(CJSIFY) src/browser.kofu -vx KofuScript \
 		-a /src/register.kofu: \
 		-a /src/parser.kofu:/lib/parser.js \
 		--source-map "$@.map" > "$@"
 
 dist/kofuscript.min.js: lib/browser.js dist
-	$(CJSIFY) src/browser.kofu -vmx CoffeeScript \
+	$(CJSIFY) src/browser.kofu -vmx KofuScript \
 		-a /src/register.kofu: \
 		-a /src/parser.kofu:/lib/parser.js \
 		--source-map "$@.map" > "$@"
 
 
-lib/%.min.js: lib/%.js lib/coffee-script
+lib/%.min.js: lib/%.js lib/kofuscript
 	$(MINIFIER) <"$<" >"$@"
 
 

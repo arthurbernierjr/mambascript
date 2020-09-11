@@ -14,7 +14,7 @@ Output 'total'
 #`import 'stringParser' from 'arthur-pavlos-string-reversal' `
 stringParser = require 'arthur-pavlos-string-reversal'
 {charlie} = require 'b'
-`export charlie`
+
 total :: Int = 0
 count :: Int = 1
 
@@ -29,7 +29,12 @@ sum += currentNumber forEvery currentNumber in [1..10]
 
 val =
   key: 'value'
+  mad: yes
+  happy: on
+  cool: true
 
 present sum
+
+present val
 
 module.exports = val
