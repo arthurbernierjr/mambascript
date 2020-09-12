@@ -1,3 +1,1 @@
 b :: Int = 5
-
-export b

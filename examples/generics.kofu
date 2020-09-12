@@ -13,7 +13,7 @@ map = (list, fn) ->
   for i in list
     fn(i)
 list :: String[] = map<Int, String> [1..10], (n) -> 'i'
-
+present list
 # class type arguments
 class Class<A>
   f :: Int -> Int
