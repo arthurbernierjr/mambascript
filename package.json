@@ -1,7 +1,7 @@
 {
   "name": "kofuscript",
   "author": "arthurbernierjr",
-  "version": "0.1.0-beta5",
+  "version": "0.1.0-beta6",
   "homepage": "https://github.com/arthurbernierjr/kofuscript",
   "bugs": "https://github.com/arthurbernierjr/kofuscript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
@@ -83,5 +83,6 @@
       "url": "https://raw.github.com/michaelficarra/CoffeeScriptRedux/master/LICENSE"
     }
   ],
+  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "license": "3-clause BSD"
 }
