@@ -2,8 +2,8 @@
   "name": "kofuscript",
   "author": "arthurbernierjr",
   "version": "0.1.0-beta5",
-  "homepage": "https://github.com/arthurbernierjr/KofuScript",
-  "bugs": "https://github.com/arthurbernierjr/KofuScript/issues",
+  "homepage": "https://github.com/arthurbernierjr/kofuscript",
+  "bugs": "https://github.com/arthurbernierjr/kofuscript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
   "keywords": [
     "typedcoffeescript",
@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/arthurbernierjr/KofuScript.git"
+    "url": "git://github.com/arthurbernierjr/kofuscript.git"
   },
   "scripts": {
     "build": "make -j build",
