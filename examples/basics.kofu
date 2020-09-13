@@ -13,7 +13,7 @@ Output 'total'
 ###
 #`import 'stringParser' from 'arthur-pavlos-string-reversal' `
 stringParser = require 'arthur-pavlos-string-reversal'
-{charlie} = require 'b'
+# {charlie} = require 'b'
 
 total :: Int = 0
 count :: Int = 1
