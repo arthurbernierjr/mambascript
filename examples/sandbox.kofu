@@ -1,0 +1,132 @@
+# Concatenate string
+present '-------Concatenate string--------'
+present 'Concatenate -->',  'con' + 'cat' + 'en' + 'ate'
+
+# typeof operator
+present '-------TYPEOF operator--------'
+present 'Typeof Operator -->', typeof 'arthur'
+
+# isnt
+present '-------ISNT instead of !== --------'
+present 'ISNT -->' , 'Love' isnt 'Hate'
+
+# and , && , also
+present '------- also --------'
+present 'ALSO -->', 5 > 3 also 6 > 5
+
+# or, ||
+present '------- or --------'
+present 'OR -->', true or false
+
+# not
+present '-------NOT--------'
+present not true
+
+# is  and Booleans
+present '------- is  and Booleans --------'
+present 'Truthy Booleans true, on, yes'
+present 'Falsey Booleans false, off, no'
+present true is on
+present true is yes
+present false is off
+present false is no
+
+
+# Types
+
+obj =  {
+  "KofuScript":	"JavaScript"
+  "is": "==="
+  "isnt":	"!=="
+  "not":	"!"
+  "also":	"&&"
+  "or":	"||"
+  "true yes on":	"true"
+  "false no off":	"false"
+  "@ this": 	"this"
+  "of": "in"
+  "in": "no JS Equivalent"
+}
+
+keys :: String[] = Object.keys obj
+
+forEvery key in keys then present "[#{key}] in KofuScript is equivalent to [#{obj[key]}] in JavaScript" unless key is 'KofuScript'
+
+# Strings
+
+myString :: String = 'arthur'
+
+present myString.split('').reverse().join('')
+present typeof myString
+
+# Numbers
+
+myNumber :: Number = 5
+
+present 'myNumber is', myNumber
+present myNumber * 2
+present myNumber ** 2
+present myNumber % 3
+present myNumber / 2
+
+
+# Booleans
+myBoolean :: Boolean = yes
+present 'myBoolean is', myBoolean
+
+# Objects
+myObj =
+  name: 'arthur'
+  age: 32
+  lights: on
+  hair: true
+
+present myObj
+# Arrays
+numArr :: Int[] = [1,2,3]
+stringArr :: String[] = ['a', 'b', 'c']
+otherArr :: Any[] = [1, 'a']
+present otherArr
+
+# Loops & Control Flow
+
+forEvery number in [0..12] by 2 then present number
+
+forEvery number in [0..10]
+  do (number) ->
+    present number * 3
+
+# eat is a function that accepts a string and returns nothing
+eat :: String -> () = (food :: String ) ->
+  present "yum #{food.toUpperCase()} !!!"
+
+eat food forEvery food in ['toast', 'cheese', 'wine']
+
+eat food forEvery food in  ['toast', 'cheese', 'wine'] when food isnt 'cheese'
+# Blueprints
+
+blueprint Human
+  name :: String
+  age :: Int
+  constructor: (age :: Int, name :: String) ->
+    @name = name
+    @age = age
+
+blueprint SuperHero inheritsFrom Human
+  name :: String
+  age :: Int
+  powers :: String[]
+
+  constructor: (name :: String, age :: Int, powers...) ->
+    super name, age
+    @powers = powers
+
+bigArt = new SuperHero 'Big Art', 33, 'flight', 'super strength'
+
+present bigArt
+
+# Functions
+
+# Structs
+
+# Generics
