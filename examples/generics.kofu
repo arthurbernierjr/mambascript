@@ -18,5 +18,6 @@ present list
 class Class<A>
   f :: Int -> Int
   constructor :: A -> ()
-  constructor: (a) ->
+  constructor: (@a) ->
 c = new Class<Int>(1)
+present c.a
