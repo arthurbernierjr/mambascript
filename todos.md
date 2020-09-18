@@ -1,4 +1,4 @@
-#Agenda
+# Agenda
 
 1. Rewrite all AlgoCasts into KofuScript with jest tests
 1. Rewrite all CSRedux tests into KofuScript tests with jest
