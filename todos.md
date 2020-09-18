@@ -15,3 +15,4 @@
 1. Build Rock Paper Scisssors Lizard Spoc with `Nuxt.kofu` and `KISS`
 1. Rewrite `Underscore` in `KofuScript` and add additional Functional programming features.
 1. Once all other todos are completed return to KofuJS and work on KofuScript and KofuJS supporting eachother via a rewrite of `Teact`
+1. Make ESLINT and Babel Plugins for KofuScript
