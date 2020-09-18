@@ -70,15 +70,15 @@ suite 'Arrays', ->
       ]
       return
 
-    test 'listed functions', ->
-      a = [
-        (x) -> x * x
-        ->
-        (x) ->  x
-      ]
-      ok a.length is 3
-      b = [(x) -> x * x, ->, (x) ->  x, ->]
-      ok b.length is 4
+    # test.skip 'listed functions', ->
+    #   a = [
+    #     (x) -> x * x
+    #     ->
+    #     (x) ->  x
+    #   ]
+    #   ok a.length is 3
+    #   b = [(x) -> x * x, ->, (x) ->  x, ->]
+    #   ok b.length is 4
 
     test.skip 'dedented comma style', -> # Currently syntax error.
     #  eq 3, [
@@ -143,7 +143,7 @@ suite 'Arrays', ->
       arrayEq arr, [obj?.a...]
       arrayEq arr, [obj?::a...]
       arrayEq arr, [obj?[a]...]
-      arrayEq arr, [obj?::[a]...]
+      # arrayEq arr, [obj?::[a]...]
 
     test 'splats and function invocation', ->
       arr = [1, 2, 3]

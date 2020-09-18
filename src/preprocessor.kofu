@@ -1,6 +1,6 @@
 {pointToErrorLocation} = require './helpers'
 StringScanner = require 'StringScanner'
-
+reminder = 'no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript'
 
 # TODO: better comments
 # TODO: support win32-style line endings
@@ -38,7 +38,7 @@ StringScanner = require 'StringScanner'
     lines = @ss.str.substr(0, @ss.pos).split(/\n/) || ['']
     columns = if lines[lines.length-1]? then lines[lines.length-1].length else 0
     context = pointToErrorLocation @ss.str, lines.length, columns
-    throw new Error "Unexpected #{token}\n#{context}"
+    throw new Error "Unexpected #{token}\n#{context} #{reminder}"
 
   peek: -> if @context.length then @context[@context.length - 1] else null
 
@@ -73,7 +73,7 @@ StringScanner = require 'StringScanner'
         (@err c) unless top is '\\'
         @context.pop()
       else throw new Error "undefined token observed: " + c
-    @context
+    @context + " #{reminder}"
 
   p: (s) ->
     if s? then @preprocessed = "#{@preprocessed}#{s}"
@@ -88,7 +88,7 @@ StringScanner = require 'StringScanner'
       # consume base indentation
       if @base?
         if not (@ss.eos() or (@scan @base)?)
-          throw new Error "inconsistent base indentation"
+          throw new Error "inconsistent base indentation remember white space matters... Think Harvard Outline"
       else
         @base = /// #{@scan /// [#{ws}]* ///} ///
 
@@ -107,10 +107,10 @@ StringScanner = require 'StringScanner'
         else
           # Some ambiguous dedent
           lines = @ss.str.substr(0, @ss.pos).split(/\n/) || ['']
-          message = "Syntax error on line #{lines.length}: indentation is ambiguous"
+          message = "Syntax error on line #{lines.length}: indentation is ambiguous make sure you use the same indentation level on each line"
           lineLen = @indents.reduce ((l, r) -> l + r.length), 0
           context = pointToErrorLocation @ss.str, lines.length, lineLen
-          throw new Error "#{message}\n#{context}"
+          throw new Error "#{message}\n#{context} #{reminder}"
         ++indentIndex
       if @ss.check /// [#{ws}]+ [^#{ws}#] ///
         # an indent
@@ -250,6 +250,6 @@ StringScanner = require 'StringScanner'
           @observe '\n'
         else
           # TODO: store offsets of tokens when inserted and report position of unclosed starting token
-          throw new Error "Unclosed \"#{@peek().replace /"/g, '\\"'}\" at EOF"
+          throw new Error "Unclosed \"#{@peek().replace /"/g, '\\"'}\" at EOF. #{reminder}"
 
     @preprocessed

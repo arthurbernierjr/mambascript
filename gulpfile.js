@@ -34,9 +34,10 @@ gulp.task('compile', (cb)=> {
 			})
 		)
 		.pipe(gulp.dest('./lib'));
+		cb();
 })
 
-gulp.task('examples', (cb)=> {
+gulp.task('example', (cb)=> {
 	gulp
 		.src('examples/**/*.kofu')
 		.pipe(

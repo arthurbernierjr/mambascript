@@ -15,6 +15,44 @@ Output 'total'
 stringParser = require 'arthur-pavlos-string-reversal'
 # {charlie} = require 'b'
 
+theBait   = 1000
+theSwitch = 0
+
+[theBait, theSwitch] = [theSwitch, theBait]
+
+a = 1
+
+present b ? a
+
+popular  = ['pepperoni', 'sausage', 'cheese']
+unwanted = ['anchovies', 'olives']
+
+all = [popular..., unwanted..., 'mushrooms']
+
+present all
+
+user =
+  name: 'Werner Heisenberg'
+  occupation: 'theoretical physicist'
+
+currentUser = Object.assign({}, user, { name: 'arthur' })
+
+present currentUser
+
+voltron = (args...)->
+  Object.assign({}, args...)
+
+state =
+  height: 72
+  age: 35
+
+newState=
+  age: 36
+
+updatedState = voltron state, newState
+
+present updatedState
+
 total :: Int = 0
 count :: Int = 1
 

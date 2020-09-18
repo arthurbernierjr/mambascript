@@ -1,0 +1,4 @@
+eq = (value, test)->
+  expect(test is value)
+
+module.exports = eq

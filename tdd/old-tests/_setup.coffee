@@ -25,7 +25,7 @@ global.neq     = (a, b, msg) -> ok (not egal a, b), msg ? "#{inspect a} !== #{in
 global.arrayEq = (a, b, msg) -> ok arrayEgal(a,b), msg ? "#{inspect a} === #{inspect b}"
 
 
-global.CoffeeScript = require '..'
+global.CoffeeScript = require '../lib/module'
 global.CS = require "../lib/nodes"
 global.JS = require "../lib/js-nodes"
 global.Repl = require "../lib/repl"

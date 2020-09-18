@@ -1,3 +1,5 @@
+###
+/*
 anagrams = require './index'
 
 test 'anagrams function exists',  ->
@@ -8,3 +10,9 @@ test "'hello' is an anagram of 'llohe'", ->
 
 test "'One One' is not an anagram of 'One One c'", ->
   expect(anagrams('One One', 'One One c')).toBeFalsy()
+  */
+###
+
+test 'can parse simple arrays', ->
+  expect([].length is 0).toBeTruthy()
+  expect([ ].length is 0).toBeTruthy()

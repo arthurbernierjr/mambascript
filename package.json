@@ -1,5 +1,5 @@
 {
-  "name": "kofuscript",
+  "name": "kofuscript-dev",
   "author": "arthurbernierjr",
   "version": "0.1.0-beta6",
   "homepage": "https://github.com/arthurbernierjr/kofuscript",
@@ -17,9 +17,9 @@
   ],
   "main": "./lib/module",
   "bin": {
-    "kofu": "./bin/kofu",
-    "start-kofuscript": "./bin/kofu-project",
-    "kofuscript": "./bin/kofuscript"
+    "kofu-dev": "./bin/kofu",
+    "start-kofuscript-dev": "./bin/kofu-project",
+    "kofuscript-dev": "./bin/kofuscript"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
   },
   "scripts": {
     "build": "make -j build",
+    "check": "make -j test",
     "test": "jest",
     "example": "gulp example",
     "dev": "gulp"
@@ -54,9 +55,10 @@
     "consola": "^2.12.1",
     "globby": "^11.0.1",
     "inquirer": "^7.0.1",
+    "kofu-optimist": "^0.6.3",
     "lodash": "^4.17.19",
     "nopt": "~2.1.2",
-    "kofu-optimist": "^0.6.3",
+    "pegjs-each-node": "^0.2.1",
     "transform-imports": "^2.1.1"
   },
   "optionalDependencies": {

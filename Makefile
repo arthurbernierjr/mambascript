@@ -9,7 +9,7 @@ ROOT = $(shell pwd)
 
 KOFU = bin/kofuscript --js --bare --self
 PEGJS = node_modules/.bin/pegjs --cache --export-var 'module.exports'
-MOCHA = node_modules/.bin/mocha --self --compilers coffee:./register -u tdd
+MOCHA = node_modules/.bin/mocha --require ./register -u test
 CJSIFY = node_modules/.bin/cjsify --export KofuScript
 MINIFIER = node_modules/.bin/esmangle
 
@@ -65,7 +65,7 @@ lib/%.min.js: lib/%.js lib/kofuscript
 .PHONY: default all build parser browser min minify test coverage install loc clean
 
 test:
-	$(MOCHA) -R dot test/*.kofu
+	$(MOCHA) "test/*.coffee"
 
 # TODO: use Constellation/ibrik for coverage
 coverage:
