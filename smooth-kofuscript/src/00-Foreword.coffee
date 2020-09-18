@@ -1,6 +1,6 @@
 require './prelude'
 # Client-side web page with canvas
-webpage = kup.render -> 
+webpage = kup.render ->
   doctype 5
   html ->
     head ->
@@ -19,8 +19,7 @@ webpage = kup.render ->
           ctx.strokeStyle = 'rgba(255,40,20,0.7)'
           circle ctx, x, y
           for angle in [0...2*Math.PI] by 1/3*Math.PI
-            circle ctx, x+100*Math.cos(angle),
-                        y+100*Math.sin(angle)
+            circle ctx, x+100*Math.cos(angle), y+100*Math.sin(angle)
         window.onload = ->
           canvas = document.getElementById 'drawCanvas'
           context = canvas.getContext '2d'

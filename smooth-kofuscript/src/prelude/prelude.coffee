@@ -153,7 +153,7 @@ prelude.stopServer = ->
 # Interactive utilities
 #-----------------------
 
-# Display a data object to a given depth and optionally in colors 
+# Display a data object to a given depth and optionally in colors
 util = require 'util'
 prelude.show = (obj, depth = 2, showHidden = false, colors = useColors) ->
   switch typeof obj
@@ -212,14 +212,16 @@ prelude.qc = require './qc'
 
 # Node colored output for QuickCheck.
 class NodeListener extends prelude.qc.ConsoleListener
-  constructor: (@maxCollected = 10) ->
+  constructor: (maxCollected = 10) ->
+    super()
+    @maxCollected = maxCollected
   log: (str) -> show str
   passed: (str) -> # print message in green
-    console.log if useColors then "\033[32m#{str}\033[0m" else str
+    console.log if useColors then "#{str}" else str
   invalid: (str) -> # print message in yellow
-    console.warn if useColors then "\033[33m#{str}\033[0m" else str
+    console.warn if useColors then "#{str}" else str
   failure: (str) -> # print message in red
-    console.error if useColors then "\033[31m#{str}\033[0m" else str
+    console.error if useColors then "#{str}" else str
   done: ->
     show 'Completed test.'
     prelude.qc.resetProps() # Chain here if needed
