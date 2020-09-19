@@ -1,4 +1,5 @@
-require './prelude'
+require('../../lib/module').register()
+_ = require "./prelude/underscore.coffee"
 
 # Error checking
 show '--- Error checking ---'

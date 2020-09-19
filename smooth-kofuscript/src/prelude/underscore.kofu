@@ -288,8 +288,7 @@ _.flatten = (array) ->
   _.reduce array, (memo, value) ->
     return memo.concat(_.flatten(value)) if _.isArray value
     memo.push value
-    memo
-  , []
+    [memo, []]
 
 
 # Return a version of the array that does not contain the specified value(s).
@@ -483,10 +482,10 @@ _.isEqual = (a, b) ->
   return false if _.isNaN(a) and _.isNaN(b)
   # Compare regular expressions.
   if _.isRegExp(a) and _.isRegExp(b)
-    return a.source     is b.source and
-           a.global     is b.global and
-           a.ignoreCase is b.ignoreCase and
-           a.multiline  is b.multiline
+    return a.source is b.source and
+    a.global       is b.global      and
+    a.ignoreCase is b.ignoreCase and
+    a.multiline    is b.multiline
   # If a is not an object by this point, we can't handle it.
   return false if atype isnt 'object'
   # Check for different array lengths before comparing contents.
@@ -617,9 +616,9 @@ _.template = (str, data) ->
   c = _.templateSettings
   endMatch = new RegExp("'(?=[^"+c.end.substr(0, 1)+"]*"+escapeRegExp(c.end)+")","g")
   fn = new Function 'obj',
-    'var p=[],print=function(){p.push.apply(p,arguments);};' +
-    'with(obj||{}){p.push(\'' +
-    str.replace(/\r/g, '\\r')
+  'var p=[],print=function(){p.push.apply(p,arguments);};'
+  + 'with(obj||{}){p.push(\''
+  + str.replace(/\r/g, '\\r')
        .replace(/\n/g, '\\n')
        .replace(/\t/g, '\\t')
        .replace(endMatch,"✄")
@@ -627,8 +626,8 @@ _.template = (str, data) ->
        .split("✄").join("'")
        .replace(c.interpolate, "',$1,'")
        .split(c.start).join("');")
-       .split(c.end).join("p.push('") +
-       "');}return p.join('');"
+       .split(c.end).join("p.push('")
+  + "');}return p.join('');"
   if data then fn(data) else fn
 
 

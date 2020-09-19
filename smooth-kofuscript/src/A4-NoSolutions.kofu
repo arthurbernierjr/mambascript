@@ -19,12 +19,12 @@ ifFileExists = (filename, action) ->
 getFileAsLines = (filename, action) ->
   ifFileExists filename, ->
     fs.readFile filename, "utf8",
-      errorWrapper (content) ->
-        action content.split "\n"
+    errorWrapper (content) ->
+      action content.split "\n"
 
 saveFile = (filename, content) ->
   fs.writeFile filename, content,
-    errorWrapper -> show "Saved #{filename}"
+  errorWrapper -> show "Saved #{filename}"
 
 stripSolutions = (lines) ->
   out = ""
@@ -36,7 +36,7 @@ stripSolutions = (lines) ->
       concat line
       indent = leadingWhitespace line
       concat "#{indent}process.exit()" +
-        " # Replace this line with your solution"
+      " # Replace this line with your solution"
     else if inSolution
       if line.contains "'--- End of Exercise ---'"
         concat line
@@ -53,19 +53,19 @@ stripFile = (fromName, toName) ->
       saveFile toName, stripSolutions lines
   else
     show "Expected a file name " +
-         "to strip for solutions"
+    "to strip for solutions"
 
 copyFile = (fromName, toName) ->
   if fromName?
     ifFileExists fromName, ->
       fs.readFile fromName, "utf8",
-        errorWrapper (content) ->
-          saveFile toName, content,
+      errorWrapper (content) ->
+        saveFile toName, content
   else
     show "Expected a file name to copy"
 
 toDir = "../src-no-solutions"
-fs.mkdir toDir, 0777, (err) ->
+fs.mkdir toDir, (err) ->
   if err
     throw err unless err.code is 'EEXIST'
     show "Reusing"
@@ -82,5 +82,4 @@ if fromDir?
         copyFile filename, "#{toDir}/#{filename}"
 else
   show "Expected a directory with " +
-       "solutions to strip"
-
+  "solutions to strip"

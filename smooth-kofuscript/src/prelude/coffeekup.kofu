@@ -14,7 +14,7 @@ if window?
   coffee = if CoffeeScript? then CoffeeScript else null
 else
   coffeekup = exports
-  coffee = require 'coffee-script'
+  coffee = require '../../../lib/module'
 
 coffeekup.version = '0.3.1edge'
 
@@ -179,7 +179,7 @@ skeleton = (data = {}) ->
       @render_idclass(idclass) if idclass
       @render_attrs(attrs) if attrs
 
-      if name in @self_closing
+      if @self_closing.includes(name)
         text ' />'
         text '\n' if data.format
       else

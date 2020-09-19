@@ -1,4 +1,5 @@
-require './prelude'
+require('../../lib/module').register()
+_ = require "./prelude/underscore.coffee"
 
 # For each loops
 show '--- For each loops ---'
@@ -81,7 +82,26 @@ show sum [1, 10, 100]
 
 # Exercise 21
 show '--- Exercise 21 ---'
-process.exit() # Replace this line with your solution
+countZeroes = (array) ->
+  counter = (total, element) ->
+    total++ if element is 0
+    total
+  reduce array, counter, 0
+
+bits = [1, 0, 1, 0, 0, 1, 1, 1, 0]
+show countZeroes bits
+
+count = (test, array) ->
+  reduce array, ((total, element) ->
+    total + if test element then 1 else 0), 0
+
+equals = (x) ->
+  (element) -> x == element
+
+countZeroes = (array) ->
+  count equals(0), array
+
+show countZeroes bits
 show '--- End of Exercise ---'
 
 # Map function
@@ -130,7 +150,15 @@ show "Found #{paragraphs.length} paragraphs."
 
 # Exercise 22
 show '--- Exercise 22 ---'
-process.exit() # Replace this line with your solution
+processParagraph = (paragraph) ->
+  header = 0
+  while paragraph[0] == '%'
+    paragraph = paragraph.slice 1
+    header++
+  type: if header == 0 then 'p' else 'h' + header,
+  content: paragraph
+
+show processParagraph paragraphs[0]
 show '--- End of Exercise ---'
 
 # Process paragraph types
@@ -141,7 +169,59 @@ show paragraphs[0..2]
 
 # Exercise 23
 show '--- Exercise 23 ---'
-process.exit() # Replace this line with your solution
+splitParagraph = (text) ->
+  # Find character position or end of text
+  indexOrEnd = (character) ->
+    index = text.indexOf character
+    if index == -1 then text.length else index
+
+  # Return and remove text upto next special
+  # character or end of text
+  takeNormal = () ->
+    end = reduce map(['*', '{'], indexOrEnd),
+                 Math.min, text.length
+    part = text.slice 0, end
+    text = text.slice end
+    part
+
+  # Return and remove text upto character
+  takeUpTo = (character) ->
+    end = text.indexOf character, 1
+    if end == -1
+      throw new Error 'Missing closing ' +
+                      '"' + character + '"'
+    part = text.slice 1, end
+    text = text.slice end + 1
+    part
+
+  fragments = [];
+
+  while text != ''
+    if text[0] == '*'
+      fragments.push
+        type: 'emphasised',
+        content: takeUpTo '*'
+    else if text[0] == '{'
+      fragments.push
+        type: 'footnote',
+        content: takeUpTo '}'
+    else
+      fragments.push
+        type: 'normal',
+        content: takeNormal()
+  fragments
+
+takeNormalAlternative = () ->
+  nextAsterisk = text.indexOf '*'
+  nextBrace = text.indexOf '{'
+  end = text.length
+  if nextAsterisk != -1
+    end = nextAsterisk
+  if nextBrace != -1 and nextBrace < end
+    end = nextBrace
+  part = text.slice 0, end
+  text = text.slice end
+  part
 show '--- End of Exercise ---'
 
 # Adhoc test of splitParagraph
@@ -218,7 +298,11 @@ show htmlDoc "Quote", "In his house at R'lyeh " +
 
 # Exercise 24
 show '--- Exercise 24 ---'
-process.exit() # Replace this line with your solution
+
+image = (src) ->
+  tag 'img', [], src: src
+
+show image '../img/ostrich.jpg'
 show '--- End of Exercise ---'
 
 # Escape strings
@@ -242,7 +326,7 @@ renderHTML = (element) ->
   renderAttributes = (attributes) ->
     result = []
     if attributes
-      for name of attributes 
+      for name of attributes
         result.push ' ' + name + '="' +
           escapeHTML(attributes[name]) + '"'
     result.join ''
@@ -290,7 +374,19 @@ show footnote(42), 3
 
 # Exercise 25
 show '--- Exercise 25 ---'
-process.exit() # Replace this line with your solution
+renderFragment = (fragment) ->
+  if fragment.type == 'reference'
+    footnote fragment.number
+  else if fragment.type == 'emphasised'
+    tag 'em', [fragment.content]
+  else if fragment.type == 'normal'
+    fragment.content
+
+renderParagraph = (paragraph) ->
+  tag paragraph.type,
+    map paragraph.content, renderFragment
+
+show renderParagraph paragraphs[7]
 show '--- End of Exercise ---'
 
 # View recluse file
@@ -374,4 +470,3 @@ isUndefined = (value) -> value is undefined
 isDefined = compose ((v) -> not v), isUndefined
 show 'isDefined Math.PI  = ' + isDefined Math.PI
 show 'isDefined Math.PIE = ' + isDefined Math.PIE
-

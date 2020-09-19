@@ -1,4 +1,5 @@
-require './prelude'
+require('../../lib/module').register()
+_ = require "./prelude/underscore.coffee"
 
 # Pure functions
 show '--- Pure functions ---'
@@ -88,7 +89,7 @@ setTimeout ( ->
   qc.test()
 
   setTimeout ( ->
-    
+
     # Return revisited
     show '--- Return revisited ---'
     yell = (message) ->
@@ -239,8 +240,3 @@ setTimeout ( ->
 
     ),300
   ),300
-
-
-
-
-

@@ -103,8 +103,8 @@ prelude.viewURL = (url) ->
           show "Process launced: #{browser} #{url}"
           return
     when 'Linux'
-      ; # Is there a simple way to do it?
-  show 'Open a web browser at: ' + url
+      # Is there a simple way to do it?
+      show 'Open a web browser at: ' + url
   return
 
 # View server instances
@@ -157,9 +157,9 @@ prelude.stopServer = ->
 util = require 'util'
 prelude.show = (obj, depth = 2, showHidden = false, colors = useColors) ->
   switch typeof obj
-    when 'string' then util.print obj, '\n'
-    when 'function' then util.puts obj.toString()
-    else util.puts util.inspect obj, showHidden, depth, colors
+    when 'string' then console.log obj, '\n'
+    when 'function' then console.log obj.toString()
+    else present console.log obj, showHidden, depth, colors
   return obj
 
 # Ask a yes/no question - does not mix with the REPL
@@ -247,7 +247,7 @@ prelude.qcConfig = new prelude.qc.Config 100, 1000
 # Test all known properties
 prelude.qc.test = (msg, func) ->
   _.each [msg, func, prelude.qc.runAllProps prelude.qcConfig, new NodeListener],
-    (o) -> unless _.isUndefined o then show o
+  (o) -> unless _.isUndefined o then show o
 
 
 # Shortcut to prelude definitions

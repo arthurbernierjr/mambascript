@@ -1,4 +1,5 @@
-require './prelude'
+require('../../lib/module').register()
+_ = require "./prelude/underscore.coffee"
 
 # Properties
 show '--- Properties ---'
@@ -62,7 +63,13 @@ show abyss, 5
 
 # Exercise 10
 show '--- Exercise 10 ---'
-process.exit() # Replace this line with your solution
+set = {'Spot': true}
+# Add 'White Fang' to the set
+set['White Fang'] = true
+# Remove 'Spot'
+delete set['Spot']
+# See if 'Asoka' is in the set
+show 'Asoka' of set
 show '--- End of Exercise ---'
 
 # Mutability
@@ -107,7 +114,19 @@ for current in [0...mailArchive.length]
 
 # Exercise 11
 show '--- Exercise 11 ---'
-process.exit() # Replace this line with your solution
+range = (upto) ->
+  result = []
+  i = 0
+  while i <= upto
+    result[i] = i
+    i++
+  result
+show range 4
+
+range = (upto) -> i for i in [0..upto]
+show range 4
+range = (upto) -> [0..upto]
+show range 4
 show '--- End of Exercise ---'
 
 # For expression
@@ -144,7 +163,8 @@ show words.split ' '
 
 # Exercise 12
 show '--- Exercise 12 ---'
-process.exit() # Replace this line with your solution
+array = ['a', 'b', 'c d']
+show array.join(' ').split(' ')
 show '--- End of Exercise ---'
 
 # Splitting strings
@@ -160,7 +180,12 @@ show paragraph[0...4] == 'born'
 
 # Exercise 13
 show '--- Exercise 13 ---'
-process.exit() # Replace this line with your solution
+startsWith = (string, pattern) ->
+  string.slice(0, pattern.length) == pattern
+# or
+startsWith = (string, pattern) ->
+  string[0...pattern.length] == pattern
+show startsWith 'rotation', 'rot'
 show '--- End of Exercise ---'
 
 # String boundaries
@@ -212,7 +237,12 @@ setTimeout ( ->
 
   # Exercise 14
   show '--- Exercise 14 ---'
-  process.exit() # Replace this line with your solution
+  catNames = (paragraph) ->
+    colon = paragraph.indexOf ':'
+    paragraph[colon+2...].split ', '
+
+  show catNames 'born 20/09/2004 (mother Yellow Bess): ' +
+                'Doctor Hobbles the 2nd, Noog'
   show '--- End of Exercise ---'
 
   # Find living cats
@@ -334,7 +364,13 @@ setTimeout ( ->
 
   # Exercise 15
   show '--- Exercise 15 ---'
-  process.exit() # Replace this line with your solution
+  extractDate = (paragraph) ->
+    numberAt = (start, length) ->
+      Number paragraph[start...start + length]
+    new Date numberAt(11, 4),     # Year
+             numberAt( 8, 2) - 1, # Month
+             numberAt( 5, 2)      # Day
+  show extractDate 'died 27-04-2006: Black Leclère'
   show '--- End of Exercise ---'
 
   # Record functions
@@ -365,7 +401,12 @@ setTimeout ( ->
 
   # Exercise 16
   show '--- Exercise 16 ---'
-  process.exit() # Replace this line with your solution
+  between = (string, start, end) ->
+    startAt = string.indexOf start
+    startAt += start.length
+    endAt = string.indexOf end, startAt
+    string[startAt...endAt]
+  show between 'bu ] boo [ bah ] gzz', '[ ', ' ]'
   show '--- End of Exercise ---'
 
   # Shorter extract function
@@ -381,7 +422,7 @@ setTimeout ( ->
     mailArchive = (require './04-emails').retrieveMails()
     cats = {'Spot': catRecord 'Spot',
       new Date(1997, 2, 5), 'unknown'}
-  
+
     handleParagraph = (paragraph) ->
       if startsWith paragraph, 'born'
         addCats cats, catNames(paragraph),
@@ -420,12 +461,34 @@ setTimeout ( ->
 
   # Exercise 17
   show '--- Exercise 17 ---'
-  process.exit() # Replace this line with your solution
+  formatDate = (date) ->
+    pad = (number) ->
+      if number < 10
+        "0" + number
+      else
+        number
+    "#{pad date.getDate()}/" +
+    "#{pad date.getMonth() + 1}/" +
+    "#{date.getFullYear()}"
+
+  show formatDate new Date 2000, 0, 1
   show '--- End of Exercise ---'
 
   # Exercise 18
   show '--- Exercise 18 ---'
-  process.exit() # Replace this line with your solution
+  oldestCat = (data) ->
+    oldest = null
+    for name of data
+      cat = data[name]
+      unless 'death' of cat
+        if oldest is null or oldest.birth > cat.birth
+          oldest = cat
+    oldest?.name
+  show oldestCat catData
+
+  for cat, info of catData # Test with dead cats
+    delete catData[cat] unless 'death' of info
+  show oldestCat catData
   show '--- End of Exercise ---'
 
   # Variable arguments
@@ -453,12 +516,29 @@ setTimeout ( ->
 
   # Exercise 19
   show '--- Exercise 19 ---'
-  process.exit() # Replace this line with your solution
+  range = (start, end) ->
+    if arguments.length < 2
+      end = start
+      start = 0
+    result = []
+    for i in [start..end]
+      result.push i
+    result
+
+  show range 4
+  show range 2, 4
   show '--- End of Exercise ---'
 
   # Exercise 20
   show '--- Exercise 20 ---'
-  process.exit() # Replace this line with your solution
+  sum = (numbers) ->
+    total = 0
+    for num in numbers
+      total += num
+    total
+
+  show sum [1..10]
+  show sum range 1, 10
   show '--- End of Exercise ---'
 
   # Hidden built-in properties
@@ -483,4 +563,3 @@ setTimeout ( ->
   show array
 
   ),300
-

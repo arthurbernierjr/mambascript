@@ -73,7 +73,7 @@ expr = (s) ->
     new JS.CallExpression (memberAccess iife.g(), 'call'), [new JS.ThisExpression]
   else
     # TODO: comprehensive
-    throw new Error "expr: Cannot use a #{s.type} as a value. no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript"
+    throw new Error "expr: Cannot use a #{s.type} as a value. no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript If you think that you found a bug in the language this error is generated from src/compiler.kofu help me improve it"
 
 makeReturn = (node) ->
   return new JS.ReturnStatement unless node?
@@ -233,7 +233,7 @@ assignment = (assignee, expression, valueUsed = no) ->
           for p, i in elements[index...]
             assignments.push stmt new JS.AssignmentExpression '=', p, new JS.MemberExpression yes, e, new JS.BinaryExpression '-', size, new JS.Literal numElements - index - i
         if any elements, (p) -> p.rest
-          throw new Error 'Positional destructuring assignments may not have more than one rest operator no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript'
+          throw new Error 'Positional destructuring assignments may not have more than one rest operator no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript. If you think that you found a bug in the language this error is generated from src/helpers.kofu help me improve it'
 
     when assignee.instanceof JS.ObjectExpression
       e = expression
@@ -250,7 +250,7 @@ assignment = (assignee, expression, valueUsed = no) ->
     when assignee.instanceof JS.Identifier, JS.GenSym, JS.MemberExpression
       assignments.push new JS.AssignmentExpression '=', assignee, expr expression
     else
-      throw new Error "compile: assignment: unassignable assignee: #{assignee.type} no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript"
+      throw new Error "compile: assignment: unassignable assignee: #{assignee.type} no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript. If you think that you found a bug in the language this error is generated from src/helpers.kofu help me improve it"
   switch assignments.length
     when 0 then if e is expression then helpers.undef() else expression
     when 1 then assignments[0]
@@ -442,7 +442,7 @@ class exports.Compiler
     [CS.SeqOp, ({left, right}) -> new JS.SequenceExpression [left, right]]
     [CS.Conditional, ({condition, consequent, alternate, ancestry}) ->
       if alternate?
-        throw new Error 'Conditional with non-null alternate requires non-null consequent no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript' unless consequent?
+        throw new Error 'Conditional with non-null alternate requires non-null consequent no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript. If you think that you found a bug in the language this error is generated from src/compiler.kofu help me improve it' unless consequent?
         alternate = forceBlock alternate unless alternate.instanceof JS.IfStatement
       if alternate? or ancestry[0]?.instanceof CS.Conditional
         consequent = forceBlock consequent
@@ -627,7 +627,7 @@ class exports.Compiler
           p = handleParam.call this, param.param, original.param, block, inScope
           block.body.unshift new JS.IfStatement (new JS.BinaryExpression '==', (new JS.Literal null), p), stmt assignment p, param.default
           p
-        else throw new Error "Unsupported parameter type: #{original.className} "
+        else throw new Error "Unsupported parameter type: #{original.className} No worries big dog. If you read below you should see why this is the case. If you think that you found a bug in the language this error is generated from src/compiler.kofu help me improve it."
 
       ({parameters, body, ancestry, inScope}) ->
         unless ancestry[0]?.instanceof CS.Constructor
@@ -673,7 +673,7 @@ class exports.Compiler
               block.body.unshift makeVarDeclaration [paramName]
             block.body.unshift reassignments
           if any parameters, (p) -> p.rest
-            throw new Error 'Parameter lists may not have more than one rest operator .... Give it a rest LOL Couldnt resist'
+            throw new Error 'Parameter lists may not have more than one rest operator .... Give it a rest LOL Couldnt resist. If you think that you found a bug in the language this error is generated from src/compiler.kofu help me improve it'
 
         performedRewrite = no
         if @instanceof CS.BoundFunction
@@ -790,10 +790,10 @@ class exports.Compiler
         when CS.DivideOp::className             then '/'
         when CS.RemOp::className                then '%'
         when CS.ExpOp::className                then '**'
-        else throw new Error 'Unrecognised compound assignment operator'
+        else throw new Error 'Unrecognised compound assignment operator +, -, *, /, **, &&, ?, || are the type of operators you can use as well as there text based subtitutes like also, and, or. If you think that you found a bug in the language this error is generated from src/compiler.kofu help me improve it'
 
       # if assignee is an identifier, fail unless assignee is in scope
-      if op in ['&&', '||', '?'] and (assignee.instanceof JS.Identifier) and assignee.name not in inScope
+      if op in ['&&', '||'] and (assignee.instanceof JS.Identifier) and assignee.name not in inScope
         throw new Error "the variable \"#{assignee.name}\" can't be assigned with ?= because it has not been defined."
 
       switch op
@@ -1214,7 +1214,7 @@ class exports.Compiler
         newNode
 
     defaultRule = ->
-      throw new Error "compile: Non-exhaustive patterns in case: #{@className} no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript"
+      throw new Error "compile: Non-exhaustive patterns in case: #{@className} no big deal take a look at your code. Are you sure you are following the KOFU principles of writing Unfancy Typed JavaScript If you think that you found a bug in the language this error is generated from src/compiler.kofu help me improve it"
 
     (ast, options = {}) ->
       options.bare ?= no

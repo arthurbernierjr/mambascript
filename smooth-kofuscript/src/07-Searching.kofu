@@ -1,4 +1,5 @@
-require './prelude'
+require('../../lib/module').register()
+_ = require "./prelude/underscore.coffee"
 # Bring underscore into global
 globalize _
 
@@ -35,7 +36,9 @@ show roads
 
 # Exercise 26
 show '--- Exercise 26 ---'
-process.exit() # Replace this line with your solution
+makeRoads = (start) ->
+  for i in [1...arguments.length] by 2
+    makeRoad start, arguments[i], arguments[i + 1]
 show '--- End of Exercise ---'
 
 # Build roads
@@ -65,7 +68,7 @@ roadsFrom = (place) ->
   found = roads[place]
   return found if found?
   throw new Error "No place named '#{place}' found."
-    
+
 try
   show roadsFrom "Hanaiapa"
   show roadsFrom "Hanalapa"
@@ -192,7 +195,16 @@ show flatten [[1], [2, [3, 4]], [5, 6]]
 
 # Exercise 27
 show '--- Exercise 27 ---'
-process.exit() # Replace this line with your solution
+_filter = (array, test) ->
+  result = []
+  for element in array
+    if test element
+      result.push element
+  result
+show _filter [0, 4, 8, 12], (n) -> n < 5
+
+isOdd = (n) -> n % 2 != 0
+show filter [0..6], isOdd # Using Underscore
 show '--- End of Exercise ---'
 
 # End of Functional samples
@@ -206,7 +218,7 @@ possibleRoutes = (from, to) ->
     notVisited = (road) ->
       not (road.to in route.places)
     continueRoute = (road) ->
-      findRoutes 
+      findRoutes
         places: route.places.concat([road.to]),
         length: route.length + road.distance
     end = route.places[route.places.length - 1]
@@ -224,7 +236,33 @@ show possibleRoutes 'Hanapaoa', 'Mt Ootua'
 
 # Exercise 28
 show '--- Exercise 28 ---'
-process.exit() # Replace this line with your solution
+shortestRoute = (from, to) ->
+  currentShortest = null
+  forEach possibleRoutes(from, to), (route) ->
+    if not currentShortest or
+       currentShortest.length > route.length
+      currentShortest = route
+  currentShortest
+show (shortestRoute 'Point Kiukiu',
+  'Point Teohotepapapa').places
+
+# Functional alternative
+minimise = (func, array) ->
+  minScore = null
+  found = null
+  forEach array, ( (element) ->
+    score = func element
+    if minScore == null || score < minScore
+      minScore = score
+      found = element )
+  found
+
+getProperty = (propName) ->
+  (object) -> object[propName]
+
+shortestRoute = (from, to) ->
+  minimise getProperty('length'),
+           possibleRoutes(from, to)
 show '--- End of Exercise ---'
 
 # Shortest route
@@ -283,7 +321,20 @@ show samePoint addPoints(point(10, 10), point(4, -2)),
 
 # Exercise 29
 show '--- Exercise 29 ---'
-process.exit() # Replace this line with your solution
+possibleDirections = (from) ->
+  mapSize = 20
+  insideMap = (point) ->
+    point.x >= 0 and point.x < mapSize and
+    point.y >= 0 and point.y < mapSize
+  directions = [ point(-1,  0), point( 1,  0)
+                 point( 0, -1), point( 0,  1)
+                 point(-1, -1), point(-1,  1)
+                 point( 1,  1), point( 1, -1)]
+  partial = (func, a...) -> (b...) -> func a..., b...
+  filter (map directions,
+              partial addPoints, from), insideMap
+
+show possibleDirections point 0, 0
 show '--- End of Exercise ---'
 
 # Binary heap
@@ -300,18 +351,50 @@ while heap.size() > 0
 
 # Exercise 30
 show '--- Exercise 30 ---'
-process.exit() # Replace this line with your solution
+estimatedDistance = (pointA, pointB) ->
+  dx = Math.abs pointA.x - pointB.x
+  dy = Math.abs pointA.y - pointB.y
+  if dx > dy
+    (dx - dy) * 100 + dy * 141
+  else
+    (dy - dx) * 100 + dx * 141
+
+show estimatedDistance point(3,3), point(9,6)
 show '--- End of Exercise ---'
 
 # Exercise 31
 show '--- Exercise 31 ---'
-process.exit() # Replace this line with your solution
+makeReachedList = () -> {}
+
+storeReached = (list, point, route) ->
+  inner = list[point.x]
+  if inner is undefined
+    inner = {}
+    list[point.x] = inner
+  inner[point.y] = route
+
+findReached = (list, point) ->
+  inner = list[point.x]
+  if inner is undefined
+    undefined
+  else
+    inner[point.y]
+
+# Alternative
+pointID = (point) ->
+  point.x + '-' + point.y
+
+makeReachedList = -> {}
+storeReached = (list, point, route) ->
+  list[pointID(point)] = route
+findReached = (list, point) ->
+  list[pointID(point)]
 show '--- End of Exercise ---'
 
 # Path finder
 show '--- Path finder ---'
 findRoute = (from, to) ->
- 
+
   routeScore = (route) ->
     if route.score is undefined
       route.score = route.length +
@@ -368,7 +451,7 @@ showRoute findRoute(point( 0,  0), point(11, 17)),
 
 # Route canvas
 show '--- Route canvas ---'
-webpage = kup.render -> 
+webpage = kup.render ->
   doctype 5
   html ->
     head ->

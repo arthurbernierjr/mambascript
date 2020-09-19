@@ -1,4 +1,6 @@
-require './prelude'
+require('../../lib/module').register()
+_ = require "./prelude/underscore.coffee"
+show = present
 
 # Summation using a while loop
 show '--- Summation using a while loop ---'
@@ -27,4 +29,3 @@ show sum [1..10]
 show '--- Summation using reduce attached to Array ---'
 Array::sum ?= -> @reduce ((a,b) -> a+b), 0
 show [1..10].sum()
-
