@@ -1,4 +1,4 @@
 eq = (value, test)->
-  expect(test is value)
+  expect(test is value).toBeTruthy()
 
 module.exports = eq

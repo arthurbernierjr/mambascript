@@ -1,0 +1,29 @@
+blueprint Node
+
+  constructor: (data, left = null, right = null) ->
+    @data = data
+    @left = left
+    @right = right
+
+  insert: (data) ->
+    if data < @data and @left
+      @left.insert data
+    else if data < @data
+      @left = new Node data
+    else if data > @data and  @right
+      @right.insert data
+    else if data > @data
+      @right = new Node data
+
+  contains: (data) ->
+    if @data is data
+      return @
+
+    if @data < data and @right
+      return @right.contains data
+    else if @data > data and  @left
+      return @left.contains data
+
+    return null
+
+module.exports = Node

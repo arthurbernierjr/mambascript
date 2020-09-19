@@ -1,9 +1,9 @@
-coffee-script-redux-*.tgz
-.travis.yml
 .gitignore
 lib/bootstrap
 dist
-old-tests
 tdd
 Makefile
 ./src
+kocky.cr
+todos.md
+./smooth-kofuscript

@@ -15,26 +15,13 @@ gulp.task('default', (cb)=> {
 })
 
 gulp.task('compile', (cb)=> {
-	gulp
-		.src('src/**/*.kofu')
-		.pipe(
-			kofu({
-				jsAst: {
-					bare: true,
-					header: true
-				},
-				csAst: {
-					bare: true
-				},
-				js: {
-				header: true
-				}
-			}).on('error', (e)=>{
-				console.log(e)
-			})
-		)
-		.pipe(gulp.dest('./lib'));
-		cb();
+	exec('npm run build', (err, stdout, stderr) => {
+			consola.warn(err)
+			consola.info(stdout)
+			consola.info(stderr)
+			cb(err)
+	})
+	cb();
 })
 
 gulp.task('example', (cb)=> {
@@ -56,6 +43,29 @@ gulp.task('example', (cb)=> {
 				console.log(e)
 			})
 		)
-		.pipe(gulp.dest('./examples'));
+		.pipe(gulp.dest('./examples/compiled'));
+		cb();
+})
+
+gulp.task('smooth', (cb)=> {
+	gulp
+		.src('smooth-kofuscript/src/**/*.kofu')
+		.pipe(
+			kofu({
+				jsAst: {
+					bare: true,
+					header: true
+				},
+				csAst: {
+					bare: true
+				},
+				js: {
+				header: true
+				}
+			}).on('error', (e)=>{
+				console.log(e)
+			})
+		)
+		.pipe(gulp.dest('./smooth-kofuscript/src/compiled'));
 		cb();
 })

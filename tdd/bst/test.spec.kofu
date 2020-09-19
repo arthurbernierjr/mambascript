@@ -1,0 +1,6 @@
+bst = require "./index"
+
+describe 'BST', ->
+  
+  test 'bst is a Node', ->
+    expect( typeof bst ).toEqual('function')

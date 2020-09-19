@@ -79,7 +79,8 @@
     "transformIgnorePatterns": [],
     "transform": {
       ".*": "<rootDir>/tdd/testprocessor.js"
-    }
+    },
+    "testMatch": ["<rootDir>/**/*.spec.kofu"]
   },
   "licenses": [
     {
