@@ -1,0 +1,10 @@
+require('../../lib/module').register()
+BST = require '../bst'
+
+tree = new BST(1)
+tree.insert 5
+tree.insert 22
+tree.insert 14
+tree.insert 0
+tree.insert -7
+present tree areYouA BST

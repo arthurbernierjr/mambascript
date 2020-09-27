@@ -7,10 +7,10 @@ const r5 = /^(eval)\(('|")(export)\s+(["'=a-zA-Z0-9-_.\s\/@~]+)('|")\)/gm
 module.exports = function(code){
   return (
     code
-      .replace(r2, `import { $6 as _$1 } from $3; \n $1 = _$1`)
+      .replace(r2, `import { $6 as _$1 } from $3; \n var $1 = _$1`)
       .replace(r3, `import { _$2 } from $4; \n $2 = _$2`)
       .replace(r4, `export default $3`)
-      .replace(r1, `import _$1 from $3; \n $1 = _$1`)
+      .replace(r1, `import _$1 from $3; \n var $1 = _$1`)
       .replace(r5, `export $4`)
     )
 }

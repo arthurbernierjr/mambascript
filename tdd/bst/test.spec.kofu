@@ -1,6 +1,42 @@
-bst = require "./index"
+Node = require "./index"
 
 describe 'BST', ->
-  
-  test 'bst is a Node', ->
-    expect( typeof bst ).toEqual('function')
+
+  test 'Node is a function or constructor', ->
+    expect( typeof Node ).toEqual('function')
+    return
+
+  test 'Node creates a BST', ->
+    bst = new Node()
+    expect( bst areYouA Node).toBeTruthy()
+    return
+
+  test 'Node can insert correctly', ->
+    bst = new Node(10)
+    bst.insert(5)
+    bst.insert(15)
+    bst.insert(17)
+    expect(bst.left.data).toEqual(5)
+    expect(bst.right.data).toEqual(15)
+    expect(bst.right.right.data).toEqual(17)
+    return
+
+  test 'Contains returns node with the same data', ->
+    bst = new Node(10)
+    bst.insert(10)
+    bst.insert(99)
+    bst.insert(50)
+
+    fifty = bst.right.left
+    expect(bst.contains 50).toEqual(fifty)
+    return
+
+  test 'Contains returns null if value is not found', ->
+    bst = new Node(10)
+    bst.insert(10)
+    bst.insert(99)
+    bst.insert(50)
+
+    expect(bst.contains 36).toEqual(null)
+    return
+  return

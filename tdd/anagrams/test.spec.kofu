@@ -1,12 +1,17 @@
 anagrams = require './index'
 
 describe 'Anagrams', ->
-  
+
   test 'anagrams function exists',  ->
     expect(typeof anagrams).toEqual('function')
+    return
 
   test "'hello' is an anagram of 'llohe'", ->
     expect(anagrams('hello', 'llohe')).toBeTruthy()
+    return
 
   test "'One One' is not an anagram of 'One One c'", ->
     expect(anagrams('One One', 'One One c')).toBeFalsy()
+    return
+
+  return

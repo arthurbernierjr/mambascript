@@ -1,7 +1,7 @@
 {
-  "name": "kofuscript-dev",
+  "name": "kofuscript",
   "author": "arthurbernierjr",
-  "version": "0.1.0-beta6",
+  "version": "0.1.1",
   "homepage": "https://github.com/arthurbernierjr/kofuscript",
   "bugs": "https://github.com/arthurbernierjr/kofuscript/issues",
   "description": "KofuScript the rebirth of typed Unfancy Javascript",
@@ -17,9 +17,9 @@
   ],
   "main": "./lib/module",
   "bin": {
-    "kofu-dev": "./bin/kofu",
-    "start-kofuscript-dev": "./bin/kofu-project",
-    "kofuscript-dev": "./bin/kofuscript"
+    "kofu": "./bin/kofu",
+    "start-kofuscript": "./bin/kofu-project",
+    "kofuscript": "./bin/kofuscript"
   },
   "repository": {
     "type": "git",
