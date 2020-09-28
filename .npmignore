@@ -3,7 +3,8 @@ lib/bootstrap
 dist
 tdd
 Makefile
-./src
+src
 kocky.cr
 todos.md
-./smooth-kofuscript
+smooth-kofuscript
+examples
