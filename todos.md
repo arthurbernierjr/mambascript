@@ -16,3 +16,4 @@
 1. Rewrite `Underscore` in `KofuScript` and add additional Functional programming features.
 1. Once all other todos are completed return to KofuJS and work on KofuScript and KofuJS supporting eachother via a rewrite of `Teact`
 1. Make ESLINT and Babel Plugins for KofuScript
+1. Build a KSON CLI Generator and Compiler to build API's in Kofuscript Object Notation ( KSON compile to JSON and get served from NodeJS to Client)
