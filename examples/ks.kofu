@@ -1,0 +1,34 @@
+require('../lib/module').register()
+kb = require '../src/kofublu.kofu'
+# Client-side web page
+webpage = kb.render ->
+  doctype 5
+  html ->
+    head ->
+      meta charset: 'utf-8'
+      title 'Life is Good | My awesome website'
+      style '''
+        body {font-family: sans-serif}
+        header, nav, section, footer {display: block}
+      '''
+      kofuscript ->
+        window.onload = ->
+          present 'peace and love'
+    body ->
+      header ->
+        h1 'Life is good'
+        nav ->
+          ul ->
+            li -> '1'
+            li -> '2'
+      footer -> 'This is the footer'
+# Server-side HTTP server
+http = require 'http'
+server = http.createServer (req, res) ->
+  present "#{req.client.remoteAddress} #{req.method} #{req.url}"
+  res.writeHead 200, 'Content-Type': 'text/html'
+  res.write webpage
+  res.end()
+server.listen 3389
+present 'Server running at'
+present  server.address()

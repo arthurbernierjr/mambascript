@@ -11,7 +11,7 @@ webpage = kup.render ->
         body {font-family: sans-serif}
         header, nav, section, footer {display: block}
       '''
-      coffeescript ->
+      kofuscript ->
         draw = (ctx, x, y) ->
           circle = (ctx, x, y) ->
             ctx.beginPath()
