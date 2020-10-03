@@ -1,0 +1,10 @@
+fib = require './index'
+
+describe 'fib', ->
+  test 'is a function', ->
+    expect(typeof fib).toEqual('function')
+    return
+  test 'can find the nth fibonacci number', ->
+    expect(fib 4).toEqual(3)
+    return
+  return 

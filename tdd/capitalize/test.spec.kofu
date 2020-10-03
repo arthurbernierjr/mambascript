@@ -1,0 +1,7 @@
+capitalize = require './index'
+
+describe 'capitalize', ->
+  test 'capitalizes a string', ->
+    expect(capitalize 'arthur is cool').toEqual('Arthur Is Cool')
+    return
+  return

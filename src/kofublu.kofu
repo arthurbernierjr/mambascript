@@ -104,7 +104,7 @@ skeleton = (data = {}) ->
   data.autoescape ?= off
 
   # Internal KofuBlu stuff.
-  __ck =
+  __kb =
     buffer: []
 
     esc: (txt) ->
@@ -210,14 +210,14 @@ skeleton = (data = {}) ->
             else
               contents = a
 
-    __ck.render_tag(name, idclass, attrs, contents)
+    __kb.render_tag(name, idclass, attrs, contents)
 
   yieldMe = (f) ->
     temp_buffer = []
-    old_buffer = __ck.buffer
-    __ck.buffer = temp_buffer
+    old_buffer = __kb.buffer
+    __kb.buffer = temp_buffer
     f()
-    __ck.buffer = old_buffer
+    __kb.buffer = old_buffer
     temp_buffer.join ''
 
   h = (txt) ->
@@ -227,11 +227,11 @@ skeleton = (data = {}) ->
       .replace(/"/g, '&quot;')
 
   doctype = (type = 'default') ->
-    text __ck.doctypes[type]
+    text __kb.doctypes[type]
     text '\n' if data.format
 
   text = (txt) ->
-    __ck.buffer.push String(txt)
+    __kb.buffer.push String(txt)
     null
 
   comment = (cmt) ->
@@ -243,7 +243,7 @@ skeleton = (data = {}) ->
       # `kofuscript -> alert 'hi'` becomes:
       # `<script>;(function () {return alert('hi');})();</script>`
       when 'function'
-        script "#{__ck.kofuscript_helpers}(#{param}).call(this);"
+        script "#{__kb.kofuscript_helpers}(#{param}).call(this);"
       # `kofuscript "alert 'hi'"` becomes:
       # `<script type="text/kofuscript">alert 'hi'</script>`
       when 'string'
@@ -256,10 +256,10 @@ skeleton = (data = {}) ->
 
   # Conditional IE comments.
   ie = (condition, contents) ->
-    __ck.indent()
+    __kb.indent()
 
     text "<!--[if #{condition}]>"
-    __ck.render_contents(contents)
+    __kb.render_contents(contents)
     text "<![endif]-->"
     text '\n' if data.format
 
@@ -305,21 +305,21 @@ kofuBlu.compile = (template, options = {}) ->
 
   tag_functions += "var #{tags_used.join ','};"
   for t in tags_used
-    tag_functions += "#{t} = function(){return __ck.tag('#{t}', arguments);};"
+    tag_functions += "#{t} = function(){return __kb.tag('#{t}', arguments);};"
 
   # Main function assembly.
   code = tag_functions + hardcoded_locals + skeleton
 
-  code += "__ck.doctypes = #{JSON.stringify kofuBlu.doctypes};"
-  code += "__ck.kofuscript_helpers = #{JSON.stringify kofuscript_helpers};"
-  code += "__ck.self_closing = #{JSON.stringify kofuBlu.self_closing};"
+  code += "__kb.doctypes = #{JSON.stringify kofuBlu.doctypes};"
+  code += "__kb.kofuscript_helpers = #{JSON.stringify kofuscript_helpers};"
+  code += "__kb.self_closing = #{JSON.stringify kofuBlu.self_closing};"
 
   # If `locals` is set, wrap the template inside a `with` block. This is the
   # most flexible but slower approach to specifying local variables.
   code += 'with(data.locals){' if options.locals
   code += "(#{template}).call(data);"
   code += '}' if options.locals
-  code += "return __ck.buffer.join('');"
+  code += "return __kb.buffer.join('');"
 
   new Function('data', code)
 

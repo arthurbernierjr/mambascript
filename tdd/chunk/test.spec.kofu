@@ -1,0 +1,10 @@
+chunk = require './index.kofu'
+
+describe 'chunk', ->
+  test 'is a function', ->
+    expect(typeof chunk == 'function' ).toBeTruthy()
+    return
+  test 'can create chunked arrays', ->
+    expect(chunk [1, 2, 3, 4], 2).toEqual([[1,2], [3,4]])
+    return
+  return
