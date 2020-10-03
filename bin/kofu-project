@@ -93,10 +93,16 @@ const QUESTIONS = [
           fs.writeFileSync(writePath, contents, 'utf8');
 
         } else if (stats.isDirectory()) {
+          if(`${file}`.trim() === 'srcfiles'){
+            fs.mkdirSync(`${CURR_DIR}/${newProjectPath}/src`);
+            // recursive call
+            createDirectoryContents(`${templatePath}/${file}`, `${newProjectPath}/src`);
+          }else {
           fs.mkdirSync(`${CURR_DIR}/${newProjectPath}/${file}`);
 
           // recursive call
           createDirectoryContents(`${templatePath}/${file}`, `${newProjectPath}/${file}`);
         }
+      }
       });
     }
