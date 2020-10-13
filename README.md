@@ -1,4 +1,4 @@
-# KofuScript in Development
+# MambaScript in Development
 
 ## Getting Started
 
