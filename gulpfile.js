@@ -1,5 +1,5 @@
 const gulp = require ('gulp');
-const kofu = require ('./gulp-kofu')
+const mamba = require ('./gulp-mamba')
 const exec = require('child-process').exec
 const consola = require('consola')
 
@@ -26,9 +26,9 @@ gulp.task('compile', (cb)=> {
 
 gulp.task('example', (cb)=> {
 	gulp
-		.src('examples/**/*.kofu')
+		.src('examples/**/*.mamba')
 		.pipe(
-			kofu({
+			mamba({
 				jsAst: {
 					bare: true,
 					header: true
@@ -49,9 +49,9 @@ gulp.task('example', (cb)=> {
 
 gulp.task('smooth', (cb)=> {
 	gulp
-		.src('smooth-kofuscript/src/**/*.kofu')
+		.src('smooth-mambascript/src/**/*.mamba')
 		.pipe(
-			kofu({
+			mamba({
 				jsAst: {
 					bare: true,
 					header: true
@@ -66,6 +66,6 @@ gulp.task('smooth', (cb)=> {
 				console.log(e)
 			})
 		)
-		.pipe(gulp.dest('./smooth-kofuscript/src/compiled'));
+		.pipe(gulp.dest('./smooth-mambascript/src/compiled'));
 		cb();
 })

@@ -1,29 +1,28 @@
 {
-  "name": "kofuscript",
+  "name": "mambascript",
   "author": "arthurbernierjr",
-  "version": "0.1.6",
-  "homepage": "https://github.com/arthurbernierjr/kofuscript",
-  "bugs": "https://github.com/arthurbernierjr/kofuscript/issues",
-  "description": "KofuScript the rebirth of typed Unfancy Javascript",
+  "version": "0.1.0",
+  "homepage": "https://github.com/arthurbernierjr/mambascript",
+  "bugs": "https://github.com/arthurbernierjr/mambascript/issues",
+  "description": "MambaScript the rebirth of typed Unfancy Javascript",
   "keywords": [
     "typedcoffeescript",
     "coffeescript",
     "javascript",
     "language",
     "compiler",
-    "kofujs",
-    "kofuscript",
+    "mambascript",
     "typescript"
   ],
   "main": "./lib/module",
   "bin": {
-    "kofu": "./bin/kofu",
-    "start-kofuscript": "./bin/kofu-project",
-    "kofuscript": "./bin/kofuscript"
+    "mamba": "./bin/mamba",
+    "start-mambascript": "./bin/mamba-project",
+    "mambascript": "./bin/mambascript"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/arthurbernierjr/kofuscript.git"
+    "url": "git://github.com/arthurbernierjr/mambascript.git"
   },
   "scripts": {
     "build": "make -j build",
@@ -73,14 +72,16 @@
   },
   "jest": {
     "moduleFileExtensions": [
-      "kofu",
+      "mamba",
       "js"
     ],
     "transformIgnorePatterns": [],
     "transform": {
       ".*": "<rootDir>/tdd/testprocessor.js"
     },
-    "testMatch": ["<rootDir>/**/*.spec.kofu"]
+    "testMatch": [
+      "<rootDir>/**/*.spec.mamba"
+    ]
   },
   "licenses": [
     {

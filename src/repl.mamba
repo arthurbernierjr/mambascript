@@ -2,7 +2,7 @@ fs = require 'fs'
 path = require 'path'
 vm = require 'vm'
 nodeREPL = require 'repl'
-KofuScript = require './module'
+MambaScript = require './module'
 CS = require './nodes'
 {merge} = require './helpers'
 reporter = require './reporter'
@@ -104,7 +104,7 @@ addHistory = (repl, filename, maxSize) ->
 module.exports =
   start: (opts = {}) ->
     # REPL defaults
-    opts.prompt or= 'kofuScript🐐>> '
+    opts.prompt or= 'mambaScript🐐>> '
     opts.ignoreUndefined ?= yes
     opts.historyFile ?= path.join process.env.HOME, '.coffee_history'
     opts.historyMaxInputSize ?= 10 * 1024 # 10KiB
@@ -118,10 +118,10 @@ module.exports =
       # empty command
       return cb null if /^\s*$/.test input
       try
-        inputAst = KofuScript.parse input, {filename, raw: yes}
+        inputAst = MambaScript.parse input, {filename, raw: yes}
         transformedAst = new CS.AssignOp (new CS.Identifier '_'), inputAst.body
-        jsAst = KofuScript.compile transformedAst, bare: yes, inScope: Object.keys context
-        js = KofuScript.js jsAst
+        jsAst = MambaScript.compile transformedAst, bare: yes, inScope: Object.keys context
+        js = MambaScript.js jsAst
         cb null, vm.runInContext js, context, filename
       catch err
         cb "\x1B[0;31m#{err.constructor.name}: #{err.message}\x1B[0m"

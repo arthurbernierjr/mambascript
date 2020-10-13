@@ -1,18 +1,18 @@
-KofuScript = require './module'
+MambaScript = require './module'
 eachCode = require 'pegjs-each-code'
 
 compile = (ksCode, options = {}) ->
-  ksAST = KofuScript.parse "-> #{ksCode.trimRight()}"
+  ksAST = MambaScript.parse "-> #{ksCode.trimRight()}"
   if ksAST.body.statements.length > 1
     throw new Error "inconsistent base indentation"
-  jsAST = KofuScript.compile ksAST, bare: yes, inScope: options.inScope
+  jsAST = MambaScript.compile ksAST, bare: yes, inScope: options.inScope
   jsAST.leadingComments = []
   jsAST.body = jsAST.body[0].expression.body.body.concat jsAST.body[1..]
-  KofuScript.js jsAST
+  MambaScript.js jsAST
 
 exports.use = (config) ->
   config.passes.transform.unshift (ast) ->
-    ast.initializer.code = KofuScript.cs2js ast.initializer.code, bare: yes
+    ast.initializer.code = MambaScript.cs2js ast.initializer.code, bare: yes
     eachCode ast, (node, labels, ruleName) ->
       try
         node.code = compile node.code, inScope: labels

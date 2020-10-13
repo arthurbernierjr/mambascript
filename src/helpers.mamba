@@ -33,12 +33,12 @@ cleanMarkers = (str) -> str.replace /[\uEFEF\uEFFE\uEFFF]/g, ''
 @formatParserError = (input, e) ->
   realColumn = (cleanMarkers "#{(input.split '\n')[e.line - 1]}\n"[...e.column]).length
   unless e.found?
-    return "Syntax error on line #{e.line}, column #{realColumn}: unexpected end of input. Below you should be able to see where the error is contained, keep in mind this error normally comes from you not being mindful of your indentation, or ending lines with operators. You have to maintain the same consistent indentation throughout your program. If you think that you found a bug in the language this error is generated from src/helpers.kofu help me improve it"
+    return "Syntax error on line #{e.line}, column #{realColumn}: unexpected end of input. Below you should be able to see where the error is contained, keep in mind this error normally comes from you not being mindful of your indentation, or ending lines with operators. You have to maintain the same consistent indentation throughout your program. If you think that you found a bug in the language this error is generated from src/helpers.mamba help me improve it"
   found = JSON.stringify humanReadable e.found
   found = ((found.replace /^"|"$/g, '').replace /'/g, '\\\'').replace /\\"/g, '"'
   unicode = ((e.found.charCodeAt 0).toString 16).toUpperCase()
   unicode = "\\u#{"0000"[unicode.length..]}#{unicode}"
-  message = "Syntax error on line #{e.line}, column #{realColumn}: unexpected '#{found}' with the unicode value of (#{unicode}). Below you should be able to see where the error is contained, keep in mind this error normally comes from you not being mindful of your indentation, or ending lines with operators. You have to maintain the same consistent indentation throughout your program. If you think that you found a bug in the language this error is generated from src/helpers.kofu help me improve it"
+  message = "Syntax error on line #{e.line}, column #{realColumn}: unexpected '#{found}' with the unicode value of (#{unicode}). Below you should be able to see where the error is contained, keep in mind this error normally comes from you not being mindful of your indentation, or ending lines with operators. You have to maintain the same consistent indentation throughout your program. If you think that you found a bug in the language this error is generated from src/helpers.mamba help me improve it"
   "#{message}\n#{pointToErrorLocation input, e.line, realColumn}"
 
 @pointToErrorLocation = pointToErrorLocation = (source, line, column, numLinesOfContext = 3) ->
@@ -74,7 +74,7 @@ cleanMarkers = (str) -> str.replace /[\uEFEF\uEFFE\uEFFF]/g, ''
   when assignment.instanceof CS.DefaultParam then beingDeclared assignment.param
   when assignment.instanceof CS.ArrayInitialiser then concatMap assignment.members, beingDeclared
   when assignment.instanceof CS.ObjectInitialiser then concatMap assignment.vals(), beingDeclared
-  else throw new Error "beingDeclared: Non-exhaustive patterns in case: #{assignment.className} 'Non-exhaustive patterns' means that you have a set of pattern matches that don't cover all possible combinations. If you're really, really certain that a case is impossible, then use something like new Error 'this will never happen because blah blah blah'. If you can't explain why it'll never happen, then you should consider handling it properly. :), All in all something is ambiguous, If you think that you found a bug in the language this error is generated from src/helpers.kofu help me improve it"
+  else throw new Error "beingDeclared: Non-exhaustive patterns in case: #{assignment.className} 'Non-exhaustive patterns' means that you have a set of pattern matches that don't cover all possible combinations. If you're really, really certain that a case is impossible, then use something like new Error 'this will never happen because blah blah blah'. If you can't explain why it'll never happen, then you should consider handling it properly. :), All in all something is ambiguous, If you think that you found a bug in the language this error is generated from src/helpers.mamba help me improve it"
 
 @declarationsFor = (node, inScope) ->
   vars = envEnrichments node, inScope

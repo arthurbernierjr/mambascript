@@ -2,7 +2,7 @@
 
 fs = require 'fs'
 path = require 'path'
-KofuScript = require '../lib/module'
+MambaScript = require '../lib/module'
 {exec, spawn} = require 'child_process'
 cscodegen = require 'cscodegen'
 escodegen = require 'escodegen'
@@ -29,7 +29,7 @@ reporter = require '../lib/reporter'
 {runMain} = require '../lib/run'
 
 compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
-  cs_ast = KofuScript.parse source, parseOption ? {
+  cs_ast = MambaScript.parse source, parseOption ? {
     optimise: yes
     raw: true
     inputSource: source
@@ -40,11 +40,11 @@ compileFromSourceToJS = (source, {parseOption, compileOption} = {}) ->
     bare: true
     header: true
   }
-  js_ast = KofuScript.compileTypedToCS cs_ast, compileOptions ? bare: !!argv.bare
-  KofuScript.js js_ast, compileOptions
+  js_ast = MambaScript.compileTypedToCS cs_ast, compileOptions ? bare: !!argv.bare
+  MambaScript.js js_ast, compileOptions
 
 run = (fname, source, {parseOption, compileOption} = {}) ->
-  cs_ast = KofuScript.parse source, parseOption ? {
+  cs_ast = MambaScript.parse source, parseOption ? {
     optimise: yes
     raw: true
     inputSource: source
@@ -55,7 +55,7 @@ run = (fname, source, {parseOption, compileOption} = {}) ->
     bare: true
     header: true
   }
-  js_ast = KofuScript.compile cs_ast, compileOptions ? bare: !!argv.bare
+  js_ast = MambaScript.compile cs_ast, compileOptions ? bare: !!argv.bare
   js = escodegen.generate js_ast
   runMain source, js, js_ast, fname
 
@@ -105,7 +105,7 @@ switch mode
       source = fs.readFileSync(fpath).toString()
       # preprocessed = Preprocessor.process source, {literate}
       try
-        cs_ast = KofuScript.parse source, {
+        cs_ast = MambaScript.parse source, {
           optimise: no
           raw: true
           sourceMap: true
@@ -113,7 +113,7 @@ switch mode
           literate
         }
       catch e
-        console.error 'Greetings from the svelteCompile Function in the kofu executable My dude no big deal but you have an Error at', fpath
+        console.error 'Greetings from the svelteCompile Function in the mamba executable My dude no big deal but you have an Error at', fpath
         throw e
         process.exit(1)
 
@@ -126,8 +126,8 @@ switch mode
         return
 
       #change here
-      js_ast = KofuScript.compile cs_ast, bare: true
-      code = KofuScript.jsEsm js_ast
+      js_ast = MambaScript.compile cs_ast, bare: true
+      code = MambaScript.jsEsm js_ast
 
 
 
@@ -136,7 +136,7 @@ switch mode
           .replace('.typed.coffee', '.js')
           .replace('.tcoffee', '.js')
           .replace('.coffee', '.js')
-          .replace('.kofu', '.js')
+          .replace('.mamba', '.js')
 
       outpath =
         if argv.out
@@ -175,7 +175,7 @@ switch mode
       source = fs.readFileSync(fpath).toString()
       # preprocessed = Preprocessor.process source, {literate}
       try
-        cs_ast = KofuScript.parse source, {
+        cs_ast = MambaScript.parse source, {
           optimise: no
           raw: true
           sourceMap: true
@@ -195,15 +195,13 @@ switch mode
         console.log cscodegen.generate cs_ast
         return
 
-      js_ast = KofuScript.compile cs_ast, bare: !!argv.bare
-      code = KofuScript.js js_ast
+      js_ast = MambaScript.compile cs_ast, bare: !!argv.bare
+      code = MambaScript.js js_ast
 
       extReplacer = (name) ->
         name
-          .replace('.typed.coffee', '.js')
-          .replace('.tcoffee', '.js')
-          .replace('.coffee', '.js')
           .replace('.kofu', '.js')
+          .replace('.mamba', '.js')
 
       outpath =
         if argv.out

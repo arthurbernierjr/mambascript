@@ -2,11 +2,11 @@
 
 path = require 'path'
 Module = require 'module'
-KofuScript = require './module'
+MambaScript = require './module'
 {SourceMapConsumer} = require 'source-map'
 
 # NodeJS / V8 have no support for transforming positions in stack traces using
-# sourceMap, so we must monkey-patch Error to display KofuScript source
+# sourceMap, so we must monkey-patch Error to display MambaScript source
 # positions.
 
 # Ideally, this would happen in a way that is scalable to multiple compile-to-
@@ -113,7 +113,7 @@ runMain = (csSource, jsSource, jsAst, filename) ->
 runModule = (module, jsSource, jsAst, filename) ->
   do patchStackTrace
   if jsAst
-    Module._sourceMaps[filename] = -> "#{KofuScript.sourceMap jsAst, filename}"
+    Module._sourceMaps[filename] = -> "#{MambaScript.sourceMap jsAst, filename}"
   module._compile jsSource, filename
 
 module.exports = {runMain, runModule}

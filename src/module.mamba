@@ -23,9 +23,9 @@ escodegenFormat =
   quotes: 'auto'
   parentheses: no
 
-KofuScript =
+MambaScript =
 
-  KofuScript: KofuScript
+  MambaScript: MambaScript
   Compiler: Compiler
   Optimiser: Optimiser
   Parser: Parser
@@ -85,15 +85,15 @@ KofuScript =
   # Equivalent to original CS compile
   cs2js: (input, options = {}) ->
     options.optimise ?= on
-    csAST = KofuScript.parse input, options
-    jsAST = KofuScript.compile csAST, bare: options.bare
-    KofuScript.js jsAST, compact: options.compact or options.minify
+    csAST = MambaScript.parse input, options
+    jsAST = MambaScript.compile csAST, bare: options.bare
+    MambaScript.js jsAST, compact: options.compact or options.minify
 
   smoothCompile: (input, options = {}) ->
     options.optimise ?= on
-    csAST = KofuScript.parse input, options
-    jsAST = KofuScript.compile csAST, bare: true
-    KofuScript.jsEsm jsAST, compact: options.compact or options.minify
+    csAST = MambaScript.parse input, options
+    jsAST = MambaScript.compile csAST, bare: true
+    MambaScript.jsEsm jsAST, compact: options.compact or options.minify
 
   svelteCompile: (input) ->
     options = {
@@ -104,13 +104,13 @@ KofuScript =
     }
     @cs2js(input, options)
 
-module.exports = KofuScript
+module.exports = MambaScript
 
 if require.extensions?['.node']?
-  KofuScript.register = -> require './register'
+  MambaScript.register = -> require './register'
   # Throw error with deprecation warning when depending upon implicit `require.extensions` registration
-  for ext in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.kofu']
+  for ext in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.mamba']
     require.extensions[ext] ?= ->
       throw new Error """
-      Use KofuScript.register() or require the coffee-script-redux/register module to require #{ext} files.
+      Use MambaScript.register() or require the coffee-script-redux/register module to require #{ext} files.
       """

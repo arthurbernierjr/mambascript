@@ -1,5 +1,5 @@
-# **KofuBlu** lets you to write HTML templates in 100% pure
-# [KofuScript](http://kofuscript.org).
+# **BlackMamba** lets you to write HTML templates in 100% pure
+# [MambaScript](http://mambascript.org).
 #
 # You can run it on [node.js](http://nodejs.org) or the browser, or compile your
 # templates down to self-contained javascript functions, that will take in data
@@ -10,17 +10,17 @@
 # stiff.
 
 if window?
-  kofuBlu = window.KofuBlu = {}
-  kofu = if KofuScript? then KofuScript else null
+  black = window.BlackMamba = {}
+  mamba = if MambaScript? then MambaScript else null
 else
-  kofuBlu = exports
-  kofu = require '../lib/module'
+  black = exports
+  mamba = require '../lib/module'
 
-kofuBlu.version = '0.1.3'
+black.version = '0.1.3'
 
 # Values available to the `doctype` function inside a template.
 # Ex.: `doctype 'strict'`
-kofuBlu.doctypes =
+black.doctypes =
   'default': '<!DOCTYPE html>'
   '5': '<!DOCTYPE html>'
   'xml': '<?xml version="1.0" encoding="utf-8" ?>'
@@ -32,12 +32,12 @@ kofuBlu.doctypes =
   'mobile': '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">'
   'ce': '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "ce-html-1.0-transitional.dtd">'
 
-# KofuScript-generated JavaScript may contain anyone of these; but when we
+# MambaScript-generated JavaScript may contain anyone of these; but when we
 # take a function to string form to manipulate it, and then recreate it through
 # the `Function()` constructor, it loses access to its parent scope and
 # consequently to any helpers it might need. So we need to reintroduce these
 # inside any "rewritten" function.
-kofuscript_helpers = """
+mambascript_helpers = """
   var __slice = Array.prototype.slice;
   var __hasProp = Object.prototype.hasOwnProperty;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -86,13 +86,13 @@ merge_elements = (args...) ->
 # Public/customizable list of possible elements.
 # For each name in this list that is also present in the input template code,
 # a function with the same name will be added to the compiled template.
-kofuBlu.tags = merge_elements 'regular', 'obsolete', 'void', 'obsolete_void'
+black.tags = merge_elements 'regular', 'obsolete', 'void', 'obsolete_void'
 
 # Public/customizable list of elements that should be rendered self-closed.
-kofuBlu.self_closing = merge_elements 'void', 'obsolete_void'
+black.self_closing = merge_elements 'void', 'obsolete_void'
 
 # This is the basic material from which compiled templates will be formed.
-# It will be manipulated in its string form at the `kofuBlu.compile` function
+# It will be manipulated in its string form at the `black.compile` function
 # to generate the final template function.
 skeleton = (data = {}) ->
   # Whether to generate formatted HTML with indentation and line breaks, or
@@ -103,8 +103,8 @@ skeleton = (data = {}) ->
   # basis with the `h` function.
   data.autoescape ?= off
 
-  # Internal KofuBlu stuff.
-  __kb =
+  # Internal BlackMamba stuff.
+  __bm =
     buffer: []
 
     esc: (txt) ->
@@ -210,14 +210,14 @@ skeleton = (data = {}) ->
             else
               contents = a
 
-    __kb.render_tag(name, idclass, attrs, contents)
+    __bm.render_tag(name, idclass, attrs, contents)
 
   yieldMe = (f) ->
     temp_buffer = []
-    old_buffer = __kb.buffer
-    __kb.buffer = temp_buffer
+    old_buffer = __bm.buffer
+    __bm.buffer = temp_buffer
     f()
-    __kb.buffer = old_buffer
+    __bm.buffer = old_buffer
     temp_buffer.join ''
 
   h = (txt) ->
@@ -227,59 +227,59 @@ skeleton = (data = {}) ->
       .replace(/"/g, '&quot;')
 
   doctype = (type = 'default') ->
-    text __kb.doctypes[type]
+    text __bm.doctypes[type]
     text '\n' if data.format
 
   text = (txt) ->
-    __kb.buffer.push String(txt)
+    __bm.buffer.push String(txt)
     null
 
   comment = (cmt) ->
     text "<!--#{cmt}-->"
     text '\n' if data.format
 
-  kofuscript = (param) ->
+  mambascript = (param) ->
     switch typeof param
-      # `kofuscript -> alert 'hi'` becomes:
+      # `mambascript -> alert 'hi'` becomes:
       # `<script>;(function () {return alert('hi');})();</script>`
       when 'function'
-        script "#{__kb.kofuscript_helpers}(#{param}).call(this);"
-      # `kofuscript "alert 'hi'"` becomes:
-      # `<script type="text/kofuscript">alert 'hi'</script>`
+        script "#{__bm.mambascript_helpers}(#{param}).call(this);"
+      # `mambascript "alert 'hi'"` becomes:
+      # `<script type="text/mambascript">alert 'hi'</script>`
       when 'string'
-        script type: 'text/kofuscript', -> param
-      # `kofuscript src: 'script.kofu'` becomes:
-      # `<script type="text/kofuscript" src="script.kofu"></script>`
+        script type: 'text/mambascript', -> param
+      # `mambascript src: 'script.mamba'` becomes:
+      # `<script type="text/mambascript" src="script.mamba"></script>`
       when 'object'
-        param.type = 'text/kofuscript'
+        param.type = 'text/mambascript'
         script param
 
   # Conditional IE comments.
   ie = (condition, contents) ->
-    __kb.indent()
+    __bm.indent()
 
     text "<!--[if #{condition}]>"
-    __kb.render_contents(contents)
+    __bm.render_contents(contents)
     text "<![endif]-->"
     text '\n' if data.format
 
   null
 
 # Stringify the skeleton and unwrap it from its enclosing `function(){}`, then
-# add the KofuScript helpers.
+# add the MambaScript helpers.
 skeleton = String(skeleton)
   .replace(/function\s*\(.*\)\s*\{/, '')
   .replace(/return null;\s*\}$/, '')
 
-skeleton = kofuscript_helpers + skeleton
+skeleton = mambascript_helpers + skeleton
 
 # Compiles a template into a standalone JavaScript function.
-kofuBlu.compile = (template, options = {}) ->
-  # The template can be provided as either a function or a KofuScript string
-  # (in the latter case, the KofuScript compiler must be available).
+black.compile = (template, options = {}) ->
+  # The template can be provided as either a function or a MambaScript string
+  # (in the latter case, the MambaScript compiler must be available).
   if typeof template is 'function' then template = String(template)
-  else if typeof template is 'string' and kofu?
-    template = kofu.smoothCompile template, bare: yes
+  else if typeof template is 'string' and mamba?
+    template = mamba.smoothCompile template, bare: yes
     template = "function(){#{template}}"
 
   # If an object `hardcode` is provided, insert the stringified value
@@ -299,33 +299,33 @@ kofuBlu.compile = (template, options = {}) ->
   tag_functions = ''
   tags_used = []
 
-  for t in kofuBlu.tags
+  for t in black.tags
     if template.indexOf(t) > -1 or hardcoded_locals.indexOf(t) > -1
       tags_used.push t
 
   tag_functions += "var #{tags_used.join ','};"
   for t in tags_used
-    tag_functions += "#{t} = function(){return __kb.tag('#{t}', arguments);};"
+    tag_functions += "#{t} = function(){return __bm.tag('#{t}', arguments);};"
 
   # Main function assembly.
   code = tag_functions + hardcoded_locals + skeleton
 
-  code += "__kb.doctypes = #{JSON.stringify kofuBlu.doctypes};"
-  code += "__kb.kofuscript_helpers = #{JSON.stringify kofuscript_helpers};"
-  code += "__kb.self_closing = #{JSON.stringify kofuBlu.self_closing};"
+  code += "__bm.doctypes = #{JSON.stringify black.doctypes};"
+  code += "__bm.mambascript_helpers = #{JSON.stringify mambascript_helpers};"
+  code += "__bm.self_closing = #{JSON.stringify black.self_closing};"
 
   # If `locals` is set, wrap the template inside a `with` block. This is the
   # most flexible but slower approach to specifying local variables.
   code += 'with(data.locals){' if options.locals
   code += "(#{template}).call(data);"
   code += '}' if options.locals
-  code += "return __kb.buffer.join('');"
+  code += "return __bm.buffer.join('');"
 
   new Function('data', code)
 
 cache = {}
 
-# Template in, HTML out. Accepts functions or strings as does `kofuBlu.compile`.
+# Template in, HTML out. Accepts functions or strings as does `black.compile`.
 #
 # Accepts an option `cache`, by default `false`. If set to `false` templates will
 # be recompiled each time.
@@ -334,20 +334,20 @@ cache = {}
 # data, but the two will be merged and passed down to the compiler (which uses
 # `locals` and `hardcode`), and the template (which understands `locals`, `format`
 # and `autoescape`).
-kofuBlu.render = (template, data = {}, options = {}) ->
+black.render = (template, data = {}, options = {}) ->
   data[k] = v for k, v of options
   data.cache ?= off
 
   if data.cache and cache[template]? then tpl = cache[template]
-  else if data.cache then tpl = cache[template] = kofuBlu.compile(template, data)
-  else tpl = kofuBlu.compile(template, data)
+  else if data.cache then tpl = cache[template] = black.compile(template, data)
+  else tpl = black.compile(template, data)
   tpl(data)
 
 unless window?
-  kofuBlu.adapters =
-    # Legacy adapters for when KofuBlu expected data in the `context` attribute.
-    simple: kofuBlu.render
-    meryl: kofuBlu.render
+  black.adapters =
+    # Legacy adapters for when BlackMamba expected data in the `context` attribute.
+    simple: black.render
+    meryl: black.render
 
     express:
       TemplateError: class extends Error
@@ -364,7 +364,7 @@ unless window?
           text @partial.apply @, arguments
 
         TemplateError = @TemplateError
-        try tpl = kofuBlu.compile(template, data)
+        try tpl = black.compile(template, data)
         catch e then throw new TemplateError "Error compiling #{data.filename}: #{e.message}"
 
         return ->

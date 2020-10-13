@@ -22,7 +22,7 @@ class Reporter
   # () -> String
   report: ->
     errors = @errors.map ([node, text])->
-      "L#{node.line} #{node.raw.inverse} #{text.red} If you think that you found a bug in the language this error is generated from src/reporter.kofu help me improve it... this reporter is exported and used around the whole language"
+      "L#{node.line} #{node.raw.inverse} #{text.red} If you think that you found a bug in the language this error is generated from src/reporter.mamba help me improve it... this reporter is exported and used around the whole language"
 
     """
     #{errors.join '\n'}

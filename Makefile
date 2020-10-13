@@ -1,22 +1,22 @@
 default: all
 
-SRC = $(wildcard src/*.kofu | sort)
-LIB = $(SRC:src/%.kofu=lib/%.js) lib/parser.js
-BOOTSTRAPS = $(SRC:src/%.kofu=lib/bootstrap/%.js) lib/bootstrap/parser.js
+SRC = $(wildcard src/*.mamba | sort)
+LIB = $(SRC:src/%.mamba=lib/%.js) lib/parser.js
+BOOTSTRAPS = $(SRC:src/%.mamba=lib/bootstrap/%.js) lib/bootstrap/parser.js
 LIBMIN = $(LIB:lib/%.js=lib/%.min.js)
-TEST = $(wildcard test/*.kofu | sort)
+TEST = $(wildcard test/*.mamba | sort)
 ROOT = $(shell pwd)
 
-KOFU = bin/kofuscript --js --bare --self
+KOFU = bin/mambascript --js --bare --self
 PEGJS = node_modules/.bin/pegjs --cache --export-var 'module.exports'
 MOCHA = node_modules/.bin/mocha --require ./register -u test
-CJSIFY = node_modules/.bin/cjsify --export KofuScript
+CJSIFY = node_modules/.bin/cjsify --export MambaScript
 MINIFIER = node_modules/.bin/esmangle
 
 all: $(LIB)
 build: all
 parser: lib/parser.js
-browser: dist/kofuscript.min.js
+browser: dist/mambascript.min.js
 min: minify
 minify: $(LIBMIN)
 # TODO: test-browser
@@ -34,31 +34,31 @@ lib/parser.js: src/grammar.pegjs bootstraps lib
 	$(PEGJS) <"$<" >"$@.tmp" && mv "$@.tmp" "$@"
 lib/bootstrap/parser.js: src/grammar.pegjs lib/bootstrap
 	$(PEGJS) <"$<" >"$@"
-lib/bootstrap/%.js: src/%.kofu lib/bootstrap
+lib/bootstrap/%.js: src/%.mamba lib/bootstrap
 	$(KOFU) -i "$<" >"$@"
 bootstraps: $(BOOTSTRAPS) lib/bootstrap
 	cp lib/bootstrap/* lib
-lib/%.js: src/%.kofu lib/bootstrap/%.js bootstraps lib
+lib/%.js: src/%.mamba lib/bootstrap/%.js bootstraps lib
 	$(KOFU) -i "$<" >"$@.tmp" && mv "$@.tmp" "$@"
 
 
 dist:
 	mkdir dist/
 
-dist/kofuscript.js: lib/browser.js dist
-	$(CJSIFY) src/browser.kofu -vx KofuScript \
-		-a /src/register.kofu: \
-		-a /src/parser.kofu:/lib/parser.js \
+dist/mambascript.js: lib/browser.js dist
+	$(CJSIFY) src/browser.mamba -vx MambaScript \
+		-a /src/register.mamba: \
+		-a /src/parser.mamba:/lib/parser.js \
 		--source-map "$@.map" > "$@"
 
-dist/kofuscript.min.js: lib/browser.js dist
-	$(CJSIFY) src/browser.kofu -vmx KofuScript \
-		-a /src/register.kofu: \
-		-a /src/parser.kofu:/lib/parser.js \
+dist/mambascript.min.js: lib/browser.js dist
+	$(CJSIFY) src/browser.mamba -vmx MambaScript \
+		-a /src/register.mamba: \
+		-a /src/parser.mamba:/lib/parser.js \
 		--source-map "$@.map" > "$@"
 
 
-lib/%.min.js: lib/%.js lib/kofuscript
+lib/%.min.js: lib/%.js lib/mambascript
 	$(MINIFIER) <"$<" >"$@"
 
 

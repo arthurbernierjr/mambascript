@@ -1,19 +1,19 @@
-KofuScript = require './module'
+MambaScript = require './module'
 
 # Use standard JavaScript `eval` to eval code.
-KofuScript.eval = (code, options = {}) ->
+MambaScript.eval = (code, options = {}) ->
   options.bare ?= on
   options.optimise ?= on
-  eval KofuScript.cs2js code, options
+  eval MambaScript.cs2js code, options
 
 # Running code does not provide access to this scope.
-KofuScript.run = (code, options = {}) ->
+MambaScript.run = (code, options = {}) ->
   options.bare = on
   options.optimise ?= on
-  do Function KofuScript.cs2js code, options
+  do Function MambaScript.cs2js code, options
 
 # Load a remote script from the current domain via XHR.
-KofuScript.load = (url, callback) ->
+MambaScript.load = (url, callback) ->
   xhr = if window.ActiveXObject
     new window.ActiveXObject 'Microsoft.XMLHTTP'
   else
@@ -23,25 +23,25 @@ KofuScript.load = (url, callback) ->
   xhr.onreadystatechange = ->
     return unless xhr.readyState is xhr.DONE
     if xhr.status in [0, 200]
-      KofuScript.run xhr.responseText
+      MambaScript.run xhr.responseText
     else
-      throw new Error "Greetings from the KofuScript.load function in the browser.coffer file  Could not load #{url}"
+      throw new Error "Greetings from the MambaScript.load function in the browser.coffer file  Could not load #{url}"
     do callback if callback
   xhr.send null
 
-# Activate KofuScript in the browser by having it compile and evaluate
+# Activate MambaScript in the browser by having it compile and evaluate
 # all script tags with a content-type of `text/coffeescript`.
 # This happens on page load.
 runScripts = ->
   scripts = document.getElementsByTagName 'script'
-  coffees = (s for s in scripts when s.type is 'text/kofu')
+  coffees = (s for s in scripts when s.type is 'text/mamba')
   index = 0
   do execute = ->
     return unless script = coffees[index++]
     if script.src
-      KofuScript.load script.src, execute
+      MambaScript.load script.src, execute
     else
-      KofuScript.run script.innerHTML
+      MambaScript.run script.innerHTML
       do execute
   null
 
@@ -51,4 +51,4 @@ if addEventListener?
 else if attachEvent?
   attachEvent 'onload', runScripts
 
-module.exports = KofuScript
+module.exports = MambaScript

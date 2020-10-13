@@ -2,7 +2,7 @@ child_process = require 'child_process'
 fs = require 'fs'
 path = require 'path'
 
-KofuScript = require './module'
+MambaScript = require './module'
 {runModule} = require './run'
 
 module.exports = not require.extensions['.coffee']?
@@ -12,9 +12,9 @@ module.exports = not require.extensions['.coffee']?
 
 compile = (module, filename, opts) ->
   input = fs.readFileSync filename, 'utf8'
-  csAst = KofuScript.parse input, opts
-  jsAst = KofuScript.compile csAst
-  js = KofuScript.js jsAst
+  csAst = MambaScript.parse input, opts
+  jsAst = MambaScript.compile csAst
+  js = MambaScript.js jsAst
   runModule module, js, jsAst, filename
 
 compileWithOriginalCoffee = (module, filename, opts = {}) ->
@@ -39,15 +39,15 @@ require.extensions['.litcoffee'] = (module, filename) ->
 require.extensions['.tcoffee'] = (module, filename) ->
   compile module, filename, raw: yes, typeCheck: true
 
-require.extensions['.kofu'] = (module, filename) ->
+require.extensions['.mamba'] = (module, filename) ->
   compile module, filename, raw: yes, typeCheck: true
 
 # patch child_process.fork to default to the coffee binary as the execPath for coffee/litcoffee files
 {fork} = child_process
 unless fork.coffeePatched
-  coffeeBinary = path.resolve 'bin', 'kofu'
+  coffeeBinary = path.resolve 'bin', 'mamba'
   child_process.fork = (file, args = [], options = {}) ->
-    if (path.extname file) in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.kofu']
+    if (path.extname file) in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.mamba']
       if not Array.isArray args
         args = []
         options = args or {}
