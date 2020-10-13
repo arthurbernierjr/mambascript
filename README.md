@@ -5,18 +5,18 @@
 Install and run!
 
 ```
-$ npm install -g kofuscript
-$ kofu -c foo.kofu # compile
-$ kofu foo.kofu # execute
-$ kofu # repl
-$ start-kofuscript #start a new kofuscript project
+$ npm install -g mambacript
+$ mamba -c foo.mamba # compile
+$ mamba foo.mamba # execute
+$ mamba # repl
+$ start-mambascript #start a new mambascript project
 ```
 
-### Extensions you should know about KofuScript
+### Extensions you should know about MambaScript
 
-- `.kofu` and `.tcoffee` are compiled by kofuscript compiler.
+- `.mamba` and `.tcoffee` are compiled by mambascript compiler.
 - Compiler uses jashkenas/coffeescript in `require('./foo.coffee')` by default.
-- if you want to compile `.coffee` with kofuscript, add `--self` option.
+- if you want to compile `.coffee` with mambascript, add `--self` option.
 
 
 # Why work on an old project.
@@ -27,13 +27,13 @@ This project is amazing, period. Everything here is exactly what I needed to be 
 
 1. Fixed Bug Causing REPL Not to Function
 1. Updated CoffeeScript to stable version 2.5+ with JSX support
-1. Added .kofu file type
+1. Added .mamba file type
 
 ## Updates Coming
 
 1. Documentation on Usage with KOFUJS
-1. Updates to Create KofuJS App
-1. Make This Kofuscript fork the default syntax for KOFUJS
+1. Updates to Create MambaJS App
+1. Make This Mambascript fork the default syntax for KOFUJS
 
 ## Current Tasks
 
@@ -80,7 +80,7 @@ This project is amazing, period. Everything here is exactly what I needed to be 
 	# Types
 
 	obj =  {
-		"KofuScript":	"JavaScript"
+		"MambaScript":	"JavaScript"
 		"is": "==="
 		"isnt":	"!=="
 		"not":	"!"
@@ -95,7 +95,7 @@ This project is amazing, period. Everything here is exactly what I needed to be 
 
 	keys :: String[] = Object.keys obj
 
-	forEvery key in keys then present "[#{key}] in KofuScript is equivalent to [#{obj[key]}] in JavaScript" unless key is 'KofuScript'
+	forEvery key in keys then present "[#{key}] in MambaScript is equivalent to [#{obj[key]}] in JavaScript" unless key is 'MambaScript'
 
 	# Strings
 
@@ -178,7 +178,7 @@ This project is amazing, period. Everything here is exactly what I needed to be 
 
 ```
 
-(Built KofuScript On Top Of) TypedCoffeeScript
+(Built MambaScript On Top Of) TypedCoffeeScript
 ==================================
 
 [![Build Status](https://drone.io/github.com/mizchi/TypedCoffeeScript/status.png)](https://drone.io/github.com/mizchi/TypedCoffeeScript/latest)
