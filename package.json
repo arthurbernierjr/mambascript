@@ -1,10 +1,10 @@
 {
   "name": "mambascript",
   "author": "arthurbernierjr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "homepage": "https://github.com/arthurbernierjr/mambascript",
   "bugs": "https://github.com/arthurbernierjr/mambascript/issues",
-  "description": "MambaScript the rebirth of typed Unfancy Javascript",
+  "description": "MambaScript The Love Child Of Typescript and Python",
   "keywords": [
     "typedcoffeescript",
     "coffeescript",
@@ -86,7 +86,7 @@
   "licenses": [
     {
       "type": "3-clause BSD",
-      "url": "https://raw.github.com/michaelficarra/CoffeeScriptRedux/master/LICENSE"
+      "url": "https://github.com/arthurbernierjr/mambascript/master/LICENSE"
     }
   ],
   "license": "3-clause BSD"
