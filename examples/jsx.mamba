@@ -1,4 +1,4 @@
-KofuScript = require '../lib/module'
+MambaScript = require '../lib/module'
 Fix = require '../utils/esm'
 code ="""
 a = require '~/b'
@@ -6,8 +6,8 @@ a = require '~/b'
 module.exports = a
 """
 
-csAST = KofuScript.parse code
-jsAST = KofuScript.compile csAST , bare: true
-final = KofuScript.jsEsm jsAST
+msAST = MambaScript.parse code
+jsAST = MambaScript.compile msAST , bare: true
+final = MambaScript.jsEsm jsAST
 fixed = Fix final
 present fixed

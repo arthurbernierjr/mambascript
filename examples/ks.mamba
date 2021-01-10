@@ -1,7 +1,7 @@
 require('../lib/module').register()
-kb = require '../src/kofublu.kofu'
+black = require '../src/black.mamba'
 # Client-side web page
-webpage = kb.render ->
+webpage = black.render ->
   doctype 5
   html ->
     head ->
