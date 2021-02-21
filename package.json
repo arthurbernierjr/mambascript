@@ -29,7 +29,8 @@
     "check": "make -j test",
     "test": "jest",
     "example": "gulp example",
-    "dev": "gulp"
+    "dev": "gulp",
+    "start": "./bin/mamba"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
