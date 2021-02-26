@@ -1,12 +1,19 @@
 MambaScript = require '../lib/module'
 Fix = require '../utils/esm'
 code ="""
-a = require '~/b'
-{b} = require '@/g'
-module.exports = a
+voltron = (args...)->
+  Object.assign({}, args...)
 """
+fs = require 'fs'
+
 
 msAST = MambaScript.parse code
+
+fs.writeFile 'msast.js', JSON.stringify(msAST),  (err) ->
+  if  err then throw err else present 'Saved!'
+
+
+present msAST
 jsAST = MambaScript.compile msAST , bare: true
 final = MambaScript.jsEsm jsAST
 fixed = Fix final
