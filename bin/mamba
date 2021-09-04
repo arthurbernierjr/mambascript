@@ -15,7 +15,7 @@ escodegen = require('escodegen');
 repl = require('../lib/repl');
 reporter = require('../lib/reporter');
 debug = require('../lib/helpers').debug;
-argv = require('optimist').boolean('compile').boolean('bare').boolean('scope').boolean('self').boolean('print').boolean('svelte').alias('c', 'compile').alias('e', 'execute').alias('b', 'bare').alias('o', 'out').alias('j', 'join').alias('d', 'debug').alias('z', 'svelte').argv;
+argv = require('kofu-optimist').boolean('compile').boolean('bare').boolean('scope').boolean('self').boolean('print').boolean('svelte').alias('c', 'compile').alias('e', 'execute').alias('b', 'bare').alias('o', 'out').alias('j', 'join').alias('d', 'debug').alias('z', 'svelte').argv;
 runMain = require('../lib/run').runMain;
 compileFromSourceToJS = function (source, param$) {
   var cache$1, compileOption, compileOptions, cs_ast, js_ast, parseOption;

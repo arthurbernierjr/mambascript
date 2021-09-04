@@ -148,7 +148,7 @@ envEnrichments_ = (inScope = []) ->
 @debug = (flag, args...) ->
 
   util = require 'util'
-  {argv} = require('optimist')
+  {argv} = require('kofu-optimist')
     .alias('d', 'debug')
 
   if arguments.length > 1

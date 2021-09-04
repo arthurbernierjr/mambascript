@@ -12,6 +12,7 @@ escodegen = try require 'escodegen'
 NewCoffeScript = require 'coffeescript'
 ESMRewriter = require '../utils/esm'
 MambaView =  require './black'
+Decision = require './decision'
 
 pkg = require './../package.json'
 
@@ -34,7 +35,7 @@ MambaScript =
   Nodes: Nodes
   NewCoffeScript: NewCoffeScript
   MambaView: MambaView
-
+  Decision: Decision
   VERSION: pkg.version
 
   parse: (coffee, options = {}) ->

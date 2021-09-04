@@ -24,9 +24,6 @@ compileWithOriginalCoffee = (module, filename, opts = {}) ->
   js = OriginalCoffee.compile input, opts
   runModule module, js, null, filename
 
-require.extensions['.typed.coffee'] = (module, filename) ->
-  compile module, filename, raw: yes, typeCheck: true
-
 require.extensions['.coffee'] = (module, filename) ->
   if argv.self
     compile module, filename, raw: yes
@@ -36,11 +33,8 @@ require.extensions['.coffee'] = (module, filename) ->
 require.extensions['.litcoffee'] = (module, filename) ->
   compile module, filename, raw: yes, literate: yes
 
-require.extensions['.tcoffee'] = (module, filename) ->
-  compile module, filename, raw: yes, typeCheck: true
-
 require.extensions['.mamba'] = (module, filename) ->
-  compile module, filename, raw: yes, typeCheck: true
+  compile module, filename, raw: yes, typeCheck: true, literate: yes
 
 # patch child_process.fork to default to the coffee binary as the execPath for coffee/litcoffee files
 {fork} = child_process
