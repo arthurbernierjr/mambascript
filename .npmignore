@@ -4,7 +4,10 @@ dist
 tdd
 Makefile
 src
-kocky.cr
+utils/kocky.cr
 todos.md
 smooth-mambascript
 examples
+utils/gulpfile.js
+utils/msast.js
+utils/msast.txt
