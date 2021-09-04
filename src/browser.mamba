@@ -30,14 +30,14 @@ MambaScript.load = (url, callback) ->
   xhr.send null
 
 # Activate MambaScript in the browser by having it compile and evaluate
-# all script tags with a content-type of `text/coffeescript`.
+# all script tags with a content-type of `text/mamba`.
 # This happens on page load.
 runScripts = ->
   scripts = document.getElementsByTagName 'script'
-  coffees = (s for s in scripts when s.type is 'text/mamba')
+  mambas = (s for s in scripts when s.type is 'text/mamba')
   index = 0
   do execute = ->
-    return unless script = coffees[index++]
+    return unless script = mambas[index++]
     if script.src
       MambaScript.load script.src, execute
     else

@@ -1,6 +1,6 @@
 {debug} = require './helpers'
 reporter = require './reporter'
-CS = require './nodes'
+MS = require './nodes'
 _ = require 'lodash'
 
 {checkType, checkTypeAnnotation }      = require './type-checker'
@@ -25,10 +25,10 @@ checkNodes = (cs_ast) ->
   return root
 
 fromMemberAccessToRef = (node) ->
-  if node instanceof CS.Identifier
+  if node instanceof MS.Identifier
     return node.data
 
-  if node instanceof CS.This
+  if node instanceof MS.This
     return '@'
 
   head = left: {}, right: node.memberName , nodeType: 'MemberAccess'
@@ -37,13 +37,13 @@ fromMemberAccessToRef = (node) ->
   parent = head
 
   while cur
-    if cur instanceof CS.Identifier
+    if cur instanceof MS.Identifier
       parent.left = cur.data
       break
-    else if cur instanceof CS.This
+    else if cur instanceof MS.This
       parent.left = '@'
       break
-    else if cur instanceof CS.MemberAccessOp
+    else if cur instanceof MS.MemberAccessOp
       h.nodeType = 'MemberAccess'
       h = h.left = {}
       h.right = cur.memberName
@@ -52,9 +52,9 @@ fromMemberAccessToRef = (node) ->
   head
 
 createIdentifier = (node) ->
-  if node instanceof CS.Identifier
+  if node instanceof MS.Identifier
     typeRef: node.data
-  else if node instanceof CS.MemberAccessOp
+  else if node instanceof MS.MemberAccessOp
     ref = fromMemberAccessToRef node
     typeRef: ref
   else if _.isString node
@@ -189,7 +189,7 @@ walkBinOp = (node, scope) ->
         identifier: createIdentifier('Number')
     else if leftRef is rightRef is 'Any'
       # TODO: Number or String
-      if node instanceof CS.PlusOp
+      if node instanceof MS.PlusOp
         node.typeAnnotation =
           implicit: true
           nodeType: 'primitiveIdentifier'
@@ -256,9 +256,9 @@ walkNewOp = (node, scope) ->
   ctor = node.ctor?.ctor ? node.ctor
   args = node.ctor?.arguments ? node.arguments
 
-  if ctor instanceof CS.Identifier
+  if ctor instanceof MS.Identifier
     ann = scope.getTypeByIdentifier createIdentifier(ctor)
-  else if ctor instanceof CS.MemberAccessOp
+  else if ctor instanceof MS.MemberAccessOp
     if ctor.expression?
       ns = fromMemberAccessToRef(ctor.expression)
       parentScope = scope.getParentModule().resolveNamespace ns
@@ -291,13 +291,13 @@ walkOfOp = (node, scope) ->
 
 walkModule = (node, scope) ->
   global._root_.hasModule = true
-  if node.ident instanceof CS.Identifier
+  if node.ident instanceof MS.Identifier
     if mod = scope.getModuleInScope(node.ident.data)
       moduleScope = mod
     else
       parentMod = scope.getParentModule()
       moduleScope = parentMod.addModule node.ident.data
-  else if node.ident instanceof CS.MemberAccessOp
+  else if node.ident instanceof MS.MemberAccessOp
     ns = fromMemberAccessToRef(node.ident)
     moduleScope = scope.getParentModule().resolveNamespace ns, true
   walk node.body, moduleScope
@@ -324,7 +324,7 @@ walkFor = (node, scope) ->
       typeAnnotation: node.valAssignee.typeAnnotation
 
   if node.keyAssignee?
-    if node instanceof CS.ForIn
+    if node instanceof MS.ForIn
       node.keyAssignee.typeAnnotation =
         nodeType: 'identifier'
         identifier: createIdentifier('Int')
@@ -335,7 +335,7 @@ walkFor = (node, scope) ->
         typeAnnotation:
           nodeType: 'identifier'
           identifier: createIdentifier('Int')
-    else if node instanceof CS.ForOf
+    else if node instanceof MS.ForOf
       # TODO: FIX later
       node.keyAssignee.typeAnnotation =
         nodeType: 'identifier'
@@ -366,7 +366,7 @@ walkClassProtoAssignOp = (node, scope) ->
   right = node.expression
   symbol = left.data
 
-  if (right.instanceof CS.Function) and scope.getThis(symbol)
+  if (right.instanceof MS.Function) and scope.getThis(symbol)
     annotation = scope.getThis(symbol)?.typeAnnotation
     # register before walk. for recursive call
     if annotation?
@@ -403,20 +403,20 @@ walkAssignOp = (node, scope) ->
   # Example
   #   add :: Int * Int -> Int
   #   add = (x, y) -> x + y
-  if (right.instanceof CS.Function) and scope.getVarInScope(symbol)
+  if (right.instanceof MS.Function) and scope.getVarInScope(symbol)
     v = scope.getVarInScope(symbol)
     walkFunction right, scope, v.typeAnnotation
-  else if (right.instanceof CS.Function) and preAnnotation
+  else if (right.instanceof MS.Function) and preAnnotation
     walkFunction right, scope, preAnnotation
   else
     walk right, scope
 
   # Array initializer
-  if left instanceof CS.ArrayInitialiser
+  if left instanceof MS.ArrayInitialiser
     if right.typeAnnotation?.identifier?.typeRef is 'Any'
       '' # ignore case
     else
-      if right instanceof CS.ArrayInitialiser
+      if right instanceof MS.ArrayInitialiser
         for lprop, n in left.members
           rprop = right?.members?[n]
           if lprop and rprop # FIXME: right may be null
@@ -437,7 +437,7 @@ walkAssignOp = (node, scope) ->
           typeAnnotation: member.typeAnnotation
 
   # Destructive Assignment
-  else if left instanceof CS.ObjectInitialiser
+  else if left instanceof MS.ObjectInitialiser
     if right.typeAnnotation?.identifier?.typeRef is 'Any'
       '' # ignore case
     else
@@ -452,10 +452,10 @@ walkAssignOp = (node, scope) ->
           typeAnnotation: member.typeAnnotation
 
   # Member
-  else if left.instanceof CS.MemberAccessOp
+  else if left.instanceof MS.MemberAccessOp
     return unless checkType scope, node, left, right
   # Identifier
-  else if left.instanceof CS.Identifier
+  else if left.instanceof MS.Identifier
     if scope.getVarInScope(symbol) and preAnnotation
       return reporter.add_error node, 'double bind: '+ symbol
 
@@ -492,15 +492,15 @@ walkAssignOp = (node, scope) ->
 walkPrimitives = (node, scope) ->
   switch
     # String
-    when node.instanceof CS.String  then walkString node, scope
+    when node.instanceof MS.String  then walkString node, scope
     # Bool
-    when node.instanceof CS.Bool    then walkBool node, scope
+    when node.instanceof MS.Bool    then walkBool node, scope
     # Number
-    when node.instanceof CS.Int then walkInt node, scope
-    when node.instanceof CS.Float then walkFloat node, scope
-    when node.instanceof CS.Numbers then walkNumbers node, scope
-    when node.instanceof CS.Null then walkNull node, scope
-    when node.instanceof CS.Undefined then walkUndefined node, scope
+    when node.instanceof MS.Int then walkInt node, scope
+    when node.instanceof MS.Float then walkFloat node, scope
+    when node.instanceof MS.Numbers then walkNumbers node, scope
+    when node.instanceof MS.Null then walkNull node, scope
+    when node.instanceof MS.Undefined then walkUndefined node, scope
 
 walkUndefined = (node, scope) ->
   node.typeAnnotation ?=
@@ -652,13 +652,13 @@ walkClass = (node, scope) ->
 
   isThis = false
 
-  if node?.nameAssignee instanceof CS.Identifier
+  if node?.nameAssignee instanceof MS.Identifier
     walk node.nameAssignee, scope
     ident = createIdentifier node.nameAssignee
     className = ident?.typeRef.right ? ident?.typeRef ? '_class' + _.uniqueId()
     if ns = ident.typeRef.left
       parentScope = scope.resolveNamespace ns, true
-  else if node?.nameAssignee instanceof CS.MemberAccessOp
+  else if node?.nameAssignee instanceof MS.MemberAccessOp
     ref = fromMemberAccessToRef node.nameAssignee #.expression
     className = ref.right
     if ref.left in ['@', 'this']
@@ -745,13 +745,13 @@ walkClass = (node, scope) ->
     walkFunction node.ctor.expression, classScope, classScope.getConstructorType()
 
   # walk
-  if node.body instanceof CS.Block
+  if node.body instanceof MS.Block
     for statement in node.body.statements when statement.nodeType isnt 'vardef'
       walk statement, classScope
 
 # TODO: move
 addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
-  if initializerNode instanceof CS.ArrayInitialiser
+  if initializerNode instanceof MS.ArrayInitialiser
     for member in initializerNode.members
       symbol = member.data
       unless scope.getVar(symbol)
@@ -759,7 +759,7 @@ addValuesByInitializer = (scope, initializerNode, preAnnotation = null) ->
           nodeType: 'variable'
           identifier: createIdentifier(member)
           typeAnnotation: member.typeAnnotation ? ImplicitAny
-  else if initializerNode instanceof CS.ObjectInitialiser
+  else if initializerNode instanceof MS.ObjectInitialiser
     for member in initializerNode.members
       unless scope.getVar(symbol)
         scope.addVar
@@ -773,7 +773,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
   if scope instanceof ClassScope # TODO: fat arrow
     functionScope._this = scope._this
 
-  if node instanceof CS.BoundFunction
+  if node instanceof MS.BoundFunction
     functionScope._this = scope._this
 
   if preAnnotation?
@@ -789,16 +789,16 @@ walkFunction = (node, scope, preAnnotation = null) ->
       if param.typeAnnotation?
         return unless checkTypeAnnotation scope, node, preAnnotation.arguments[n], param.typeAnnotation
       # FIXME: we should always walk param
-      if param instanceof CS.MemberAccessOp
+      if param instanceof MS.MemberAccessOp
         walk param, functionScope
 
       param.typeAnnotation ?= preAnnotation.arguments?[n] ? ImplicitAny
-      if param instanceof CS.Identifier
+      if param instanceof MS.Identifier
         functionScope.addVar
           nodeType: 'variable'
           identifier: createIdentifier(param)
           typeAnnotation: param.typeAnnotation
-      else if param instanceof CS.Rest
+      else if param instanceof MS.Rest
         preLastArg = preAnnotation.arguments[n]
         argType = _.cloneDeep preLastArg
         delete argType.identifier.splats
@@ -810,7 +810,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
           typeAnnotation: param.typeAnnotation
 
       # getX :: Int[] -> Int = ([x, y]) -> x
-      else if param instanceof CS.ArrayInitialiser
+      else if param instanceof MS.ArrayInitialiser
         preAnn = preAnnotation.arguments?[n]
         if preAnn
           for member in param.members
@@ -825,7 +825,7 @@ walkFunction = (node, scope, preAnnotation = null) ->
 
         addValuesByInitializer scope, param
       # f :: Point -> Int = ({x, y}) -> Int
-      else if param instanceof CS.ObjectInitialiser
+      else if param instanceof MS.ObjectInitialiser
         preAnn = preAnnotation.arguments?[n]
         if preAnn
           for member in param.members
@@ -838,18 +838,18 @@ walkFunction = (node, scope, preAnnotation = null) ->
   else
     node.parameters?.map (param, n) ->
       walk param, functionScope
-      if param instanceof CS.Identifier
+      if param instanceof MS.Identifier
         functionScope.addVar
           nodeType: 'variable'
           identifier: createIdentifier(param)
           typeAnnotation: param.typeAnnotation ? ImplicitAny
-      else if param instanceof CS.ObjectInitialiser
+      else if param instanceof MS.ObjectInitialiser
         addValuesByInitializer scope, param
-      else if param instanceof CS.ArrayInitialiser
+      else if param instanceof MS.ArrayInitialiser
         addValuesByInitializer scope, param
 
   if node.body?
-    if node.body instanceof CS.Function
+    if node.body instanceof MS.Function
       walkFunction node.body, functionScope, node.typeAnnotation.returnType
     else
       walk node.body, functionScope
@@ -906,7 +906,7 @@ walkFunctionApplication = (node, scope) ->
 
     left ?= splatsType
 
-    if arg instanceof CS.Function
+    if arg instanceof MS.Function
       if node.function.typeAnnotation?.identifier?.typeRef isnt 'Any'
         preAnn = node.function.typeAnnotation?.arguments?[n]
         if preAnn
@@ -937,59 +937,59 @@ walk = (node, scope) ->
     when node.nodeType is 'struct'       then walkStruct node, scope
     when node.nodeType is 'vardef'       then walkVardef node, scope
     # Program
-    when node.instanceof CS.Program      then walkProgram node, scope
+    when node.instanceof MS.Program      then walkProgram node, scope
     # Module
-    when node.instanceof CS.Module       then walkModule node, scope
+    when node.instanceof MS.Module       then walkModule node, scope
     # Block
-    when node.instanceof CS.Block        then walkBlock node, scope
+    when node.instanceof MS.Block        then walkBlock node, scope
     # Retrun
-    when node.instanceof CS.Return       then  walkReturn node, scope
+    when node.instanceof MS.Return       then  walkReturn node, scope
     # New
-    when node.instanceof CS.NewOp        then  walkNewOp node, scope
+    when node.instanceof MS.NewOp        then  walkNewOp node, scope
     # BinaryOperator
-    when node.instanceof(CS.PlusOp) or node.instanceof(CS.MultiplyOp) or node.instanceof(CS.DivideOp) or node.instanceof(CS.SubtractOp)
+    when node.instanceof(MS.PlusOp) or node.instanceof(MS.MultiplyOp) or node.instanceof(MS.DivideOp) or node.instanceof(MS.SubtractOp)
       walkBinOp node, scope
 
     # === Controlle flow ===
     # Switch
-    when node.instanceof CS.Switch then walkSwitch node, scope
+    when node.instanceof MS.Switch then walkSwitch node, scope
     # If
-    when node.instanceof CS.Conditional  then walkConditional node, scope
+    when node.instanceof MS.Conditional  then walkConditional node, scope
 
-    when node.instanceof CS.Undefined         then walkUndefined node, scope
+    when node.instanceof MS.Undefined         then walkUndefined node, scope
 
-    when node.instanceof CS.OfOp              then walkOfOp node, scope
+    when node.instanceof MS.OfOp              then walkOfOp node, scope
     # For
-    when (node.instanceof CS.ForIn) or (node.instanceof CS.ForOf) then walkFor node, scope
+    when (node.instanceof MS.ForIn) or (node.instanceof MS.ForOf) then walkFor node, scope
     # Primitives
-    when node.instanceof CS.Primitives        then walkPrimitives node, scope
-    when node.instanceof CS.Null              then walkNull node, scope
+    when node.instanceof MS.Primitives        then walkPrimitives node, scope
+    when node.instanceof MS.Null              then walkNull node, scope
     # This
-    when node.instanceof CS.This              then walkThis node, scope
+    when node.instanceof MS.This              then walkThis node, scope
     # Identifier
-    when node.instanceof CS.Identifier        then walkIdentifier node, scope
+    when node.instanceof MS.Identifier        then walkIdentifier node, scope
     # ClassProto
-    when node.instanceof CS.ClassProtoAssignOp then walkClassProtoAssignOp node, scope
+    when node.instanceof MS.ClassProtoAssignOp then walkClassProtoAssignOp node, scope
     # MemberAccessOps TODO: imperfect
-    when node.instanceof CS.DynamicProtoMemberAccessOp
+    when node.instanceof MS.DynamicProtoMemberAccessOp
       walkDynamicProtoMemberAccessOp node, scope
-    when node.instanceof CS.DynamicMemberAccessOp then walkDynamicMemberAccessOp node, scope
-    when node.instanceof CS.ProtoMemberAccessOp then walkProtoMemberAccessOp node, scope
-    when node.instanceof CS.MemberAccessOps   then walkMemberAccess node, scope
+    when node.instanceof MS.DynamicMemberAccessOp then walkDynamicMemberAccessOp node, scope
+    when node.instanceof MS.ProtoMemberAccessOp then walkProtoMemberAccessOp node, scope
+    when node.instanceof MS.MemberAccessOps   then walkMemberAccess node, scope
     # Array
-    when node.instanceof CS.ArrayInitialiser  then walkArrayInializer node, scope
+    when node.instanceof MS.ArrayInitialiser  then walkArrayInializer node, scope
     # Range
-    when node.instanceof CS.Range             then walkRange node, scope
+    when node.instanceof MS.Range             then walkRange node, scope
     # Object
-    when node.instanceof CS.ObjectInitialiser then walkObjectInitializer node, scope
+    when node.instanceof MS.ObjectInitialiser then walkObjectInitializer node, scope
     # Class
-    when node.instanceof CS.Class             then walkClass node, scope
+    when node.instanceof MS.Class             then walkClass node, scope
     # Function
-    when (node.instanceof CS.Function) or node.instanceof CS.BoundFunction then walkFunction node, scope
+    when (node.instanceof MS.Function) or node.instanceof MS.BoundFunction then walkFunction node, scope
     # FunctionApplication
-    when node.instanceof CS.FunctionApplication then walkFunctionApplication node, scope
+    when node.instanceof MS.FunctionApplication then walkFunctionApplication node, scope
     # left.typeAnnotation.identifier
-    when node.instanceof CS.CompoundAssignOp then walkCompoundAssignOp node, scope
-    when node.instanceof CS.AssignOp then walkAssignOp node, scope
+    when node.instanceof MS.CompoundAssignOp then walkCompoundAssignOp node, scope
+    when node.instanceof MS.AssignOp then walkAssignOp node, scope
 
 module.exports = {checkNodes}

@@ -2,7 +2,7 @@
 {beingDeclared, usedAsExpression, envEnrichments} = require './helpers'
 CS = require './nodes'
 JS = require './js-nodes'
-MainCoffee = require 'coffeescript'
+# MainCoffee = require 'coffeescript'
 exports = module?.exports ? this
 
 # TODO: this whole file could use a general cleanup

@@ -8,9 +8,9 @@ path = require 'path'
 MambaScript = require './module'
 Repl = require './repl'
 nopt = require 'nopt'
-cscodegen = try require 'cscodegen'
-escodegen = try require 'escodegen'
-esmangle = try require 'esmangle'
+cscodegen = try require 'cscodegen' # Need a Mamba Flavored CSCodeGen
+escodegen = try require 'escodegen' # Need a Mamba Flavored ESCodegen
+esmangle = try require 'esmangle' # Need a Mamba Flavored EsMangle that doesn't need optimist
 
 inspect = (o) -> (require 'util').inspect o, no, 9e9, yes
 
@@ -131,9 +131,9 @@ if options.help
   Usage: (OPT is interpreted by #{$0}, ARG is passed to FILE)
 
     #{$0} OPT* -{p,c,j,f} OPT*
-      example: #{$0} --js --no-optimise <input.coffee >output.js
+      example: #{$0} --js --no-optimise <input.mamba >output.js
     #{$0} [-e] FILE {OPT,ARG}* [-- ARG*]
-      example: #{$0} myfile.coffee arg0 arg1
+      example: #{$0} myfile.mamba arg0 arg1
     #{$0} OPT* [--repl] OPT*
       example: #{$0}
 
@@ -319,7 +319,7 @@ else
     fs.stat options.input, (err, stats) ->
       throw err if err?
       if stats.isDirectory()
-        options.input = path.join options.input, 'index.coffee'
+        options.input = path.join options.input, 'index.mamba'
       fs.readFile options.input, (err, contents) ->
         throw err if err?
         input = contents

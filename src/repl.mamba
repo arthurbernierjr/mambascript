@@ -3,7 +3,7 @@ path = require 'path'
 vm = require 'vm'
 nodeREPL = require 'repl'
 MambaScript = require './module'
-CS = require './nodes'
+MS = require './nodes'
 {merge} = require './helpers'
 reporter = require './reporter'
 
@@ -106,7 +106,7 @@ module.exports =
     # REPL defaults
     opts.prompt or= 'mambaScript🐐>> '
     opts.ignoreUndefined ?= yes
-    opts.historyFile ?= path.join process.env.HOME, '.coffee_history'
+    opts.historyFile ?= path.join process.env.HOME, '.mamba_history'
     opts.historyMaxInputSize ?= 10 * 1024 # 10KiB
     opts.eval or= (input, context, filename, cb) ->
       # XXX: multiline hack
@@ -119,7 +119,7 @@ module.exports =
       return cb null if /^\s*$/.test input
       try
         inputAst = MambaScript.parse input, {filename, raw: yes}
-        transformedAst = new CS.AssignOp (new CS.Identifier '_'), inputAst.body
+        transformedAst = new MS.AssignOp (new MS.Identifier '_'), inputAst.body
         jsAst = MambaScript.compile transformedAst, bare: yes, inScope: Object.keys context
         js = MambaScript.js jsAst
         cb null, vm.runInContext js, context, filename

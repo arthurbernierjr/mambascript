@@ -17,18 +17,8 @@ compile = (module, filename, opts) ->
   js = MambaScript.js jsAst
   runModule module, js, jsAst, filename
 
-compileWithOriginalCoffee = (module, filename, opts = {}) ->
-  OriginalCoffee = require 'coffeescript'
-
-  input = fs.readFileSync filename, 'utf8'
-  js = OriginalCoffee.compile input, opts
-  runModule module, js, null, filename
-
 require.extensions['.coffee'] = (module, filename) ->
-  if argv.self
-    compile module, filename, raw: yes
-  else
-    compileWithOriginalCoffee module, filename, raw: yes, bare: argv.bare
+  compile module, filename, raw: yes
 
 require.extensions['.litcoffee'] = (module, filename) ->
   compile module, filename, raw: yes, literate: yes
@@ -36,17 +26,17 @@ require.extensions['.litcoffee'] = (module, filename) ->
 require.extensions['.mamba'] = (module, filename) ->
   compile module, filename, raw: yes, typeCheck: true, literate: yes
 
-# patch child_process.fork to default to the coffee binary as the execPath for coffee/litcoffee files
+# patch child_process.fork to default to the mamba binary as the execPath for coffee/litcoffee/mamba files
 {fork} = child_process
-unless fork.coffeePatched
-  coffeeBinary = path.resolve 'bin', 'mamba'
+unless fork.mambaPatched
+  mambaBinary = path.resolve 'bin', 'mamba'
   child_process.fork = (file, args = [], options = {}) ->
-    if (path.extname file) in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.mamba']
+    if (path.extname file) in ['.coffee', '.litcoffee', '.mamba']
       if not Array.isArray args
         args = []
         options = args or {}
-      options.execPath or= coffeeBinary
+      options.execPath or= mambaBinary
     fork file, args, options
-  child_process.fork.coffeePatched = yes
+  child_process.fork.mambaPatched = yes
 
 delete require.cache[__filename]

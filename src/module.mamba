@@ -9,7 +9,6 @@ reporter = require './reporter'
 {TypeError} = require './type-helpers'
 cscodegen = try require 'cscodegen'
 escodegen = try require 'escodegen'
-NewCoffeScript = require 'coffeescript'
 ESMRewriter = require '../utils/esm'
 MambaView =  require './black'
 Decision = require './decision'
@@ -33,14 +32,13 @@ MambaScript =
   Parser: Parser
   Preprocessor: Preprocessor
   Nodes: Nodes
-  NewCoffeScript: NewCoffeScript
   MambaView: MambaView
   Decision: Decision
   VERSION: pkg.version
 
-  parse: (coffee, options = {}) ->
+  parse: (mamba, options = {}) ->
     try
-      preprocessed = Preprocessor.process coffee, literate: options.literate
+      preprocessed = Preprocessor.process mamba, literate: options.literate
       parsed = Parser.parse preprocessed,
         raw: options.raw
         inputSource: options.inputSource
@@ -54,14 +52,14 @@ MambaScript =
       throw e unless e instanceof Parser.SyntaxError
       throw new Error formatParserError preprocessed, e
 
-  compile: (csAst, options) ->
-    (Compiler.compile csAst, options).toBasicObject()
+  compile: (msAst, options) ->
+    (Compiler.compile msAst, options).toBasicObject()
 
-  compileTypedToCS: (csAst, options) ->
-    (cscodegen csAst)
+  compileTypedToCS: (msAst, options) ->
+    (cscodegen msAst)
 
   # TODO
-  cs: (csAst, options) ->
+  cs: (msAst, options) ->
     # TODO: opt: format (default: nice defaults)
 
   jsWithSourceMap: (jsAst, name = 'unknown', options = {}) ->
@@ -88,15 +86,15 @@ MambaScript =
   # Equivalent to original CS compile
   cs2js: (input, options = {}) ->
     options.optimise ?= on
-    csAST = MambaScript.parse input, options
-    jsAST = MambaScript.compile csAST, bare: options.bare
-    MambaScript.js jsAST, compact: options.compact or options.minify
+    msAst = MambaScript.parse input, options
+    jsAst = MambaScript.compile msAst, bare: options.bare
+    MambaScript.js jsAst, compact: options.compact or options.minify
 
   smoothCompile: (input, options = {}) ->
     options.optimise ?= on
-    csAST = MambaScript.parse input, options
-    jsAST = MambaScript.compile csAST, bare: true
-    MambaScript.jsEsm jsAST, compact: options.compact or options.minify
+    msAst = MambaScript.parse input, options
+    jsAst = MambaScript.compile msAst, bare: true
+    MambaScript.jsEsm jsAst, compact: options.compact or options.minify
 
   svelteCompile: (input) ->
     options = {
@@ -113,8 +111,8 @@ module.exports = MambaScript
 if require.extensions?['.node']?
   MambaScript.register = -> require './register'
   # Throw error with deprecation warning when depending upon implicit `require.extensions` registration
-  for ext in ['.coffee', '.litcoffee', '.tcoffee', '.typed.coffee', '.mamba']
+  for ext in ['.coffee', '.litcoffee','.mamba']
     require.extensions[ext] ?= ->
       throw new Error """
-      Use MambaScript.register() or require the coffee-script-redux/register module to require #{ext} files.
+      Hey make sure to Use MambaScript.register() or require the register module to require #{ext} files.
       """
