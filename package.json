@@ -1,7 +1,7 @@
 {
   "name": "mambascript1",
   "author": "arthurbernierjr",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "homepage": "https://github.com/arthurbernierjr/mambascript",
   "bugs": "https://github.com/arthurbernierjr/mambascript/issues",
   "description": "MambaScript The Love Child Of Typescript and Python",
@@ -16,8 +16,8 @@
   ],
   "main": "./lib/module",
   "bin": {
-    "mamba1": "./bin/mamba",
-    "mambascript1": "./bin/mambascript"
+    "mamba": "./bin/mamba",
+    "mambascript": "./bin/mambascript"
   },
   "repository": {
     "type": "git",
