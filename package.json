@@ -1,7 +1,7 @@
 {
   "name": "mambascript",
   "author": "arthurbernierjr",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "homepage": "https://github.com/arthurbernierjr/mambascript",
   "bugs": "https://github.com/arthurbernierjr/mambascript/issues",
   "description": "MambaScript The Love Child Of Typescript and Python",
@@ -39,9 +39,7 @@
     "StringScanner": "~0.0.3",
     "arthur-pavlos-string-reversal": "^1.0.0",
     "colors": "^0.6.2",
-    "consola": "^2.12.1",
     "globby": "^11.0.1",
-    "inquirer": "^7.0.1",
     "kofu-optimist": "^0.6.3",
     "lodash": "^4.17.19",
     "nopt": "~2.1.2",
