@@ -24,8 +24,7 @@
     "url": "git://github.com/arthurbernierjr/mambascript.git"
   },
   "scripts": {
-    "build": "make -j build",
-    "check": "make -j test",
+    "build": "make -j build && npm run test",
     "test": "jest",
     "start": "./bin/mamba"
   },
@@ -36,7 +35,6 @@
     "semver": "^7.3.2"
   },
   "dependencies": {
-    "StringScanner": "~0.0.3",
     "arthur-pavlos-string-reversal": "^1.0.0",
     "colors": "^0.6.2",
     "globby": "^11.0.1",
@@ -44,13 +42,14 @@
     "lodash": "^4.17.19",
     "nopt": "~2.1.2",
     "pegjs-each-node": "^0.2.1",
+    "StringScanner": "~0.0.3",
     "transform-imports": "^2.1.1"
   },
   "optionalDependencies": {
-    "prettyjson": "*",
-    "source-map": "0.1.11",
+    "cscodegen": "git://github.com/michaelficarra/cscodegen.git#73fd7202ac086c26f18c9d56f025b18b3c6f5383",
     "escodegen": "~0.0.24",
-    "cscodegen": "git://github.com/michaelficarra/cscodegen.git#73fd7202ac086c26f18c9d56f025b18b3c6f5383"
+    "prettyjson": "*",
+    "source-map": "0.1.11"
   },
   "engines": {
     "node": ">=14.8.x"

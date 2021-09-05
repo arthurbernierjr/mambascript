@@ -1,4 +1,4 @@
-chunk = require './index.kofu'
+chunk = require './index.mamba'
 
 describe 'chunk', ->
   test 'is a function', ->
