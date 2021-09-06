@@ -52,6 +52,11 @@ MambaScript =
       throw e unless e instanceof Parser.SyntaxError
       throw new Error formatParserError preprocessed, e
 
+  esCompile: (mamba, options = {}) ->
+    msAst = @parse mamba
+    jsAST = @compile msAst, bare: true
+    return @jsEsm jsAST
+
   compile: (msAst, options) ->
     (Compiler.compile msAst, options).toBasicObject()
 
