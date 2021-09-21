@@ -9,12 +9,9 @@
 # [Markaby](http://markaby.rubyforge.org/) by Tim Fletcher and why the lucky
 # stiff.
 
-if window?
-  black = window.BlackMamba = {}
-  mamba = if MambaScript? then MambaScript else null
-else
-  black = exports
-  mamba = require '../lib/module'
+
+black = module.exports
+mamba = require '../lib/light-module'
 
 black.version = '0.1.3'
 
