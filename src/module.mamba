@@ -9,6 +9,7 @@ reporter = require './reporter'
 {TypeError} = require './type-helpers'
 cscodegen = try require 'cscodegen'
 escodegen = try require 'escodegen'
+NewCoffeScript = require 'coffeescript'
 ESMRewriter = require '../utils/esm'
 MambaView =  require './black'
 Decision = require './decision'
@@ -32,6 +33,7 @@ MambaScript =
   Parser: Parser
   Preprocessor: Preprocessor
   Nodes: Nodes
+  NewCoffeScript: NewCoffeScript
   MambaView: MambaView
   Decision: Decision
   VERSION: pkg.version
