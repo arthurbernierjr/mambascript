@@ -9,7 +9,7 @@ exec('npm run buildfiles', (err, stderr, stdout) => {
     console.log(stdout)
     console.log("Build complete")
   }
-  setTimeout(()=>{
+  setTimeout(() => {
     console.log('Preparing To Run Tests')
     exec('npm run test', (err, stderr, stdout) => {
       if(err){
