@@ -1,7 +1,7 @@
 {
   "name": "mambascript",
   "author": "arthurbernierjr",
-  "version": "0.3.8",
+  "version": "0.4.0",
   "homepage": "https://github.com/arthurbernierjr/mambascript",
   "bugs": "https://github.com/arthurbernierjr/mambascript/issues",
   "description": "MambaScript The Love Child Of Typescript and Python",
@@ -24,8 +24,9 @@
     "url": "git://github.com/arthurbernierjr/mambascript.git"
   },
   "scripts": {
-    "build": "make -j build && npm run test",
+    "buildfiles": "make -j build",
     "test": "jest",
+    "build": "node build.js",
     "start": "./bin/mamba"
   },
   "devDependencies": {
