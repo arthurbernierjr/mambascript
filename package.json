@@ -1,7 +1,7 @@
 {
   "name": "mambascript",
   "author": "arthurbernierjr",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "homepage": "https://github.com/arthurbernierjr/mambascript",
   "bugs": "https://github.com/arthurbernierjr/mambascript/issues",
   "description": "MambaScript The Love Child Of Typescript and Python",
@@ -61,7 +61,7 @@
   "optionalDependencies": {
     "escodegen": "~0.0.24",
     "esmangle": "~0.0.8",
-    "mambacodegen": "0.1.0",
+    "mambacodegen": "0.1.1",
     "prettyjson": "*",
     "source-map": "0.1.11"
   },
