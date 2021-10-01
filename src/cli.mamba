@@ -8,7 +8,7 @@ path = require 'path'
 MambaScript = require './module'
 Repl = require './repl'
 nopt = require 'nopt'
-cscodegen = try require 'cscodegen' # Need a Mamba Flavored CSCodeGen
+mscodegen = try require 'mambacodegen' # Need a Mamba Flavored mscodegen
 escodegen = try require 'escodegen' # Need a Mamba Flavored ESCodegen
 esmangle = try require 'esmangle' # Need a Mamba Flavored EsMangle that doesn't need optimist
 
@@ -22,7 +22,7 @@ optAliases =
   b: '--bare'
   c: '--compile'
   e: '--eval'
-  f: '--cscodegen'
+  f: '--mscodegen'
   I: '--require'
   i: '--input'
   j: '--js'
@@ -43,8 +43,8 @@ if escodegen?
   if esmangle?
     option 'minify'
 
-if cscodegen?
-  option 'cscodegen'
+if mscodegen?
+  option 'mscodegen'
 
 
 options = nopt knownOpts, optAliases, process.argv, 2
@@ -60,7 +60,7 @@ options.sourceMapFile = options['source-map-file']
 
 # input validation
 
-unless options.compile or options.js or options.sourceMap or options.parse or options.eval or options.cscodegen
+unless options.compile or options.js or options.sourceMap or options.parse or options.eval or options.mscodegen
   if not escodegen?
     options.compile = on
   else if positionalArgs.length
@@ -71,9 +71,9 @@ unless options.compile or options.js or options.sourceMap or options.parse or op
     options.repl = on
 
 # mutual exclusions
-# - p (parse), c (compile), j (js), source-map, e (eval), cscodegen, repl
-if 1 isnt (options.parse ? 0) + (options.compile ? 0) + (options.js ? 0) + (options.sourceMap ? 0) + (options.eval ? 0) + (options.cscodegen ? 0) + (options.repl ? 0)
-  console.error "Error: At most one of --parse (-p), --compile (-c), --js (-j), --source-map, --eval (-e), --cscodegen, or --repl may be used."
+# - p (parse), c (compile), j (js), source-map, e (eval), mscodegen, repl
+if 1 isnt (options.parse ? 0) + (options.compile ? 0) + (options.js ? 0) + (options.sourceMap ? 0) + (options.eval ? 0) + (options.mscodegen ? 0) + (options.repl ? 0)
+  console.error "Error: At most one of --parse (-p), --compile (-c), --js (-j), --source-map, --eval (-e), --mscodegen, or --repl may be used."
   process.exit 1
 
 # - i (input), w (watch), cli
@@ -107,9 +107,9 @@ if options.input? and (fs.statSync options.input).isDirectory() and (not options
   console.error 'Error: when --input is a directory, --output must be provided, and --output must not reference a file'
   process.exit 1
 
-# - cscodegen depends on cscodegen
-if options.cscodegen and not cscodegen?
-  console.error 'Error: cscodegen must be installed to use --cscodegen'
+# - mscodegen depends on mscodegen
+if options.mscodegen and not mscodegen?
+  console.error 'Error: mscodegen must be installed to use --mscodegen'
   process.exit 1
 
 
@@ -141,7 +141,7 @@ if options.help
   -c, --compile           compile input .mamba file to js
   -z, --svelte           compile input .mamba file to js svelte
   -e, --eval              evaluate compiled JavaScript
-  -f, --cscodegen         output cscodegen-generated MambaScript code
+  -f, --mscodegen         output mscodegen-generated MambaScript code
   -i, --input FILE        file to be used as input instead of STDIN
   -I, --require FILE      require a library before a script is executed
   -j, --js                generate JavaScript output
@@ -162,7 +162,7 @@ if options.help
   --source-map-file FILE  file used as output for source map when using --js
 
   Unless given --input or --cli flags, `#{$0}` will operate on stdin/stdout.
-  When none of --{parse,compile,js,source-map,eval,cscodegen,repl} are given,
+  When none of --{parse,compile,js,source-map,eval,mscodegen,repl} are given,
     If positional arguments were given
       * --eval is implied
       * the first positional argument is used as an input filename
@@ -235,8 +235,8 @@ else
       console.error inspect result.toBasicObject()
 
     # cs code gen
-    if options.cscodegen
-      try result = cscodegen.generate result
+    if options.mscodegen
+      try result = mscodegen.generate result
       catch e
         console.error (e.stack or e.message)
         process.exit 1

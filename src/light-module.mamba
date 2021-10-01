@@ -7,7 +7,7 @@ TypeWalker = require './type-walker'
 {Compiler} = require './compiler'
 reporter = require './reporter'
 {TypeError} = require './type-helpers'
-cscodegen = try require 'cscodegen'
+mscodegen = try require 'mambacodegen'
 escodegen = try require 'escodegen'
 ESMRewriter = require '../utils/esm'
 
@@ -58,7 +58,7 @@ MambaScript =
     (Compiler.compile msAst, options).toBasicObject()
 
   compileTypedToCS: (msAst, options) ->
-    (cscodegen msAst)
+    (mscodegen msAst)
 
   # TODO
   cs: (msAst, options) ->
