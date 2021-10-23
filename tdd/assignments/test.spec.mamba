@@ -1,0 +1,266 @@
+# I wanna be the best, i wanna be the best simple and plain
+# Thats why I play the game
+# To be the best you have to win
+# and that's what drives me
+
+eq = (value, test)->
+  expect(test is value).toBeTruthy()
+
+egal = (a, b) ->
+  if a is b
+    a isnt 0 or 1/a is 1/b
+  else
+    a isnt a and b isnt b
+
+arrayEgal = (a, b) ->
+  if egal a, b then yes
+  else if a instanceof Array and b instanceof Array
+    return no unless a.length is b.length
+    return no for el, idx in a when not arrayEgal el, b[idx]
+    yes
+
+arrayEq = (value, test) -> expect(arrayEgal(value, test)).toBeTruthy()
+
+## Purpose
+# * Assignment
+# * Compound Assignment
+# * Destructuring Assignment
+# * Context Property (@) Assignment
+# * Existential Assignment (?=)
+
+
+test 'assign to the result of an assignment', ->
+  nonce = {}
+  a = b = nonce
+  eq nonce, a
+  eq nonce, b
+
+test "context property assignment (using @)", ->
+  nonce = {}
+  addMethod = ->
+    @method = -> nonce
+    this
+  eq nonce, addMethod.call({}).method()
+
+test "boolean operators", ->
+  nonce = {}
+
+  a  = 0
+  a or= nonce
+  eq nonce, a
+
+  b  = 1
+  b or= nonce
+  eq 1, b
+
+  c = 0
+  c and= nonce
+  eq 0, c
+
+  d = 1
+  d and= nonce
+  eq nonce, d
+
+  # ensure that RHS is treated as a group
+  e = f = false
+  e and= f or true
+  eq false, e
+
+test "compound assignment as a sub expression", ->
+  [a, b, c] = [1, 2, 3]
+  eq 6, a + (b += c)
+  eq 1, a
+  eq 5, b
+  eq 3, c
+
+
+test.skip "compound assignment should be careful about caching variables", ->
+  count = 0
+  list = []
+  ## This isn't possible because it compiles to
+  ## list[++count] || (list[++count] = 1);
+  ## so you will end up incrementing the value twice
+  list[++count] or= 1
+  eq 1, list[1]
+  eq 1, count
+
+  list[++count] ?= 2
+  eq 2, list[2]
+  eq 2, count
+
+  list[count++] and= 6
+  eq 6, list[2]
+  eq 3, count
+
+  base = ->
+    ++count
+    base
+
+  base().four or= 4
+  eq 4, base.four
+  eq 4, count
+
+  base().five ?= 5
+  eq 5, base.five
+  eq 5, count
+
+
+test "empty destructuring assignment", ->
+  {} = [] = undefined
+
+test "chained destructuring assignments", ->
+  [a] = {0: b} = {'0': c} = [nonce={}]
+  eq nonce, a
+  eq nonce, b
+  eq nonce, c
+
+test "variable swapping to verify caching of RHS values when appropriate", ->
+  a = nonceA = {}
+  b = nonceB = {}
+  c = nonceC = {}
+  [a, b, c] = [b, c, a]
+  eq nonceB, a
+  eq nonceC, b
+  eq nonceA, c
+  [a, b, c] = [b, c, a]
+  eq nonceC, a
+  eq nonceA, b
+  eq nonceB, c
+  fn = ->
+    [a, b, c] = [b, c, a]
+  arrayEq [nonceA,nonceB,nonceC], fn()
+  eq nonceA, a
+  eq nonceB, b
+  eq nonceC, c
+
+test "double swap", ->
+  nonces = [nonceA={},nonceB={}]
+  eq nonces, [a, b] = [c, d] = nonces
+  eq nonceA, a
+  eq nonceA, c
+  eq nonceB, b
+  eq nonceB, d
+
+
+test "destructuring assignment with splats", ->
+  a = {}; b = {}; c = {}; d = {}; e = {}
+  [x,y...,z] = [a,b,c,d,e]
+  eq a, x
+  arrayEq [b,c,d], y
+  eq e, z
+
+test "deep destructuring assignment with splats", ->
+  a={}; b={}; c={}; d={}; e={}; f={}; g={}; h={}; i={}
+  [u, [v, w..., x], y..., z] = [a, [b, c, d, e], f, g, h, i]
+  eq a, u
+  eq b, v
+  arrayEq [c,d], w
+  eq e, x
+  arrayEq [f,g,h], y
+  eq i, z
+
+test "destructuring assignment with objects", ->
+  a={}; b={}; c={}
+  obj = {a,b,c}
+  {a:x, b:y, c:z} = obj
+  eq a, x
+  eq b, y
+  eq c, z
+
+test "deep destructuring assignment with objects", ->
+  a={}; b={}; c={}; d={}
+  obj = {a, b: {'c': {d: [b, {e: c, f: d}]}}}
+  {a: w, 'b': {c: {d: [x, {'f': z, e: y}]}}} = obj
+  eq a, w
+  eq b, x
+  eq c, y
+  eq d, z
+
+test "destructuring assignment with objects and splats", ->
+  a={}; b={}; c={}; d={}
+  obj = a: b: [a, b, c, d]
+  {a: {b: [y, z...]}} = obj
+  eq a, y
+  arrayEq [b,c,d], z
+
+test "destructuring assignment against an expression", ->
+  a={}; b={}
+  [y, z] = if true then [a, b] else [b, a]
+  eq a, y
+  eq b, z
+
+test "bracket insertion when necessary", ->
+  [a] = [0] ? [1]
+  eq a, 0
+
+# for implicit destructuring assignment in comprehensions, see the comprehension tests
+
+test "destructuring assignment with context (@) properties", ->
+  a={}; b={}; c={}; d={}; e={}
+  obj =
+    fn: ->
+      local = [a, {b, c}, d, e]
+      [@a, {b: @b, c: @c}, @d, @e] = local
+  eq undefined, obj[key] for key in ['a','b','c','d','e']
+  obj.fn()
+  eq a, obj.a
+  eq b, obj.b
+  eq c, obj.c
+  eq d, obj.d
+  eq e, obj.e
+
+test 'destructuring with statement-like RHS', ->
+  c = false
+  {a, b} = if c then {a: 0, b: 1} else {a: 2, b: 3}
+  eq 2, a
+  eq 3, b
+
+test "Fro was ligned up yellin kobe but plaing pewee", ->
+  eq 2 * ([] = 3 + 5), 16
+
+
+test "#2055: destructuring assignment with `new`", ->
+  {length} = new Array
+  eq 0, length
+
+
+test "existential assignment", ->
+  nonce = {}
+  a = false
+  a ?= nonce
+  eq false, a
+  b = undefined
+  b ?= nonce
+  eq nonce, b
+  c = null
+  c ?= nonce
+  eq nonce, c
+
+
+test "more existential assignment", ->
+  obj = {}
+  obj.temp ?= 0
+  eq obj.temp, 0
+  obj.temp or= 100
+  eq obj.temp, 100
+
+
+test "#1838: Regression with variable assignment", ->
+  name =
+  'dave'
+
+  eq name, 'dave'
+
+
+test '#72: parsing assignment fails when the assignee is member access of a result of a call', ->
+  f = (o) -> o
+  g = -> this
+  nonce = {}
+
+  obj = {}
+  f(obj).a = nonce
+  eq nonce, obj.a
+
+  obj = {g: g}
+  obj.g().a = nonce
+  eq nonce, obj.a

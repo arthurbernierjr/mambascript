@@ -1,0 +1,16 @@
+nonce = {}
+
+a  = 0
+a or= nonce
+
+count = 0
+list = []
+
+list[++count] or= 1
+present list.length
+
+"chained destructuring assignments"
+[a] = {0: b} = {'0': c} = [nonce={}]
+present a
+present b
+present c

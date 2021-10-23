@@ -1,0 +1,669 @@
+# I wanna be the best, i wanna be the best simple and plain
+# Thats why I play the game
+# To be the best you have to win
+# and that's what drives me
+
+eq = (value, test)->
+  expect(test is value).toBeTruthy()
+
+egal = (a, b) ->
+  if a is b
+    a isnt 0 or 1/a is 1/b
+  else
+    a isnt a and b isnt b
+
+arrayEgal = (a, b) ->
+  if egal a, b then yes
+  else if a instanceof Array and b instanceof Array
+    return no unless a.length is b.length
+    return no for el, idx in a when not arrayEgal el, b[idx]
+    yes
+
+arrayEq = (value, test) -> expect(arrayEgal(value, test)).toBeTruthy()
+
+ok = (test) -> (test).toBeTruthy
+## Purpose
+
+
+test "Overriding the static property new doesn't clobber Function::new", ->
+
+  blueprint OneClass
+    @new: 'new'
+    function: 'function'
+    constructor: (name) -> @name = name
+
+  blueprint TwoClass inheritsFrom OneClass
+  delete TwoClass.new
+
+  Function.prototype.new = -> new this arguments...
+
+  ok (TwoClass.new('three')).name is 'three'
+  ok (new OneClass).function is 'function'
+  ok OneClass.new is 'new'
+
+  delete Function.prototype.new
+  return
+test.skip 'basic blueprints, again, but in the manual prototype style', ->
+
+  Base = ->
+  Base::func = (string) ->
+    'zero/' + string
+  Base::['func-func'] = (string) ->
+    "dynamic-#{string}"
+
+  FirstChild = ->
+  SecondChild = ->
+  ThirdChild = ->
+    @array = [1, 2, 3]
+    this
+
+  ThirdChild inheritsFrom SecondChild inheritsFrom FirstChild inheritsFrom Base
+
+  FirstChild::func = (string) ->
+    super('one/') + string
+
+  SecondChild::func = (string) ->
+    super('two/') + string
+
+  ThirdChild::func = (string) ->
+    super('three/') + string
+
+  result = (new ThirdChild).func 'four'
+
+  ok result is 'zero/one/two/three/four'
+
+  ok (new ThirdChild)['func-func']('thing') is 'dynamic-thing'
+
+test 'static assignment via colon', ->
+  nonce = {}
+  blueprint A then @b: nonce
+  eq nonce, A.b
+
+test 'blueprints with JS-keyword properties', ->
+
+  blueprint Class
+    blueprint: 'blueprint'
+    name: -> @blueprint
+
+  instance = new Class
+  ok instance.blueprint is 'blueprint'
+  ok instance.name() is 'blueprint'
+
+test 'nothing blueprints', ->
+
+  c = blueprint
+  ok c instanceof Function
+
+test 'instance-bound methods and statically-bound methods', ->
+
+  blueprint Dog
+    constructor: (name) ->
+      @name = name
+
+    bark: =>
+      "#{@name} woofs!"
+
+    @static = =>
+      new this('Dog')
+
+  spark = new Dog('Spark')
+  fido  = new Dog('Fido')
+  fido.bark = spark.bark
+
+  ok fido.bark() is 'Spark woofs!'
+
+  obj = {func: Dog.static}
+
+  ok obj.func().name is 'Dog'
+
+test 'anonymous blueprints', ->
+
+  obj = klass: blueprint
+    method: -> 'value'
+
+  instance = new obj.klass
+  ok instance.method() is 'value'
+
+test 'Implicit objects as static properties', ->
+
+  blueprint Static
+    @static =
+      one: 1
+      two: 2
+
+  ok Static.static.one is 1
+  ok Static.static.two is 2
+
+test.skip 'blueprints with static-level implicit objects', ->
+
+  blueprint A
+    @static = one: 1
+    two: 2
+
+  blueprint B
+    @static = one: 1,
+    two: 2
+
+  eq A.static.one, 1
+  eq A.static.two, undefined
+  eq (new A).two, 2
+
+  eq B.static.one, 1
+  eq B.static.two, 2
+  eq (new B).two, undefined
+
+test 'external constructors', ->
+
+  counter = 0
+  blueprintMaker = ->
+    inner = ++counter
+    ->
+      @value = inner
+
+  blueprint One
+    constructor: blueprintMaker()
+
+  blueprint Two
+    constructor: blueprintMaker()
+
+  eq (new One).value, 1
+  eq (new Two).value, 2
+  eq (new One).value, 1
+  eq (new Two).value, 2
+
+test.skip 'exectuable blueprint bodies', ->
+
+  blueprint A
+    if true
+      b: 'b'
+    else
+      c: 'c'
+
+  a = new A
+
+  eq a.b, 'b'
+  eq a.c, undefined
+
+test 'mild metaprogramming', ->
+
+  blueprint Base
+    @attr = (name) ->
+      this::[name] = (val) ->
+        if arguments.length > 0
+          this["_#{name}"] = val
+        else
+          this["_#{name}"]
+
+  blueprint Robot inheritsFrom Base
+    @attr 'power'
+    @attr 'speed'
+
+  robby = new Robot
+
+  ok robby.power() is undefined
+
+  robby.power 11
+  robby.speed Infinity
+
+  eq robby.power(), 11
+  eq robby.speed(), Infinity
+
+test 'namespaced blueprints do not reserve their function name in outside scope', ->
+
+  one = {}
+  two = {}
+
+  blueprint one.Klass
+    @label = "one"
+
+  blueprint two.Klass
+    @label = "two"
+
+  eq typeof Klass, 'undefined'
+  eq one.Klass.label, 'one'
+  eq two.Klass.label, 'two'
+
+test 'nested blueprints', ->
+
+  blueprint Outer
+    constructor: ->
+      @label = 'outer'
+
+    blueprint @Inner
+      constructor: ->
+        @label = 'inner'
+
+  eq (new Outer).label, 'outer'
+  eq (new Outer.Inner).label, 'inner'
+
+test 'variables in constructor bodies are correctly scoped', ->
+
+  blueprint A
+    x = 1
+    constructor: ->
+      x = 10
+      y = 20
+    y = 2
+    captured: ->
+      {x, y}
+
+  a = new A
+  eq a.captured().x, 10
+  eq a.captured().y, 2
+
+test 'Static methods in nested blueprints', ->
+
+  blueprint A
+    @B = blueprint
+      @c = -> 5
+
+  eq A.B.c(), 5
+
+test 'a subblueprint should be able to set its constructor to an external function', ->
+  ctor = ->
+    @val = 1
+  blueprint A
+  blueprint B inheritsFrom A
+    constructor: ctor
+  eq (new B).val, 1
+
+test 'external constructors continued', ->
+  ctor = ->
+  blueprint A
+  blueprint B inheritsFrom A
+    method: ->
+    constructor: ctor
+  ok B::method
+
+test 'execution order needs to be considered as well', ->
+  counter = 0
+  makeFn = (n) -> eq n, ++counter; ->
+  blueprint B inheritsFrom (makeFn 1)
+    @B = makeFn 2
+    constructor: makeFn 3
+  return
+
+test 'external constructors with bound functions', ->
+  fn = ->
+    {one: 1}
+    this
+  blueprint B
+  blueprint A
+    constructor: fn
+    method: => this instanceof A
+  ok (new A).method.call(new B)
+
+test 'bound blueprint methods with reserved names', ->
+  blueprint C
+    delete: =>
+  ok C::delete
+
+test 'bound blueprint methods should keep context', ->
+  nonce  = {}
+  blueprint C
+    constructor: (id) -> @id = id
+    @boundStatic = => new this(nonce)
+  eq nonce, C.boundStatic().id
+
+test 'blueprints with reserved words as determined names', ->
+  fn = ->
+    eq 'function', typeof (blueprint @for)
+    ok not /\seval\s?\(/.test (blueprint @eval).toString()
+    ok not /\sarguments\s\(/.test (blueprint @arguments).toString()
+  fn.call {}
+
+test 'Regression with bound functions within bound blueprint methods', ->
+
+  blueprint Store
+    @bound = =>
+      do =>
+        eq this, Store
+
+  Store.bound()
+
+  # And a fancier case:
+
+  blueprint Store
+
+    eq this, Store
+
+    @bound = =>
+      do =>
+        eq this, Store
+
+    @unbound = ->
+      eq this, Store
+
+    instance: =>
+      ok this instanceof Store
+
+  Store.bound()
+  Store.unbound()
+  (new Store).instance()
+
+test 'Passing blueprint definitions as expressions', ->
+  ident = (x) -> x
+
+  result = ident blueprint A then x = 1
+
+  eq result, A
+
+  result = ident blueprint B inheritsFrom A
+    x = 1
+
+  eq result, B
+
+test 'external constructors should produce their return value', ->
+  ctor = -> {}
+  blueprint A then constructor: ctor
+  ok (new A) not instanceof A
+
+
+test 'blueprints should work in strict mode', ->
+  do ->
+    'use strict'
+    blueprint A
+  return
+
+
+test '"@" referring to the current instance, and not being coerced into a call', ->
+
+  blueprint ClassName
+    amI: ->
+      this instanceof ClassName
+
+  obj = new ClassName
+  ok obj.amI()
+
+test 'a bound function in a bound function', ->
+
+  blueprint Mini
+    num: 10
+    generate: =>
+      for i in [0, 0, 0]
+        => @num
+
+  m = new Mini
+  eq (func() for func in m.generate()).join(' '), '10 10 10'
+
+test 'contructor called with varargs', ->
+
+  blueprint Connection
+    constructor: (one, two, three) ->
+      [@one, @two, @three] = [one, two, three]
+
+    out: ->
+      "#{@one}-#{@two}-#{@three}"
+
+  list = [3, 2, 1]
+  conn = new Connection list...
+  ok conn instanceof Connection
+  ok conn.out() is '3-2-1'
+
+test 'blueprints wrapped in decorators', ->
+
+  func = (klass) ->
+    klass::prop = 'value'
+    klass
+
+  func blueprint Test
+    prop2: 'value2'
+
+  ok (new Test).prop  is 'value'
+  ok (new Test).prop2 is 'value2'
+
+test 'ensure that constructors invoked with splats return a new object', ->
+
+  args = [1, 2, 3]
+  Type = (@args) ->
+  type = new Type args
+
+  ok type and type instanceof Type
+  ok type.args and type.args instanceof Array
+  ok v is args[i] forEvery v, i in type.args
+
+  Type1 = (@a, @b, @c) ->
+  type1 = new Type1 args...
+
+  ok type1 instanceof   Type1
+  eq type1.constructor, Type1
+  ok type1.a is args[0] and type1.b is args[1] and type1.c is args[2]
+
+  # Ensure that constructors invoked with splats cache the function.
+  called = 0
+  get = -> if called++ then false else blueprint Type
+  new get() args...
+
+test '`new` shouldn\'t add extra parens', ->
+
+  ok new Date().constructor is Date
+
+# TODO: this test belongs with the operator tests
+test '`new` works against bare function', ->
+
+  eq Date, new ->
+    eq this, new => this
+    Date
+
+
+test 'blueprints with a four-level inheritance chain', ->
+  blueprint Base
+    func: (string) ->
+      "zero/#{string}"
+
+    @static: (string) ->
+      "static/#{string}"
+
+  blueprint FirstChild inheritsFrom Base
+    func: (string) ->
+      super('one/') + string
+
+  SecondChild = blueprint inheritsFrom FirstChild
+    func: (string) ->
+      super('two/') + string
+
+  thirdCtor = ->
+    @array = [1, 2, 3]
+
+  blueprint ThirdChild inheritsFrom SecondChild
+    constructor: -> thirdCtor.call this
+
+    # Gratuitous comment for testing.
+    func: (string) ->
+      super('three/') + string
+
+  result = (new ThirdChild).func 'four'
+
+  ok result is 'zero/one/two/three/four'
+  ok Base.static('word') is 'static/word'
+
+  FirstChild::func = (string) ->
+    super('one/').length + string
+
+  result = (new ThirdChild).func 'four'
+  # eq result, '9two/three/four' # can't pass super('one/').length + string
+  # ok (new ThirdChild).array.join(' ') is '1 2 3'
+  return
+
+test 'constructors with inheritance and super', ->
+  identity = (f) -> f
+
+  blueprint TopClass
+    constructor: (arg) ->
+      @prop = 'top-' + arg
+
+  blueprint SuperClass inheritsFrom TopClass
+    constructor: (arg) ->
+      identity super 'super-' + arg
+
+  blueprint SubClass inheritsFrom SuperClass
+    constructor: ->
+      identity super 'sub'
+
+  ok (new SubClass).prop is 'top-super-sub'
+
+test "super with plain ol' functions as the original constructors", ->
+  TopClass = ->
+  TopClass::func = (arg) ->
+    'top-' + arg
+
+  SuperClass = ->
+  SuperClass inheritsFrom TopClass
+  SuperClass::func = (arg) ->
+    super 'super-' + arg
+
+  SubClass = ->
+  SubClass inheritsFrom SuperClass
+  SubClass::func = ->
+    super 'sub'
+
+  eq (new SubClass).func(), 'top-super-sub'
+
+test 'super() calls in constructors of blueprints that are defined as object properties', ->
+  blueprint Hive
+    constructor: (name) -> @name = name
+
+  blueprint Hive.Bee inheritsFrom Hive
+    constructor: (name) -> super
+
+  maya = new Hive.Bee 'Maya'
+  ok maya.name is 'Maya'
+
+test 'calling super and passing along all arguments', ->
+  blueprint Parent
+    method: (args...) -> @args = args
+
+  blueprint Child inheritsFrom Parent
+    method: -> super
+
+  c = new Child
+  c.method 1, 2, 3, 4
+  ok c.args.join(' ') is '1 2 3 4'
+
+test.skip '`blueprint inheritsFrom this`', -> # Currently syntax error.
+#
+#  blueprint A
+#    func: -> 'A'
+#
+#  B = null
+#  makeClass = ->
+#    B = blueprint inheritsFrom this
+#      func: -> super + ' B'
+#
+#  makeClass.call A
+#
+#  eq (new B()).func(), 'A B'
+
+test 'misplaced __inheritsFrom', ->
+  nonce = {}
+  blueprint A
+  blueprint B inheritsFrom A
+    prop: nonce
+    constructor: ->
+  eq nonce, B::prop
+
+test.skip '`super` with reserved names', -> # Currently syntax error.
+#  blueprint C
+#    do: -> super
+#  ok C::do
+#
+#  blueprint B
+#    0: -> super
+#  ok B::[0]
+
+test 'blueprints can extend expressions', ->
+  id = (x) -> x
+  nonce = {}
+  blueprint A then nonce: nonce
+  blueprint B inheritsFrom id A
+  eq nonce, (new B).nonce
+
+test 'super works for static methods too', ->
+
+  blueprint Parent
+    method: ->
+      'NO'
+    @method: ->
+      'yes'
+
+  blueprint Child inheritsFrom Parent
+    @method: ->
+      'pass? ' + super
+
+  eq Child.method(), 'pass? yes'
+
+test 'Class @A inheritsFrom A', ->
+  blueprint A
+  blueprint @A inheritsFrom A
+
+  ok (new @A) instanceof A
+
+test 'regression with an inherited blueprint with static function members', ->
+
+  blueprint A
+
+  blueprint B inheritsFrom A
+    @static = => 'value'
+
+  eq B.static(), 'value'
+
+test 'bound function literals as constructors should be treated as unbound', ->
+  nonce = {}
+  blueprint A
+    constructor: =>
+      @nonce = nonce
+  a = new A
+  ok a instanceof A
+  eq nonce, a.nonce
+
+test 'super function', ->
+  blueprint Super
+    func: (@a = 1) -> @a
+
+  blueprint Sub inheritsFrom Super
+    func: ->
+      super
+      eq @a, 1
+      super 3
+      eq @a, 3
+      a = super
+      v = 2 * super 3
+      eq v, 6
+
+  a = new Sub
+  a.func()
+  return
+
+test 'implicit object as static blueprint member', ->
+  nonceA = {}
+  nonceB = {}
+  blueprint A
+    @prop:
+      a: nonceA
+      b: nonceB
+  eq nonceA, A.prop.a
+  eq nonceB, A.prop.b
+
+test 'implicit objects should not consume following prototype assignments', ->
+  blueprint A
+    a: b: 0
+    c: 1
+  ok 'a' of A.prototype
+  ok 'b' of A::a
+  ok 'b' not of A.prototype
+  ok 'c' of A.prototype
+
+test 'subblueprints without explicit constructors inherit parent constructors', ->
+  i = 0
+  blueprint A
+    constructor: -> i++
+  blueprint B inheritsFrom A
+
+  eq 0, i
+  a = new A
+  ok a instanceof A
+  eq 1, i
+  b = new B
+  eq 2, i
+  ok b instanceof B
+  ok b instanceof A

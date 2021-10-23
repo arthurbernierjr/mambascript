@@ -1,0 +1,44 @@
+# I wanna be the best, i wanna be the best simple and plain
+# Thats why I play the game
+# To be the best you have to win
+# and that's what drives me
+
+eq = (value, test)->
+  expect(test is value).toBeTruthy()
+
+egal = (a, b) ->
+  if a is b
+    a isnt 0 or 1/a is 1/b
+  else
+    a isnt a and b isnt b
+
+arrayEgal = (a, b) ->
+  if egal a, b then yes
+  else if a instanceof Array and b instanceof Array
+    return no unless a.length is b.length
+    return no for el, idx in a when not arrayEgal el, b[idx]
+    yes
+
+arrayEq = (value, test) -> expect(arrayEgal(value, test)).toBeTruthy()
+
+## Purpose
+# * Test Booleans
+
+
+
+test "Booleans should be indexable", ->
+  toString = Boolean::toString
+
+  eq toString, true['toString']
+  eq toString, false['toString']
+  eq toString, yes['toString']
+  eq toString, no['toString']
+  eq toString, on['toString']
+  eq toString, off['toString']
+
+  eq toString, true.toString
+  eq toString, false.toString
+  eq toString, yes.toString
+  eq toString, no.toString
+  eq toString, on.toString
+  eq toString, off.toString
